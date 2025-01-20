@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>NetLogo Help: up-to-n-of</title>
+
+    <link rel="stylesheet" href="../netlogo.css" type="text/css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style>
+      p { margin-left: 1.5em ; }
+      h3 { font-size: 115% ; }
+      h4 { font-size: 100% ; margin-left: 1.5em ; background: white ; }
+    </style>
+  </head>
+  <body>
+    <div class="dict_entry" id="up-to-n-of"> 
+ <h3> <a>up-to-n-of<span class="since">6.1</span></a> </h3> 
+ <h4> <span class="prim_example">up-to-n-of <i>size</i> <i>agentset</i></span> <span class="prim_example">up-to-n-of <i>size</i> <i>list</i></span> </h4> 
+ <p> From an agentset, reports an agentset of size <i>size</i> randomly chosen from the input set, with no repeats. If the input does not have enough agents to satisfy the <i>size</i>, reports the entire agentset. </p> 
+ <p> From a list, reports a list of size <i>size</i> randomly chosen from the input set, with no repeats. The items in the result appear in the same order that they appeared in the input list. (If you want them in random order, use shuffle on the result.) If the input does not have enough items to satisfy the <i>size</i>, reports the entire list. </p> 
+ <p> If <i>size</i> is fractional, it will be rounded down to the nearest integer (4.5 becomes 4, 10.9 becomes 10). </p> 
+ <pre>
+ask up-to-n-of 50 patches [ set pcolor green ]
+;; 50 randomly chosen patches turn green
+;; if less than 50 patches exist, they all turn green
+</pre> 
+ <p> See also <a href="../dictionary.html#n-of">n-of</a>, <a href="../dictionary.html#one-of">one-of</a>. </p> 
+</div>
+    <p>
+      Take me to the full <a href="../index2.html">NetLogo Dictionary</a>
+    </p>
+  </body>
+</html>
