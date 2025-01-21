@@ -132,7 +132,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		agents_specific_resources = {}
 		if len(resources) != 0 and type != "Spawnroom" and type != "Fillingroom" and type != "Stair" and type != "Waitingroom":
 			resources_room = resources[type + "-" + area]["roomResource"]
-			#waiting_room = resources[type + "-" + area]["waitingRooms"]
+			waiting_room = resources[type + "-" + area]["waitingRooms"]
 		
 		for res in resources_room:
 			if res["room"] == room_name:
