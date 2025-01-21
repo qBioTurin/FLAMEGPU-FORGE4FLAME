@@ -99,13 +99,6 @@ else
     echo "The directory '$DIR_PATH' has been created."
 fi
 
-# To remove before submission!!
-if [ $USER == dbaccega ] || [ $USER == dbaccega-eth ];
-then
-  PATH="/usr/local/cuda/bin:$PATH"
-  LD_LIBRARY_PATH="/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
-fi
-
 if [ ! -d flamegpu2 ];
 then
   python3 -m venv flamegpu2
