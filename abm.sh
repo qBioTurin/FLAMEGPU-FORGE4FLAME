@@ -85,8 +85,8 @@ set -- "${POSITIONAL_ARGS[@]}"  # Restore positional parameters
 DIR_PATH="results/$EXPERIMENT_DIR"
 
 if [ -d "$DIR_PATH" ]; then
-    read -p "The directory '$DIR_PATH' already exists. Do you want to replace it? (yes/no): " response
-    if [[ "$response" == "yes" ]]; then
+    read -p "The directory '$DIR_PATH' already exists. Do you want to replace it? (y/n): " response
+    if [[ "$response" == "y" ]]; then
         rm -rf "$DIR_PATH"  # Remove the directory and its contents
         mkdir -p "$DIR_PATH"  # Recreate the directory
         echo "The directory '$DIR_PATH' has been replaced."
