@@ -28,4 +28,4 @@
 # sudo systemctl daemon-reload
 # sudo systemctl restart docker
 
-docker build -t danielebaccega/flamegpu2-run .
+docker build -t danielebaccega/flamegpu2 .

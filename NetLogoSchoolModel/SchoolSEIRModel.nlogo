@@ -1530,7 +1530,7 @@ end
 to end-of-day-computation
   if stop-day
     [
-      ;infect-aerosol
+      infect-aerosol
       infect-with-contact
 
       update-quarantine
@@ -2547,10 +2547,6 @@ to infect-with-contact
         [ set c-r c-r * (1 - contamination-risk-decreased-with-mask) ]
 
       let pi-agent c-r * (contact-time-in-min / contact-space-volume)
-
-      print contact-time-in-min
-      print c-r
-      print pi-agent
 
       if random-float 1 < pi-agent
         [ get-the-infection false ]
