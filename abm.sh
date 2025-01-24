@@ -127,4 +127,8 @@ then
   bash run.sh -expdir $EXPERIMENT_DIR -v $VISUALISATION -e OFF
 fi
 
+if [ -f /.dockerenv ]; then
+  cp results flamegpu_results
+fi
+
 deactivate
