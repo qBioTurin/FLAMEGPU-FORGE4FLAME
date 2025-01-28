@@ -22,9 +22,15 @@ def CreateMapEncoding(dirname_experiment):
 		mapencoding_file.write("\tWALKABLE = 1\n")
 		mapencoding_file.write("\tDOOR = 2\n")
 		mapencoding_file.write("\tCORRIDOR = 3\n")
+		mapencoding_file.write("\tNORMAL = 4\n")
+		mapencoding_file.write("\tSTAIR = 5\n")
+		mapencoding_file.write("\tSPAWNROOM = 6\n")
+		mapencoding_file.write("\tFILLINGROOM = 7\n")
+		mapencoding_file.write("\tWAITINGROOM = 8\n")
 
 		for type, data in types_IDs.items():
-			mapencoding_file.write("\t" + type.upper() + " = " + str(data["ID"]) + "\n")
+			if(int(data["ID"]) > 8):
+				mapencoding_file.write("\t" + type.upper() + " = " + str(data["ID"]) + "\n")
 
 		mapencoding_file.write("\n")
 
