@@ -15,7 +15,7 @@ RUN mkdir -p /home/docker/flamegpu2 && \
     chmod -R 777 /home/docker/flamegpu2
 
 RUN mkdir /home/docker/flamegpu2/flamegpu2_results && \
-    chmod -R 777 /home/docker/flamegpu2
+    chmod -R 777 /home/docker/flamegpu2/flamegpu2_results
 
 RUN git clone https://francescosiv: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@github.com/qBioTurin/FLAMEGPU-FORGE4FLAME.git /home/docker/flamegpu2/
 
