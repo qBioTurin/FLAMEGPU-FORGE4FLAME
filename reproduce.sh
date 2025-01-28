@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Comparison between NetLogo and FLAME GPU 2
+# Comparison between NetLogo and FLAME GPU 2 (ITC test, 200 runs)
 cd NetLogoSchoolModel
 ./run.sh Configurations/F4FComparison/NoCountermeasures.conf 16
 ./run.sh Configurations/F4FComparison/Countermeasures.conf 16
 cd ..
 
-./abm_ensemble -expdir NoCountermeasures -prun 16 -c ON
-./abm_ensemble -expdir Countermeasures -prun 16 -c ON
+./run_docker_ensemble NoCountermeasures 16
+./run_docker_ensemble Countermeasures 16
 

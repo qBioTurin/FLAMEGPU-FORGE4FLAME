@@ -9,7 +9,6 @@
 
   Inputs:
       -expdir or --experiment_dir:  directory with the scenario to simulate
-      -prun   or --parallel_run:    number of run to execute in parallel on GPUs
       -ob     or --only_build:      build the model without execute it
       -c      or --clean:           clean files and directories
 
@@ -18,7 +17,6 @@
 
 # Default values for input parameters
 EXPERIMENT_DIR="Scenario_$(date +%s)"
-PARALLEL_RUN="10"
 ONLY_BUILD="OFF"
 CLEAN="OFF"
 
@@ -26,11 +24,6 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -expdir|--experiment_dir)
       EXPERIMENT_DIR="$2"
-      shift
-      shift
-      ;;
-    -prun|--parallel_run)
-      PARALLEL_RUN="$2"
       shift
       shift
       ;;
@@ -48,7 +41,6 @@ while [[ $# -gt 0 ]]; do
   	  printf "./run.sh - run the ABM\n\n"
   	  printf "Arguments:\n"
       printf "        -expdir or --experiment_dir:  directory with the scenario to simulate (default: .)\n"
-      printf "        -prun   or --parallel_run:    number of run to execute in parallel on GPUs (default: 10)\n"
       printf "        -ob     or --only_build:      build the model without execute it (default: OFF; possible values: ON, OFF)\n"
       printf "        -c      or --clean:           clean old files and directories (default: OFF; possible values: ON, OFF)\n"
       exit 1
@@ -106,7 +98,8 @@ fi
 
 # Generate the configuration file to give in input to the ABM model
 WHOLE_OUTPUT="$(bash generate_configuration.sh -e ON -expdir $EXPERIMENT_DIR 2>&1)"
-SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f2)"
+SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
+PARALLEL_RUN="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f2)"
 
 # Build the model
 bash build.sh -cps OFF -g OFF -v OFF
@@ -115,6 +108,10 @@ if [ $ONLY_BUILD == "OFF" ];
 then
   # Run the model
   bash run.sh -expdir $EXPERIMENT_DIR -prun $PARALLEL_RUN -v OFF -e ON
+fi
+
+if [ -f /.dockerenv ]; then
+  cp -r results flamegpu_results
 fi
 
 deactivate
