@@ -127,7 +127,7 @@ then
 fi
 
 if [ -f /.dockerenv ]; then
-  cp -r results flamegpu_results
+  cp -r results flamegpu2_results
 fi
 
 deactivate
