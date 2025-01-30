@@ -80,10 +80,10 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
     auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
     auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
-    auto intermediate_target_x = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-    auto intermediate_target_y = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-    auto intermediate_target_z = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-    auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+    auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+    auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+    auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+    auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
 
     const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
     const int room_for_quarantine_index = FLAMEGPU->getVariable<int>(ROOM_FOR_QUARANTINE_INDEX);

@@ -167,10 +167,10 @@ namespace host_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
-        auto intermediate_target_x = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-        auto intermediate_target_y = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-        auto intermediate_target_z = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
@@ -445,10 +445,10 @@ namespace host_functions {
             
             short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID);
 
-            auto intermediate_target_x = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-            auto intermediate_target_y = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-            auto intermediate_target_z = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-            auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+            auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+            auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+            auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+            auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
             auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
             auto env_rate_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR);

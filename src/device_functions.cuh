@@ -455,10 +455,10 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif       
-        auto intermediate_target_x = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-        auto intermediate_target_y = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-        auto intermediate_target_z = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
 
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
 
@@ -517,7 +517,7 @@ namespace device_functions {
         const unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         const unsigned short identified = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
-        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
@@ -567,7 +567,7 @@ namespace device_functions {
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
-        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_quarantine_days_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR);
         auto env_quarantine_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
         auto env_quarantine_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
@@ -641,7 +641,7 @@ namespace device_functions {
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
-        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_SWAB_DISTR);
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_FIRSTPARAM);
         auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_SECONDPARAM);
@@ -745,7 +745,7 @@ namespace device_functions {
         short solution_quarantine_extern[SOLUTION_LENGTH] = {-1};
         unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
 
-        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
         auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_SWAB_DISTR);
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_FIRSTPARAM);
