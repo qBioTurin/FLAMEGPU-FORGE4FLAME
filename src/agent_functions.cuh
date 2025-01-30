@@ -656,7 +656,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingInWaitingRoom, MessageBucket, MessageBucket) {
 #endif
 
     if(FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
-        unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
 
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         
