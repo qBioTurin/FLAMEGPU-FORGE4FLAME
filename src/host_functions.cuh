@@ -285,11 +285,11 @@ namespace host_functions {
                 new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
                 const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (int) env_flow_distr_firstparam[agent_type][weekday_agent][0], (int) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
-                stay_matrix[contacts_id][0].exchange(initial_stay);
+                stay_matrix[contacts_id][0] = initial_stay;
 
-                intermediate_target_x[contacts_id][0].exchange(x);
-                intermediate_target_y[contacts_id][0].exchange(y);
-                intermediate_target_z[contacts_id][0].exchange(z);
+                intermediate_target_x[contacts_id][0] = x;
+                intermediate_target_y[contacts_id][0] = y;
+                intermediate_target_z[contacts_id][0] = z;
                 new_pedestrian.setVariable<int>(WAITING_ROOM_TIME, 0);
                 new_pedestrian.setVariable<int>(WAITING_ROOM_FLAG, 0);
                 new_pedestrian.setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
@@ -514,11 +514,11 @@ namespace host_functions {
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
                         const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (int) env_hours_schedule[i][week_day][2 * slot], (int) env_hours_schedule[i][week_day][2 * slot + 1], true);
-                        stay_matrix[contacts_id][0].exchange(initial_stay);
+                        stay_matrix[contacts_id][0] = initial_stay;
 
-                        intermediate_target_x[contacts_id][0].exchange(x);
-                        intermediate_target_y[contacts_id][0].exchange(y);
-                        intermediate_target_z[contacts_id][0].exchange(z);
+                        intermediate_target_x[contacts_id][0] = x;
+                        intermediate_target_y[contacts_id][0] = y;
+                        intermediate_target_z[contacts_id][0] = z;
                         new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
 
                         contacts_id = contacts_id + 1;
