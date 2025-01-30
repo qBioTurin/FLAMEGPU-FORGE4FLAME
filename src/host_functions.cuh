@@ -167,6 +167,10 @@ namespace host_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
+        auto intermediate_target_x = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
@@ -281,11 +285,11 @@ namespace host_functions {
                 new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
                 const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (int) env_flow_distr_firstparam[agent_type][weekday_agent][0], (int) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
-                new_pedestrian.setVariable<unsigned int, SOLUTION_LENGTH>(STAY, 0, initial_stay);
+                stay_matrix[contacts_id][0].exchange(initial_stay);
 
-                new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X, 0, x);
-                new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y, 0, y);
-                new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z, 0, z);
+                intermediate_target_x[contacts_id][0].exchange(x);
+                intermediate_target_y[contacts_id][0].exchange(y);
+                intermediate_target_z[contacts_id][0].exchange(z);
                 new_pedestrian.setVariable<int>(WAITING_ROOM_TIME, 0);
                 new_pedestrian.setVariable<int>(WAITING_ROOM_FLAG, 0);
                 new_pedestrian.setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
@@ -441,6 +445,10 @@ namespace host_functions {
             
             short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID);
 
+            auto intermediate_target_x = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+            auto intermediate_target_y = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+            auto intermediate_target_z = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+            auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
             auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
             auto env_rate_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR);
@@ -506,11 +514,11 @@ namespace host_functions {
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
                         const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (int) env_hours_schedule[i][week_day][2 * slot], (int) env_hours_schedule[i][week_day][2 * slot + 1], true);
-                        new_pedestrian.setVariable<unsigned int, SOLUTION_LENGTH>(STAY, 0, initial_stay);
+                        stay_matrix[contacts_id][0].exchange(initial_stay);
 
-                        new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X, 0, x);
-                        new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y, 0, y);
-                        new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z, 0, z);
+                        intermediate_target_x[contacts_id][0].exchange(x);
+                        intermediate_target_y[contacts_id][0].exchange(y);
+                        intermediate_target_z[contacts_id][0].exchange(z);
                         new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
 
                         contacts_id = contacts_id + 1;
@@ -536,7 +544,7 @@ namespace host_functions {
         printf("[DEBUG],%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
         // Log the environment macro properties
-        auto number_of_steps_contacts = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, TOTAL_AGENTS_OVERESTIMATION>(NUMBER_OF_STEPS_CONTACTS);
+        //auto number_of_steps_contacts = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, TOTAL_AGENTS_OVERESTIMATION>(NUMBER_OF_STEPS_CONTACTS);
         auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 

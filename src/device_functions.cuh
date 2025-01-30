@@ -454,13 +454,20 @@ namespace device_functions {
     FLAMEGPU_DEVICE_FUNCTION void update_targets(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, short* new_targets, unsigned short *target_index, const bool clean, int stay) {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-#endif        
+#endif       
+        auto intermediate_target_x = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+
+        const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+
         float new_target_x, new_target_y, new_target_z;
 
         if(clean){
             const unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
 
-            FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, *target_index, 0);
+            stay_matrix[contacts_id][*target_index].exchange(0);
             
             if(next_index != *target_index){
                 *target_index = (next_index + 1) % SOLUTION_LENGTH;
@@ -481,16 +488,16 @@ namespace device_functions {
             new_target_y = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, new_targets[i]);
             new_target_z = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, new_targets[i]) + 0.5f + jitter_z;
 
-            FLAMEGPU->setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X, *target_index, new_target_x);
-            FLAMEGPU->setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y, *target_index, new_target_y);
-            FLAMEGPU->setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z, *target_index, new_target_z);
+            intermediate_target_x[contacts_id][*target_index].exchange(new_target_x);
+            intermediate_target_y[contacts_id][*target_index].exchange(new_target_y);
+            intermediate_target_z[contacts_id][*target_index].exchange(new_target_z);
             
             *target_index = (*target_index + 1) % SOLUTION_LENGTH;
             
             ++i;
         }
 
-        FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, *target_index, stay);
+        stay_matrix[contacts_id][*target_index].exchange(stay);
         FLAMEGPU->setVariable<unsigned short>(TARGET_INDEX, *target_index);
 
 #ifdef DEBUG
@@ -510,6 +517,7 @@ namespace device_functions {
         const unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         const unsigned short identified = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
+        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
@@ -538,11 +546,11 @@ namespace device_functions {
         }
 
         if(entry_time_index == 0){
-            FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index, (unsigned int) (empty_days * STEPS_IN_A_DAY + (STEPS_IN_A_DAY - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)) + start_step));
+            stay_matrix[contacts_id][target_index].exchange((unsigned int) (empty_days * STEPS_IN_A_DAY + (STEPS_IN_A_DAY - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)) + start_step));
             FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, week_day_flow * SOLUTION_LENGTH);
         }
         else{
-            FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index, (unsigned short) start_step);
+            stay_matrix[contacts_id][target_index].exchange((unsigned int) start_step);
         }
 
         FLAMEGPU->setVariable<unsigned short>(ENTRY_TIME_INDEX, entry_time_index);
@@ -559,6 +567,7 @@ namespace device_functions {
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
+        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_quarantine_days_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR);
         auto env_quarantine_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
         auto env_quarantine_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
@@ -582,7 +591,7 @@ namespace device_functions {
         const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
         const unsigned short agent_with_a_rate = FLAMEGPU->getVariable<unsigned short>(AGENT_WITH_A_RATE);
         
-        FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index, 0);
+        stay_matrix[contacts_id][target_index].exchange(0);
 
         printf("[QUARANTINE],%d,%d,%d,%d,%d,0\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), already_in_quarantine ? 1: 0, severity);
 
@@ -606,7 +615,7 @@ namespace device_functions {
             counters[AGENTS_IN_QUARANTINE]++;
         }
         else
-            FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index, quarantine * STEPS_IN_A_DAY);
+            stay_matrix[contacts_id][target_index].exchange(quarantine * STEPS_IN_A_DAY);
 
         if(agent_with_a_rate)
             FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW) * SOLUTION_LENGTH);
@@ -632,6 +641,7 @@ namespace device_functions {
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
+        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_SWAB_DISTR);
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_FIRSTPARAM);
         auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_SECONDPARAM);
@@ -704,7 +714,7 @@ namespace device_functions {
         else{
             // Not identified (True or False Negative): the agent exits from quarantine
             if(already_in_quarantine){
-                FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index, 1);
+                stay_matrix[contacts_id][target_index].exchange(1);
             }
             else{
                 if((int) env_swab_distr[agent_type] != NO_SWAB){
@@ -735,6 +745,7 @@ namespace device_functions {
         short solution_quarantine_extern[SOLUTION_LENGTH] = {-1};
         unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
 
+        auto stay_matrix = FLAMEGPU->getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
         auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_SWAB_DISTR);
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_FIRSTPARAM);
@@ -773,7 +784,7 @@ namespace device_functions {
             if(quarantine_node != extern_node)
                 update_targets(FLAMEGPU, solution_quarantine_extern, &target_index, false, stay_spawnroom);
             else
-                FLAMEGPU->setVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index, stay_spawnroom);
+                stay_matrix[contacts_id][target_index].exchange(stay_spawnroom);
         }
 
         if((int) env_swab_distr[agent_type] != NO_SWAB){

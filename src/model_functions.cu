@@ -164,6 +164,11 @@ void define_environment(ModelDescription& model){
 
     env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
 
+    env.newMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+    env.newMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+    env.newMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+    env.newMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_AREA);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
@@ -202,7 +207,7 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(INITIAL_INFECTED);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(NUMBER_OF_AGENTS_BY_TYPE);
 
-    env.newMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, TOTAL_AGENTS_OVERESTIMATION>(NUMBER_OF_STEPS_CONTACTS);
+    //env.newMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, TOTAL_AGENTS_OVERESTIMATION>(NUMBER_OF_STEPS_CONTACTS);
 
     env.newMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
 
@@ -288,10 +293,6 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<float>(VELZ);
     pedestrian.newVariable<float>(QUANTA_INHALED);
     pedestrian.newVariable<float, 3>(FINAL_TARGET);
-    pedestrian.newVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-    pedestrian.newVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-    pedestrian.newVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-    pedestrian.newVariable<unsigned int, SOLUTION_LENGTH>(STAY);
     pedestrian.newVariable<unsigned short>(NEXT_INDEX);
     pedestrian.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian.newVariable<unsigned short>(FLOW_INDEX);
