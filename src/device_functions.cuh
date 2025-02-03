@@ -338,10 +338,7 @@ namespace device_functions {
     /** 
      * Find the shortest path between two nodes in the graph.
     */
-    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
-    
-    printf("cosa cosa, in astar entri?\n");
-
+    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {        
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif        
