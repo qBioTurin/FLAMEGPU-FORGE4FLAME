@@ -258,8 +258,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             FLAMEGPU->setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
         }
 
-        printf("noncredo proprio qui\n");
-
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -325,7 +323,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         FLAMEGPU->setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
     }
 
-    printf("sarebbe un update da animazione\n");
 #ifdef DEBUG
     printf("[DEBUG],%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -342,8 +339,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     Each pedestrian agent output a MessageSpatial3D message for counting contacts
 */
 FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocation, MessageNone, MessageSpatial3D) {
-
-    printf("ma qui non arriva\n");
 #ifdef DEBUG
     printf("[DEBUG],%d,%d,Beginning outputPedestrianLocation for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -378,8 +373,6 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocation, MessageNone, MessageSpatial3D)
     Each pedestrian agent output a MessageBucket message for counting how many agents there are in a room (for aerosol transmission)
 */
 FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationAerosol, MessageNone, MessageBucket) {
-
-    printf("e qinvece qui entri e il problema è un altro?\n");
 #ifdef DEBUG
     printf("[DEBUG],%d,%d,Beginning outputPedestrianLocationAerosol for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -521,8 +514,6 @@ FLAMEGPU_AGENT_FUNCTION_CONDITION(notInitAndNotFillingroomCondition) {
     Each room agent output a MessageBucket message with its position(for handling events)
 */
 FLAMEGPU_AGENT_FUNCTION(outputRoomLocation, MessageNone, MessageBucket) {
-
- printf("non è che in outputroom?\n");
 #ifdef DEBUG
     printf("[DEBUG],%d,%d,Begin outputRoomLocation for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
 #endif
