@@ -102,11 +102,12 @@ namespace device_functions {
  /** 
      * Find a room of free resources for an event, searching the nearest
     */
-    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, float *previous_separation, int type_room_event, bool *available) {  
+    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {  
         
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         short event_node = -1;
         float min_separation = numeric_limits<float>::max();
+        float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
         //resources
         auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
@@ -115,11 +116,16 @@ namespace device_functions {
 
         do {
             // Searching the nearest room related to the event
+            //to add the area
             for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
+
+
                 const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
+                int area_room = message.getVariable<int>(AREA);
+
 
                 float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
-                if(separation < min_separation && separation > previous_separation){
+                if(separation < min_separation && separation > previous_separation && area_room_event == area_room){
                     min_separation = separation;                    
                     event_node = message.getVariable<short>(GRAPH_NODE);
                 }
@@ -128,12 +134,12 @@ namespace device_functions {
             // Try getting the resources of the room
             if(event_node != -1){
                 int get_global_resource = ++global_resources_counter[event_node];
-                int get_specific_resources = ++specific_resources_counter[agent_type][event_node];
+                int get_specific_resource = ++specific_resources_counter[agent_type][event_node];
 
-                if(get_global_resource > global_resources[event_node] || get_specific_resources > specific_resources_counter[agent_type][event_node]){
+                if(get_global_resource > global_resources[event_node] || get_specific_resource > specific_resources_counter[agent_type][event_node]){
                     unsigned int global = --global_resources_counter[event_node];
                     unsigned int specific = --specific_resources_counter[agent_type][event_node];
-                    *previous_separation = min_separation;
+                    previous_separation = min_separation;
 
                 }
                 else {
@@ -176,9 +182,9 @@ namespace device_functions {
         
             // Try getting the resources of the room
             int get_global_resource = ++global_resources_counter[final_target];
-            int get_specific_resources = ++specific_resources_counter[agent_type][final_target];
+            int get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
-            if(get_global_resource > global_resources[final_target] || get_specific_resources > specific_resources_counter[agent_type][final_target]){
+            if(get_global_resource > global_resources[final_target] || get_specific_resource > specific_resources_counter[agent_type][final_target]){
                 unsigned int global = --global_resources_counter[final_target];
                 unsigned int specific = --specific_resources_counter[agent_type][final_target];
                 random_iterator = (random_iterator + 1) % lenght_rooms;
@@ -265,7 +271,7 @@ namespace device_functions {
             int lenght_rooms = j;
             bool available = false;
             unsigned int get_global_resource;
-            unsigned int get_specific_resources;
+            unsigned int get_specific_resource;
 
             //if the agent is already waiting for a node, go for it
             if(FLAMEGPU->getVariable<short>(NODE_WAITING_FOR) != -1){
@@ -312,9 +318,9 @@ namespace device_functions {
                 
                 // Try getting the resources of the room
                 get_global_resource = ++global_resources_counter[final_target];
-                get_specific_resources = ++specific_resources_counter[agent_type][final_target];
+                get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
-                if(get_global_resource <= global_resources[final_target] && get_specific_resources <= specific_resources[agent_type][final_target]){
+                if(get_global_resource <= global_resources[final_target] && get_specific_resource <= specific_resources[agent_type][final_target]){
                    available = true; 
                 } 
 
@@ -322,7 +328,7 @@ namespace device_functions {
                 if(!available){
 
                     get_global_resource = --global_resources_counter[final_target]; 
-                    get_specific_resources = --specific_resources_counter[agent_type][final_target];
+                    get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
                     //search another room of the same type and area
                     if(alternative_resources_area[agent_type][final_target] == area && alternative_resources_type[agent_type][final_target] == flow){
@@ -332,7 +338,7 @@ namespace device_functions {
 
                     }
                     //search another room of the alternative
-                    else if(alternative_resources_area[agent_type][final_target] == area || alternative_resources_type[agent_type][final_target] == flow){
+                    else if(alternative_resources_area[agent_type][final_target] != area || alternative_resources_type[agent_type][final_target] != flow){
                         
                         auto messages = FLAMEGPU->message_in(alternative_resources_type[agent_type][final_target]);
 
@@ -390,8 +396,6 @@ namespace device_functions {
     */
     FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
     
-    printf("cosa cosa, in astar entri?\n");
-
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif        
