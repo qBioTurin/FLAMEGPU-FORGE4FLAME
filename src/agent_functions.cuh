@@ -97,8 +97,14 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     float intermediate_target[3] = {FLAMEGPU->getVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X, next_index), FLAMEGPU->getVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y, next_index), FLAMEGPU->getVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z, next_index)};
 
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+
+    //resources
+    auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
     auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+    auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
     auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+    auto alternative_resources_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA);
+    auto alternative_resources_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE);
     auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
     
     if(FLAMEGPU->getVariable<unsigned char>(INIT) && !quarantine && !FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT)){
@@ -111,6 +117,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         auto env_events_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
 
         unsigned int num_events = 0;
+        int type_room_event = (int) env_events[agent_type][event];
         while((int) env_events[agent_type][num_events] != -1)
             num_events++;
 
@@ -119,17 +126,19 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         if(event){
             short event_node = -1;
             float min_separation = numeric_limits<float>::max();
+            float previous_separation = 0;
 
             // Searching the nearest room related to the event
-            for(const auto& message: FLAMEGPU->message_in((int) env_events[agent_type][event])) {
+            for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
                 const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
 
                 float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
-                if(separation < min_separation){
+                if(separation < min_separation && separation > previous_separation){
                     min_separation = separation;
                     event_node = message.getVariable<short>(GRAPH_NODE);
                 }
             }
+            previous_separation = min_separation;
 
             short start_node;
             
@@ -143,36 +152,91 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             short solution_start_event[SOLUTION_LENGTH] = {-1};
             short solution_event_target[SOLUTION_LENGTH] = {-1};
 
-            a_star(FLAMEGPU, start_node, event_node, solution_start_event);
-            a_star(FLAMEGPU, event_node, final_node, solution_event_target);
+            //waitingroom for now suspended; if in the future, see the code in take new destination to handle the sending in the
+            //nearest waiting room
 
-            int event_distr = (int) env_events_distr[agent_type][event];
-            int event_distr_firstparam = (int) env_events_distr_firstparam[agent_type][event];
-            int event_distr_secondparam = (int) env_events_distr_secondparam[agent_type][event];
+            //try getting inside the event room
+            else if(alternative_resources_type[agent_type][event_node] != WAITINGROOM && alternative_resources_type[agent_type][event_node] != -1){
+                
+                // Try getting the resources of the room
+                get_global_resource = ++global_resources_counter[event_node];
+                get_specific_resources = ++specific_resources_counter[agent_type][event_node];
 
-            unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, event_distr_firstparam, event_distr_secondparam, true);
-            unsigned int final_stay;
-            if(event_time_random < FLAMEGPU->getVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index)){
-                final_stay = FLAMEGPU->getVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index) - event_time_random;
+                if(get_global_resource <= global_resources[event_node] && get_specific_resources <= specific_resources[agent_type][event_node]){
+                   available = true; 
+                } 
+
+                //if the initial room is not avaiable because the resources are over, explore the alternatives:
+                if(!available){
+
+                    get_global_resource = --global_resources_counter[event_node]; 
+                    get_specific_resources = --specific_resources_counter[agent_type][event_node];
+
+                    //search another room of the same type and area
+                    if(alternative_resources_area[agent_type][event_node] == area && alternative_resources_type[agent_type][event_node] == flow){
+
+                        random = (random + 1) % lenght_rooms;
+                        event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, &previous_separation, type_room_event, &available);
+
+                    }
+                    //search another room of the alternative
+                    else if(alternative_resources_type[agent_type][event_node] == flow){
+                        
+                        float alternative_previous = 0;
+                        int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, j-1, false));
+                        event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, &alternative_previous, alternative_resources_type[agent_type][event_node], &available);
+                    }
+                }
             }
-            else{
-                event_time_random = FLAMEGPU->getVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index);
-                final_stay = 1;
+
+            //if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
+            if(available && alternative_resources_type[agent_type][event_node] != -1){
+
+                a_star(FLAMEGPU, start_node, event_node, solution_start_event);
+                a_star(FLAMEGPU, event_node, final_node, solution_event_target);
+
+                int event_distr = (int) env_events_distr[agent_type][event];
+                int event_distr_firstparam = (int) env_events_distr_firstparam[agent_type][event];
+                int event_distr_secondparam = (int) env_events_distr_secondparam[agent_type][event];
+
+                unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, event_distr_firstparam, event_distr_secondparam, true);
+                unsigned int final_stay;
+                if(event_time_random < FLAMEGPU->getVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index)){
+                    final_stay = FLAMEGPU->getVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index) - event_time_random;
+                }
+                else{
+                    event_time_random = FLAMEGPU->getVariable<unsigned int, SOLUTION_LENGTH>(STAY, target_index);
+                    final_stay = 1;
+                }
+
+                update_targets(FLAMEGPU, solution_start_event, &target_index, true, event_time_random);
+                update_targets(FLAMEGPU, solution_event_target, &target_index, false, final_stay);
+
+                FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, event);
+
+                printf("[AGENT_POSITION_AND_STATUS],%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), (int) agent_pos[0], (int) agent_pos[1], (int) agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), week_day_flow, flow_index, FLAMEGPU->getStepCounter() - last_step_move, FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT), FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE));
+                FLAMEGPU->setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
             }
-
-            update_targets(FLAMEGPU, solution_start_event, &target_index, true, event_time_random);
-            update_targets(FLAMEGPU, solution_event_target, &target_index, false, final_stay);
-
-            FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, event);
-
-            printf("[AGENT_POSITION_AND_STATUS],%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), (int) agent_pos[0], (int) agent_pos[1], (int) agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), week_day_flow, flow_index, FLAMEGPU->getStepCounter() - last_step_move, FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT), FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE));
-            FLAMEGPU->setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
             
 #ifdef DEBUG
             printf("[DEBUG],%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
             return ALIVE;
         }
+       
+    } else if(FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT)){
+
+        short waiting_event_node = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR_EVENT);
+        if(alternative_resources_type[agent_type][waiting_event_node] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
+            
+            //The agent have waited in waiting room and now go to the right flux room
+            FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, OUTSIDE_WAITING_ROOM);
+
+            final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
+            FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
+        
+        }
+
     }
 
     // Move pedestrian
@@ -254,7 +318,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             FLAMEGPU->setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
         }
 
-        printf("noncredo proprio qui\n");
 
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -375,7 +438,6 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocation, MessageNone, MessageSpatial3D)
 */
 FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationAerosol, MessageNone, MessageBucket) {
 
-    printf("e qinvece qui entri e il problema è un altro?\n");
 #ifdef DEBUG
     printf("[DEBUG],%d,%d,Beginning outputPedestrianLocationAerosol for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif

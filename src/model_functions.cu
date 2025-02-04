@@ -321,6 +321,9 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<int>(WAITING_ROOM_FLAG, 0);
     pedestrian.newVariable<int>(ENTRY_EXIT_FLAG, 0);
     pedestrian.newVariable<short>(NODE_WAITING_FOR, -1);
+    pedestrian.newVariable<short>(NODE_WAITING_FOR_EVENT, -1);
+    pedestrian.newVariable<short>(NODE_STARTING_FROM_EVENT, -1);
+
 
     define_pedestrian_functions(pedestrian);
 }

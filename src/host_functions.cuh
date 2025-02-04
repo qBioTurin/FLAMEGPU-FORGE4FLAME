@@ -289,6 +289,9 @@ namespace host_functions {
                 new_pedestrian.setVariable<int>(WAITING_ROOM_TIME, 0);
                 new_pedestrian.setVariable<int>(WAITING_ROOM_FLAG, 0);
                 new_pedestrian.setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
+                new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
+                new_pedestrian.newVariable<short>(NODE_WAITING_FOR_EVENT, -1);
+                new_pedestrian.newVariable<short>(NODE_STARTING_FROM_EVENT, -1);
 
                 num_seird[new_agent_state]++;
                 
@@ -512,6 +515,8 @@ namespace host_functions {
                         new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y, 0, y);
                         new_pedestrian.setVariable<float, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z, 0, z);
                         new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
+                        new_pedestrian.newVariable<short>(NODE_WAITING_FOR_EVENT, -1);
+                        new_pedestrian.newVariable<short>(NODE_STARTING_FROM_EVENT, -1);
 
                         contacts_id = contacts_id + 1;
                         num_seird[new_agent_state]++;
