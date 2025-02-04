@@ -80,7 +80,7 @@ void visualise_pedestrians(visualiser::ModelVis& vis){
 // Visualise model's agents room
 void visualise_rooms(visualiser::ModelVis& vis){
     visualiser::Color rooms_colors[NUM_COLORS] = COLORS;
-    string rooms_types[NUM_ROOMS_TYPES] = ROOMS;
+    string rooms_types[NUM_ROOMS_OBJ_TYPES] = ROOMS;
 
     visualiser::iDiscreteColor cmap(COLOR_ID, visualiser::Stock::Colors::WHITE);
     for(int c = 0; c < NUM_COLORS; c++){
@@ -153,8 +153,8 @@ void define_environment(ModelDescription& model){
 
     env.newProperty<float, DAYS>(PERC_INF, {0.0f});
 
-    env.newProperty<float>(SENSITIVITY_SWAB, 0.0f);
-    env.newProperty<float>(SPECIFICITY_SWAB, 0.0f);
+    // env.newProperty<float>(SENSITIVITY_SWAB, 0.0f);
+    // env.newProperty<float>(SPECIFICITY_SWAB, 0.0f);
     env.newProperty<float>(VIRUS_SEVERITY, 0.0f);
 
     env.newProperty<unsigned short>(RUN_IDX, 0);
@@ -179,6 +179,7 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR_SECONDPARAM);
+    
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_AREA);
     env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_CDF);
@@ -186,23 +187,32 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_EFFICACY);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_TYPE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_AREA);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_SECOND);
+
+    env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_VENTILATION);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_EFFICACY);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_SENSITIVITY);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_SPECIFICITY);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
+    // env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SENSITIVITY);
+    // env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SPECIFICITY);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_TYPE);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_AREA);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_SECOND);
 
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(INITIAL_INFECTED);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(NUMBER_OF_AGENTS_BY_TYPE);
@@ -329,7 +339,7 @@ void define_pedestrian(ModelDescription& model){
 // Define model's agents room
 void define_room(ModelDescription& model){
     // Room agents
-    string rooms_types[NUM_ROOMS_TYPES] = ROOMS;
+    string rooms_types[NUM_ROOMS_OBJ_TYPES] = ROOMS;
 
     for(string room_type: rooms_types){
         {
@@ -343,10 +353,10 @@ void define_room(ModelDescription& model){
             room.newVariable<float>(YAW, 0.0f);
             room.newVariable<unsigned char>(INIT_ROOM, 0);
             room.newVariable<int>(AREA, -1);
+            room.newVariable<int>(TYPE, -1);
             room.newVariable<int>(COLOR_ID, 0);
             if(room_type != FILLINGROOM_AGENT_STRING){
                 room.newVariable<float>(VOLUME, 0.0f);
-                room.newVariable<float>(VENTILATION, 0.0f);
                 room.newVariable<float>(ROOM_QUANTA_CONCENTRATION, 0.0f);
                 room.newVariable<unsigned short>(X_CENTER, 0);
                 room.newVariable<unsigned short>(Y_CENTER, 0);

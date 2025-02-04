@@ -79,9 +79,9 @@ for input_file in *.csv; do
 
             # Check if the directory exists in the pre-checked list (using the no-space version)
             if (dir_name_no_spaces in dir_exists) {
-                # Prepare to print all columns from the second column onward, keeping commas
+                # Prepare to print all columns from the third column onward, keeping commas
                 line = ""
-                for (i=2; i<=NF; i++) {
+                for (i=3; i<=NF; i++) {
                     if (i > 2) {
                         line = line "," $i
                     } else {
