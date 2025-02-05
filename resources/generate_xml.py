@@ -400,6 +400,10 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		env_external_screening_second = np.zeros((days, total_number_of_agents_types+1), dtype=float)
 
 		rooms_whatif = pd.DataFrame(WHOLEmodel["rooms_whatif"])
+		for row in rooms_whatif["Ventilation"]:
+			(type, area) = (types_IDs[row[0].split("-")[0]]["ID"], areas[row[0].split("-")[1]]["ID"])
+			
+			
 		agents_whatif = pd.DataFrame(WHOLEmodel["agents_whatif"])
 		
 		
