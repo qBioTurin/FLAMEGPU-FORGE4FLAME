@@ -1275,7 +1275,7 @@ def main():
 	args = parser.parse_args()
 
 
-	total_agents_overestimation = 100000
+	total_agents_overestimation = 10000
 	solution_length = 50
 	num_counters = 5
 	y_offset = 10
