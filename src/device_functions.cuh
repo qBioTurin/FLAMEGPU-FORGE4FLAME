@@ -648,6 +648,8 @@ namespace device_functions {
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
         auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
         auto env_quarantine_days_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
+        auto env_quarantine_swab_sensitivity = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SENSITIVITY);
+        auto env_quarantine_swab_specificity = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SPECIFICITY);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
         unsigned short identified_bool = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
@@ -657,7 +659,7 @@ namespace device_functions {
         bool already_in_quarantine = quarantine > 0;
 
         if(disease_state == INFECTED){
-            const float sensitivity_swab = (float) env_swab_sensitivity[day-1][agent_type];
+            const float sensitivity_swab = already_in_quarantine ? (float) env_quarantine_swab_sensitivity[day-1][agent_type]: (float) env_swab_sensitivity[day-1][agent_type];
             float random_sensitivity = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
 
             if(random_sensitivity < sensitivity_swab){
@@ -678,7 +680,7 @@ namespace device_functions {
         }
         else {
             // False positive
-            const float specificity_swab = (float) env_swab_specificity[day-1][agent_type];
+            const float specificity_swab = already_in_quarantine ? (float) env_quarantine_swab_specificity[day-1][agent_type]: (float) env_swab_specificity[day-1][agent_type];
             float random_specificity = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
 
             if(random_specificity >= specificity_swab){
@@ -850,18 +852,19 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning external_screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
+        const unsigned int disease_state = FLAMEGPU->getVariable<unsigned int>(DISEASE_STATE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
-        const unsigned int disease_state = FLAMEGPU->getVariable<unsigned int>(DISEASE_STATE);
 
-        auto env_external_screening_first = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
-        auto env_external_screening_second = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_SECOND);
+        auto env_external_screening_first = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
+        auto env_external_screening_second = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_SECOND);
 
         unsigned short identified_bool = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
         if(identified_bool != IDENTIFIED){
             float random_external_screening_first = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
-            if(random_external_screening_first < (float) env_external_screening_first[agent_type]){
+            if(random_external_screening_first < (float) env_external_screening_first[day-1][agent_type]){
                 swab(FLAMEGPU);
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -870,7 +873,7 @@ namespace device_functions {
             }
 
             float random_external_screening_second = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
-            if(disease_state == INFECTED && random_external_screening_second < (float) env_external_screening_second[agent_type]){
+            if(disease_state == INFECTED && random_external_screening_second < (float) env_external_screening_second[day-1][agent_type]){
                 swab(FLAMEGPU);
             }
         }

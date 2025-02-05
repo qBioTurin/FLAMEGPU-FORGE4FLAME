@@ -114,7 +114,8 @@ then
 fi
 
 # Generate the configuration file to give in input to the ABM model
-WHOLE_OUTPUT="$(bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1)"
+#WHOLE_OUTPUT="$(bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1)"
+bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR
 SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 
 # Build the model

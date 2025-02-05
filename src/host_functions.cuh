@@ -132,12 +132,16 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR, string("resources/macro_environment/") + ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_SWAB_SENSITIVITY, string("resources/macro_environment/") + ENV_SWAB_SENSITIVITY + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_SWAB_SPECIFICITY, string("resources/macro_environment/") + ENV_SWAB_SPECIFICITY + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_SWAB_DISTR, string("resources/macro_environment/") + ENV_SWAB_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_SWAB_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_SWAB_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_SWAB_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_SWAB_DISTR_SECONDPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_DAYS_DISTR, string("resources/macro_environment/") + ENV_QUARANTINE_DAYS_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_SENSITIVITY, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_SENSITIVITY + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_SPECIFICITY, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_SPECIFICITY + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_DAYS_DISTR, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_DAYS_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM + ".xml");
