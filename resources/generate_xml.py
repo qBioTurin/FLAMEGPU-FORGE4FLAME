@@ -208,6 +208,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		if door != "none":
 			local_graph.add_vertex(x_door, y, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame())
 			local_graph.add_vertex(center_x, y, center_z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_dataframe)
+
 	
 	nodesINcanvas = WHOLEmodel["nodesINcanvas"]
 	nodesINcanvas = [node for node in nodesINcanvas if node["CanvasID"] == floor_name]
@@ -424,6 +425,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		alternative_resources_type = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
 		alternative_resources_area = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
 
+		days_of_a_week = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
+
 		with open("agents_file.xml", "w") as agent_file:
 			agent_file.write("<agents>\n")
 			nawar = 0
@@ -457,7 +460,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				if initial_infected_type == "Different for each agent":
 					initial_infected_agents[agent_type_idx] = int(agent_whatif.iloc[0]["initial_infected"])
 
-				days_of_a_week = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
 
 				deterministic_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
 				random_flow = agent_info["RandFlow"]
