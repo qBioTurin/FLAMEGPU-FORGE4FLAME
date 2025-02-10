@@ -474,7 +474,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 						continue
 
 					entry_exit_time_weekday = pd.DataFrame(entry_exit_time_weekday)
-					
+
 					if not "Rate" in agent_info["entry_type"][0]:
 						entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
 						entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
@@ -527,8 +527,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								if weekday == init_week_day and start_step_time > entry_exit_time_weekday.loc[0, "EntryTime"]:
 									print("ERROR: The start step time (" + start_step_time + ") is greater than the entrance time of agent '" + agent + "' (" + entry_exit_time_weekday.loc[0, "EntryTime"] + ").")
 									sys.exit(-1)
-						
-						
+									
 						for k, f in deterministic_flow.iterrows():
 							ft, fa = f.loc["Room"].strip().split("-")
 

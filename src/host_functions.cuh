@@ -88,7 +88,7 @@ namespace host_functions {
             rng_state >> host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)];
             rng_state.close();
         }
-
+        
         fflush(stdout);
 
         printf("[INFO],%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), day);
@@ -211,8 +211,6 @@ namespace host_functions {
             // Append selected indices to the result
             selectedIndices.insert(selectedIndices.end(), indices.begin(), indices.end());
         }
-        
-
         xml_document doc_agents;
         doc_agents.load_file("resources/agents_file.xml");
 
@@ -222,7 +220,7 @@ namespace host_functions {
         // Loop through each xagent node
         for (xml_node xagent = agents.child("xagent"); xagent; xagent = xagent.next_sibling("xagent")) {
             // Extract child nodes of xagent, like <name>, <state>, <x>, etc.
-            {
+          //  {
                 string name = xagent.child("name").text().as_string();
                 short contacts_id = (short) xagent.child("contacts_id").text().as_int();
                 int agent_type = xagent.child("agent_type").text().as_int();
@@ -238,6 +236,7 @@ namespace host_functions {
 
                 unsigned short empty_days = 0;
                 unsigned short weekday_agent = week_day;
+
                 while((int) env_flow[agent_type][weekday_agent][0] == -1){
                     empty_days++;
                     weekday_agent = (weekday_agent + 1) % DAYS_IN_A_WEEK;
@@ -296,7 +295,7 @@ namespace host_functions {
 
                 num_seird[new_agent_state]++;
                 
-            }
+           // }
         }
 
         xml_document doc;
@@ -308,7 +307,7 @@ namespace host_functions {
         // Loop through each xagent node
         for (xml_node xagent = rooms.child("xagent"); xagent; xagent = xagent.next_sibling("xagent")) {
             // Extract child nodes of xagent, like <name>, <state>, <x>, etc.
-            {
+       //     {
                 string name = xagent.child("name").text().as_string();
                 float x = xagent.child("x").text().as_float();
                 float y = xagent.child("y").text().as_float();
@@ -347,12 +346,9 @@ namespace host_functions {
                     new_room.setVariable<unsigned short>(X_CENTER, x_center);
                     new_room.setVariable<unsigned short>(Y_CENTER, y_center);
                     new_room.setVariable<unsigned short>(Z_CENTER, z_center);
-                }
+             //   }
             }
         }
-
-
-
 
         string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";
         ofstream evolution_file(filename.c_str(), ofstream::out);
