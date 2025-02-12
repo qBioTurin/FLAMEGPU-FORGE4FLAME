@@ -62,5 +62,16 @@ set -- "${POSITIONAL_ARGS[@]}"  # Restore positional parameters
 cd resources
 python3 CreateMapEncoding.py -dirname_experiment $EXPERIMENT_DIR
 python3 generate_xml.py -dirname_experiment $EXPERIMENT_DIR -ensemble $ENSEMBLE -checkpoint $CHECKPOINT_SIMULATION
-
 cd ..
+
+awk 'NR > 1 {
+    if ($2 == "CPOINT" || $2 == "DOOR") {
+        next
+    } 
+    if (NF == 3 || NF == 1) {
+        next
+    } 
+    if (NF == 5) {
+        print $1, $3+1, $4, $5+1
+    } 
+}' resources/G.txt > results/$EXPERIMENT_DIR/rooms_mapping.txt

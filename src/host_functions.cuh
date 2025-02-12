@@ -175,10 +175,10 @@ namespace host_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
-        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
@@ -202,17 +202,16 @@ namespace host_functions {
         vector<int> selectedIndices;
         unsigned short init_i = 0;
         unsigned short final_i = NUMBER_OF_AGENTS_TYPES_PLUS_1-1;
-        if((int) initial_infected[NUMBER_OF_AGENTS_TYPES] > 0){
-            init_i = NUMBER_OF_AGENTS_TYPES_PLUS_1-1;
-            final_i = NUMBER_OF_AGENTS_TYPES_PLUS_1;
-        }
 
+        // Handle Global and Specific
+        int totalAgents = 0;
         for (unsigned short i = init_i; i < final_i; i++) {
             int numInfected = (int) initial_infected[i];
-            int totalAgents = (int) number_of_agents_by_type[i];
+            int totalAgentsByType = (int) number_of_agents_by_type[i];
+            totalAgents += totalAgentsByType;
 
             // Generate all possible indices for the current type
-            vector<int> indices(totalAgents);
+            vector<int> indices(totalAgentsByType);
             iota(indices.begin(), indices.end(), 0);
 
             // Shuffle and pick the first `numInfected` indices
@@ -223,6 +222,21 @@ namespace host_functions {
             selectedIndices.insert(selectedIndices.end(), indices.begin(), indices.end());
         }
         
+
+        // Handle Random
+        // Generate all possible indices, excluding already selected ones
+        for (int i = 0; i < totalAgents; i++) {
+            if (selectedIndices.find(i) == selectedIndices.end()) { // Exclude already selected
+                availableIndices.push_back(i);
+            }
+        }
+
+        // Shuffle and pick `n` random indices
+        shuffle(availableIndices.begin(), availableIndices.end(), host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]);
+        availableIndices.resize(initial_infected[NUMBER_OF_AGENTS_TYPES_PLUS_1-1]); // Keep only `n` elements
+
+        // Append new indices to `selectedIndices`
+        selectedIndices.insert(selectedIndices.end(), availableIndices.begin(), availableIndices.end());
 
         xml_document doc_agents;
         doc_agents.load_file("resources/agents_file.xml");
@@ -390,11 +404,21 @@ namespace host_functions {
     /** 
      * Update the simulation day and log.
     */
-    FLAMEGPU_STEP_FUNCTION(updateDay) {
-        if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
+    FLAMEGPU_STEP_FUNCTION(updateDayAndLog) {
 #ifdef DEBUG
-            printf("[DEBUG],%d,%d,Beginning updateDay for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("[DEBUG],%d,%d,Beginning updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
+        if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_HOUR)){
+            auto contacts_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
+
+            for(int i=0;i<NUMBER_OF_AGENTS_TYPES;i++){
+                for(int j=0;j<=i;j++){
+                    printf("[CONTACTS_MATRIX],%d,%d,%d,%d,%d", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
+                }
+            }
+        }
+
+        if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
             unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY) + 1;
             unsigned short week_day = (FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY) + 1) % DAYS_IN_A_WEEK;
             
@@ -435,10 +459,10 @@ namespace host_functions {
 
             counters_file << endl;
             counters_file.close();
-#ifdef DEBUG
-            printf("[DEBUG],%d,%d,Ending updateDay for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
-#endif
         }
+#ifdef DEBUG
+        printf("[DEBUG],%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+#endif
     }
 
     /** 
@@ -454,10 +478,10 @@ namespace host_functions {
             
             short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID);
 
-            auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-            auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-            auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-            auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+            auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+            auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+            auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+            auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
             auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
             auto env_rate_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR);
@@ -556,7 +580,6 @@ namespace host_functions {
         printf("[DEBUG],%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
         // Log the environment macro properties
-        //auto number_of_steps_contacts = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, TOTAL_AGENTS_OVERESTIMATION>(NUMBER_OF_STEPS_CONTACTS);
         auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
@@ -589,15 +612,6 @@ namespace host_functions {
         }
         counters_file << endl;
         counters_file.close();
-
-        // filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/number_of_steps_contacts.csv";
-        // ofstream number_of_steps_contacts_file(filename.c_str(), ofstream::out);
-        // for (int i = 0; i < TOTAL_AGENTS_OVERESTIMATION; i++) {
-        //    for (int j = 0; j < TOTAL_AGENTS_OVERESTIMATION; j++)
-        //        number_of_steps_contacts_file << number_of_steps_contacts[i][j] <<',';
-        //    number_of_steps_contacts_file << '\n';
-        // }
-        // number_of_steps_contacts_file.close();
 
         filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/host_rng_state.txt";
         ofstream rng_state(filename.c_str(), ofstream::out);

@@ -77,6 +77,8 @@ for input_file in *.csv; do
             dir_name = "seed" col2
             dir_name_no_spaces = gensub(/[[:space:]]/, "", "g", dir_name)
 
+            system("rm -f \"" dir_name_no_spaces "/" col1 ".csv\"")
+
             # Check if the directory exists in the pre-checked list (using the no-space version)
             if (dir_name_no_spaces in dir_exists) {
                 # Prepare to print all columns from the third column onward, keeping commas

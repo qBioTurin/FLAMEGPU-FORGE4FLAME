@@ -31,7 +31,7 @@
 
 #define INVISIBLE_AGENT_Y 10000.0f
 
-__device__ curandState cuda_pedestrian_states[NRUN][TOTAL_AGENTS_OVERESTIMATION];
+__device__ curandState cuda_pedestrian_states[NRUN][TOTAL_AGENTS_ESTIMATION];
 __device__ curandState cuda_room_states[NRUN][NUM_ROOMS];
 
 std::mt19937 host_rng[NRUN];

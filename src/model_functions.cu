@@ -153,8 +153,6 @@ void define_environment(ModelDescription& model){
 
     env.newProperty<float, DAYS>(PERC_INF, {0.0f});
 
-    // env.newProperty<float>(SENSITIVITY_SWAB, 0.0f);
-    // env.newProperty<float>(SPECIFICITY_SWAB, 0.0f);
     env.newProperty<float>(VIRUS_SEVERITY, 0.0f);
 
     env.newProperty<unsigned short>(RUN_IDX, 0);
@@ -164,10 +162,10 @@ void define_environment(ModelDescription& model){
 
     env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
 
-    env.newMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-    env.newMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-    env.newMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-    env.newMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+    env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+    env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+    env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+    env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_AREA);
@@ -230,8 +228,8 @@ void define_environment(ModelDescription& model){
 
 
     env.newMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
-
-    env.newMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
+    env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
     env.newMacroProperty<unsigned int, NUM_ROOMS>(CUDA_RNG_OFFSETS_ROOM);
 }
 
@@ -258,7 +256,7 @@ void define_pedestrian_messages(ModelDescription& model){
     // Message for the waiting room
     MessageBucket::Description queue_message = model.newMessage<MessageBucket>("queue_message");
     queue_message.newVariable<short>(GRAPH_NODE);
-    queue_message.setBounds(0, TOTAL_AGENTS_OVERESTIMATION);
+    queue_message.setBounds(0, TOTAL_AGENTS_ESTIMATION);
     queue_message.setPersistent(true);
 
 }
@@ -411,7 +409,7 @@ void define_layers(ModelDescription& model){
     model.addInitFunction(initFunction);
     model.addInitFunction(macroPropertyIO);
     model.addInitFunction(generateAgents);
-    model.addStepFunction(updateDay);
+    model.addStepFunction(updateDayAndLog);
     model.addStepFunction(birth);
     model.addExitFunction(exitFunction);
 }

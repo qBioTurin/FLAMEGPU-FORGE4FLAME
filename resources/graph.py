@@ -282,7 +282,7 @@ class SpatialGraph:
 
             for i, stair_i in enumerate( stair_vertices )
                 for stair_j in stair_vertices[i+1:]
-                    if abs(stair_i.coords.x - stair_j.coords.x) <= 20 and abs(stair_i.coords.z - stair_j.coords.z) <= 20
+                    if abs(stair_i.coords.x - stair_j.coords.x) <= 10 and abs(stair_i.coords.z - stair_j.coords.z) <= 10
         ]
         self.edgelist.update( stair_links )
 
@@ -331,17 +331,23 @@ class SpatialGraph:
 
     def graph_diameter(self) -> int:
         """
-        Compute the diameter of the graph, i.e., the longest shortest path.
+        Optimized method to compute graph diameter.
+        Uses two BFS passes for efficiency.
         """
         vertices = list(chain.from_iterable(self.vertices.values()))
-        max_shortest_path = 0
+        
+        if not vertices:
+            return 0  # No vertices in the graph
+        
+        # Step 1: Pick an arbitrary vertex and run BFS
+        start_vertex = vertices[0]
+        shortest_paths = self.__bfs_shortest_path(start_vertex)
 
-        # Compute the shortest paths from every vertex
-        for v in vertices:
-            shortest_paths = self.__bfs_shortest_path(v)
-            # Find the maximum shortest path from this vertex
-            max_path_from_v = max(shortest_paths.values())
-            # Track the largest of these maximum values
-            max_shortest_path = max(max_shortest_path, max_path_from_v)
+        # Step 2: Find the farthest vertex from the first BFS
+        farthest_vertex = max(shortest_paths, key=shortest_paths.get)
 
-        return max_shortest_path
+        # Step 3: Run BFS again from this farthest vertex
+        final_shortest_paths = self.__bfs_shortest_path(farthest_vertex)
+
+        # Step 4: Return the longest shortest path found
+        return max(final_shortest_paths.values())
