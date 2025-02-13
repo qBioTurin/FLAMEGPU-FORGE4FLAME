@@ -316,6 +316,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE);
     pedestrian.newVariable<unsigned short>(WEEK_DAY_FLOW);
     pedestrian.newVariable<unsigned char>(IN_AN_EVENT);
+    pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
     pedestrian.newVariable<unsigned int>(LAST_STEP_MOVE);
     pedestrian.newVariable<int>(WAITING_ROOM_TIME, 0);
     pedestrian.newVariable<int>(WAITING_ROOM_FLAG, 0);
