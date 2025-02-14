@@ -222,7 +222,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		x = node["x"] - 1
 		z = node["y"] - 1
 
-		local_graph.add_vertex(x, y, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CORRIDOR, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame())
+		local_graph.add_vertex(x, y, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CORRIDOR, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
 	local_graph.init_edges(np.array(WHOLEmodel["matricesCanvas"][floor_name]))
 
