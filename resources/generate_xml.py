@@ -129,12 +129,15 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			color_id = np.where(np.array(list(types_IDs.keys()), dtype=str) == type)[0][0]
 
 		resources_room = {}
-		waiting_room = {}
+		waiting_room_det = {}
+		waiting_room_rand = {}
 		agents_specific_resources = {}
 		if len(resources) != 0 and type != "Spawnroom" and type != "Fillingroom" and type != "Stair" and type != "Waitingroom":
-			resources_room = resources[type + "-" + area]["roomResource"]
-			if "waitingRooms" in resources[type + "-" + area]:
-				waiting_room = resources[type + "-" + area]["waitingRooms"]
+			room_type_area = type + "-" + area
+			if room_type_area in resources:
+				resources_room = resources[type + "-" + area]["roomResource"]
+				waiting_room_det = resources[type + "-" + area]["waitingRoomsDeter"]
+				waiting_room_rand = resources[type + "-" + area]["waitingRoomsRand"]
 		
 		for res in resources_room:
 			if res["room"] == room_name:
@@ -143,9 +146,12 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 						agents_specific_resources[key] = value
 
 		resources_dataframe = pd.DataFrame.from_dict(agents_specific_resources, orient = "index")
-		waiting_room_dataframe = pd.DataFrame.from_dict(waiting_room)
-		if len(waiting_room_dataframe) != 0:
-			waiting_room_dataframe = waiting_room_dataframe.set_index("Agent")
+		waiting_room_det_dataframe = pd.DataFrame.from_dict(waiting_room_det)
+		waiting_room_rand_dataframe = pd.DataFrame.from_dict(waiting_room_rand)
+		if len(waiting_room_det_dataframe) != 0:
+			waiting_room_det_dataframe = waiting_room_det_dataframe.set_index("Agent")
+		if len(waiting_room_rand_dataframe) != 0:
+			waiting_room_rand_dataframe = waiting_room_rand_dataframe.set_index("Agent")
 
 		if door == "bottom":
 			yaw = 0
@@ -196,7 +202,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			room_file.write("\t\t<yaw>" + str(yaw) + "</yaw>\n")
 			room_file.write("\t\t<init_room>0</init_room>\n")
 			room_file.write("\t\t<area>" + str(areas[area]["ID"]) + "</area>\n")
-			room_file.write("\t\t<type>" + str(np.where(np.array(list(types_IDs.keys()), dtype=str) == type)[0][0]) + "</type>\n")
+			room_file.write("\t\t<type>" + str(types_IDs[type]["ID"]) + "</type>\n")			
 			room_file.write("\t\t<color_id>" + str(color_id) + "</color_id>\n")
 			if type != "Fillingroom":
 				room_file.write("\t\t<volume>" + str(length * width * height) + "</volume>\n")
@@ -207,8 +213,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			room_file.write("\t</xagent>\n")
 			
 		if door != "none":
-			local_graph.add_vertex(x_door, y, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame())
-			local_graph.add_vertex(center_x, y, center_z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_dataframe)
+			local_graph.add_vertex(x_door, y, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+			local_graph.add_vertex(center_x, y, center_z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe)
 	
 	nodesINcanvas = WHOLEmodel["nodesINcanvas"]
 	nodesINcanvas = [node for node in nodesINcanvas if node["CanvasID"] == floor_name]
@@ -429,8 +435,11 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		global_resources_counter = np.zeros(len(vlist), dtype=int)
 		specific_resources =  np.zeros((total_number_of_agents_types, len(vlist)), dtype=int)
 		specific_resources_counter = np.zeros((total_number_of_agents_types, len(vlist)), dtype=int)
-		alternative_resources_type = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
-		alternative_resources_area = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_type_det = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_area_det = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_type_rand = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_area_rand = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+
 
 		agent_names = {}
 		with open("agents_file.xml", "w") as agent_file:
@@ -687,21 +696,40 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					if agent in v.resources.index:
 						specific_resources[ID][v.id] = v.resources.loc[agent, 0]
 
+		#Setting waiting room both for
+		#det flow
 		for v in vlist:
-			if len(v.waitingroom) != 0:
+			if len(v.waitingroom_det) != 0:
 				for agent, ID in pedestrian_names.items():
-					if agent in v.waitingroom.index:
-						key = v.waitingroom.loc[agent, "Room"]
+					if agent in v.waitingroom_det.index:
+						key = v.waitingroom_det.loc[agent, "Room"]
 						if key == "Same room":
-							alternative_resources_area[ID][v.id] = v.area
-							alternative_resources_type[ID][v.id] = v.type.value
+							alternative_resources_area_det[ID][v.id] = v.area
+							alternative_resources_type_det[ID][v.id] = v.type.value
 						elif key == "Skip room":
-							alternative_resources_area[ID][v.id] = -1
-							alternative_resources_type[ID][v.id] = -1
+							alternative_resources_area_det[ID][v.id] = -1
+							alternative_resources_type_det[ID][v.id] = -1
 						else:
 							type_area = (key.replace(" ", "")).split("-")
-							alternative_resources_type[ID][v.id] = MapEncoding.to_value(type_area[0].upper())
-							alternative_resources_area[ID][v.id] = areas[type_area[1]]["ID"]
+							alternative_resources_type_det[ID][v.id] = MapEncoding.to_value(type_area[0].upper())
+							alternative_resources_area_det[ID][v.id] = areas[type_area[1]]["ID"]
+		
+		for v in vlist:
+			if len(v.waitingroom_rand) != 0:
+				for agent, ID in pedestrian_names.items():
+					if agent in v.waitingroom_rand.index:
+						key = v.waitingroom_rand.loc[agent, "Room"]
+						if key == "Same room":
+							alternative_resources_area_rand[ID][v.id] = v.area
+							alternative_resources_type_rand[ID][v.id] = v.type.value
+						elif key == "Skip room":
+							alternative_resources_area_rand[ID][v.id] = -1
+							alternative_resources_type_rand[ID][v.id] = -1
+						else:
+							type_area = (key.replace(" ", "")).split("-")
+							alternative_resources_type_rand[ID][v.id] = MapEncoding.to_value(type_area[0].upper())
+							alternative_resources_area_rand[ID][v.id] = areas[type_area[1]]["ID"]
+
 		
 		macro_environment_dir = "macro_environment/"
 		os.system("mkdir -p " + macro_environment_dir)
@@ -1115,21 +1143,39 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			file.write("</SPECIFIC_RESOURCES_COUNTER></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define SPECIFIC_RESOURCES_COUNTER \"SPECIFIC_RESOURCES_COUNTER\"\n")
 
-		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_TYPE.xml", "w") as file:
-			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_TYPE>")
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_TYPE_DET.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_TYPE_DET>")
 			for k in range(total_number_of_agents_types):
 				for j in range(len(vlist)):
-					file.write(str(alternative_resources_type[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
-			file.write("</ALTERNATIVE_RESOURCES_TYPE></macro_environment></states>\n")
-		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_TYPE \"ALTERNATIVE_RESOURCES_TYPE\"\n")
+					file.write(str(alternative_resources_type_det[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_TYPE_DET></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_TYPE_DET \"ALTERNATIVE_RESOURCES_TYPE_DET\"\n")
 
-		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_AREA.xml", "w") as file:
-			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_AREA>")
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_AREA_DET.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_AREA_DET>")
 			for k in range(total_number_of_agents_types):
 				for j in range(len(vlist)):
-					file.write(str(alternative_resources_area[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
-			file.write("</ALTERNATIVE_RESOURCES_AREA></macro_environment></states>\n")
-		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_AREA \"ALTERNATIVE_RESOURCES_AREA\"\n")
+					file.write(str(alternative_resources_area_det[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_AREA_DET></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_AREA_DET \"ALTERNATIVE_RESOURCES_AREA_DET\"\n")
+
+
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_TYPE_RAND.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_TYPE_RAND>")
+			for k in range(total_number_of_agents_types):
+				for j in range(len(vlist)):
+					file.write(str(alternative_resources_type_rand[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_TYPE_RAND></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_TYPE_RAND \"ALTERNATIVE_RESOURCES_TYPE_RAND\"\n")
+
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_AREA_RAND.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_AREA_RAND>")
+			for k in range(total_number_of_agents_types):
+				for j in range(len(vlist)):
+					file.write(str(alternative_resources_area_rand[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_AREA_RAND></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_AREA_RAND \"ALTERNATIVE_RESOURCES_AREA_RAND\"\n")
+
 
 		with open(macro_environment_dir + "COUNTERS.xml", "w") as file:
 			file.write("<states><macro_environment><COUNTERS>" + ','.join(map(str, counters)) + "</COUNTERS></macro_environment></states>\n")
@@ -1398,7 +1444,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_defines.write("#define HOST_FLOW_DISTR_IDX 5\n")
 		autogenerated_defines.write("#define HOST_HOURS_SCHEDULE_DISTR_IDX 6\n")
 		autogenerated_defines.write("#define HOST_END_OF_IMMUNIZATION_DISTR_IDX 7\n")
-		autogenerated_defines.write('#define HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX 8')
+		autogenerated_defines.write('#define HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX 8\n')
 		autogenerated_defines.write("#define HOST_INFECTION_DISTR_IDX 9\n")
 		autogenerated_defines.write("#define HOST_FATALITY_DISTR_IDX 10\n")
 
@@ -1469,7 +1515,8 @@ def main():
 			autogenerated_defines.write("#define NUM_ROOMS_OBJ_TYPES 2\n")
 			autogenerated_defines.write("#define ROOMS {\"room\", \"fillingroom\"}\n\n")
 			autogenerated_defines.write("#define NUM_ROOMS " + str(len(WHOLEmodel["roomsINcanvas"])) + "\n")
-			autogenerated_defines.write("#define NUM_ROOMS_TYPES " + str(len(WHOLEmodel["types"])) + "\n")
+
+			autogenerated_defines.write("#define NUM_ROOMS_TYPES " + str(len(WHOLEmodel["types"]) + 4) + "\n")
 
 			color = WHOLEmodel["color"][0]
 

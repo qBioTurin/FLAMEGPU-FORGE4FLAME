@@ -57,7 +57,8 @@ class Vertex:
                  length: int,
                  width: int,
                  resources: pd.DataFrame,
-                 waitingroom: pd.DataFrame) -> None:
+                 waitingroom_det: pd.DataFrame,
+                 waitingroom_rand: pd.DataFrame) -> None:
         self.id = vid 
         self.coords = coordinates
         self.type = typeof
@@ -66,7 +67,8 @@ class Vertex:
         self.length = length
         self.width = width
         self.resources = resources
-        self.waitingroom = waitingroom
+        self.waitingroom_det = waitingroom_det
+        self.waitingroom_rand = waitingroom_rand
 
     def __str__(self):
         return f"{self.id} {MapEncoding.to_str(self.type)} {int(self.coords.x)} {int(self.coords.y)} {int(self.coords.z)}"
@@ -121,10 +123,10 @@ class SpatialGraph:
             if vtype not in [MapEncoding.WALL, MapEncoding.WALKABLE]:
                 self.vertices[vtype] = []
 
-    def add_vertex(self, x_value: int, y_value: int, z_value: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms: pd.DataFrame):
+    def add_vertex(self, x_value: int, y_value: int, z_value: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame):
         global first_vertex_id
 
-        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms))
+        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand))
         self.__first_vid = self.__first_vid + 1
         first_vertex_id = first_vertex_id + 1
 

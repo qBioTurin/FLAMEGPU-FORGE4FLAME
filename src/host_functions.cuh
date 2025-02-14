@@ -157,11 +157,14 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(GLOBAL_RESOURCES_COUNTER, string("resources/macro_environment/") + GLOBAL_RESOURCES_COUNTER + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES, string("resources/macro_environment/") + SPECIFIC_RESOURCES + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES_COUNTER, string("resources/macro_environment/") + SPECIFIC_RESOURCES_COUNTER + ".xml"); 
-        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE + ".xml");
-        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_DET + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA_DET + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_RAND, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_RAND + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA_RAND, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA_RAND + ".xml");
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_PEDESTRIAN, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_PEDESTRIAN + ".xml");
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_ROOM, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_ROOM + ".xml");
 
+        
 
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Ending macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
@@ -200,6 +203,7 @@ namespace host_functions {
 
         // Generate initial infected agents
         vector<int> selectedIndices;
+        vector<int> availableIndices;
         unsigned short init_i = 0;
         unsigned short final_i = NUMBER_OF_AGENTS_TYPES_PLUS_1-1;
 
@@ -226,7 +230,7 @@ namespace host_functions {
         // Handle Random
         // Generate all possible indices, excluding already selected ones
         for (int i = 0; i < totalAgents; i++) {
-            if (selectedIndices.find(i) == selectedIndices.end()) { // Exclude already selected
+            if (find(selectedIndices.begin(), selectedIndices.end(), i) != selectedIndices.end()) { // Exclude already selected
                 availableIndices.push_back(i);
             }
         }
@@ -347,6 +351,7 @@ namespace host_functions {
                 unsigned char init_room = (unsigned char) xagent.child("init_room").text().as_int();
                 int area = xagent.child("area").text().as_int();
                 int color_id = xagent.child("color_id").text().as_int();
+                int type = xagent.child("type").text().as_int();
                 float volume = xagent.child("volume").text().as_float();
                 float room_quanta_concentration = xagent.child("room_quanta_concentration").text().as_float();
                 unsigned short x_center = (unsigned short) xagent.child("x_center").text().as_int();
@@ -366,6 +371,8 @@ namespace host_functions {
                 new_room.setVariable<unsigned char>(INIT_ROOM, init_room);
                 new_room.setVariable<int>(AREA, area);
                 new_room.setVariable<int>(COLOR_ID, color_id);
+                new_room.setVariable<int>(TYPE, type);
+
                 if(name != FILLINGROOM_AGENT_STRING){
                     new_room.setVariable<float>(VOLUME, volume);
                     new_room.setVariable<float>(ROOM_QUANTA_CONCENTRATION, room_quanta_concentration);

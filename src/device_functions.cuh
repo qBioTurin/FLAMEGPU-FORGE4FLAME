@@ -226,8 +226,8 @@ namespace device_functions {
         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
         auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
         auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
-        auto alternative_resources_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA);
-        auto alternative_resources_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE);
+        auto alternative_resources_area_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_DET);
+        auto alternative_resources_type_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_DET);
 
         const int flow = (int) env_flow[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH];
         const int flow_area = (int) env_flow_area[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH];
@@ -287,7 +287,7 @@ namespace device_functions {
                 final_target = (*list_front).getVariable<short>(GRAPH_NODE);
             }
 
-            if(alternative_resources_type[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
+            if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
                 
                 float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                 FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
@@ -307,7 +307,7 @@ namespace device_functions {
                 FLAMEGPU->setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
                 *stay = 2;
             }
-            else if(alternative_resources_type[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
+            else if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
                 
                 //The agent have waited in waiting room and now go to the right flux room
                 FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, OUTSIDE_WAITING_ROOM);
@@ -315,7 +315,7 @@ namespace device_functions {
                 FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
             
             }
-            else if(alternative_resources_type[agent_type][final_target] != WAITINGROOM && alternative_resources_type[agent_type][final_target] != -1){
+            else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM && alternative_resources_type_det[agent_type][final_target] != -1){
                 
                 // Try getting the resources of the room
                 get_global_resource = ++global_resources_counter[final_target];
@@ -332,16 +332,15 @@ namespace device_functions {
                     get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
                     //search another room of the same type and area
-                    if(alternative_resources_area[agent_type][final_target] == area && alternative_resources_type[agent_type][final_target] == flow){
+                    if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
 
                         random = (random + 1) % lenght_rooms;
                         final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, &available);
-
                     }
                     //search another room of the alternative
-                    else if(alternative_resources_area[agent_type][final_target] != area || alternative_resources_type[agent_type][final_target] != flow){
+                    else if(alternative_resources_area_det[agent_type][final_target] != area || alternative_resources_type_det[agent_type][final_target] != flow){
                         
-                        auto messages = FLAMEGPU->message_in(alternative_resources_type[agent_type][final_target]);
+                        auto messages = FLAMEGPU->message_in(alternative_resources_type_det[agent_type][final_target]);
 
                         unsigned short ward_indeces_alternative[SOLUTION_LENGTH];
                         unsigned short j = 0;
@@ -351,7 +350,7 @@ namespace device_functions {
                         while(i != messages.end()){
                             const int local_area = (*i).getVariable<int>(AREA);
 
-                            if(local_area == alternative_resources_area[agent_type][final_target]){
+                            if(local_area == alternative_resources_area_det[agent_type][final_target]){
                                 ward_indeces_alternative[j] = k;
                                 j++;
                             }
@@ -361,12 +360,12 @@ namespace device_functions {
                         }
 
                         int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, j-1, false));
-                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, &available);
+                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, &available);
                     }
                 }
 
                 //if no other alternave is avaiable or it's explicit, skip
-                if(!available || alternative_resources_type[agent_type][final_target] == -1){
+                if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
                 
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
