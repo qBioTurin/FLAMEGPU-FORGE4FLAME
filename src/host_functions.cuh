@@ -422,7 +422,7 @@ namespace host_functions {
 
             for(int i=0;i<NUMBER_OF_AGENTS_TYPES;i++){
                 for(int j=0;j<=i;j++){
-                    printf("[CONTACTS_MATRIX],%d,%d,%d,%d,%d", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
+                    printf("[CONTACTS_MATRIX],%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
                 }
             }
         }
