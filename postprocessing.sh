@@ -106,16 +106,8 @@ done
 
 cd ../../resources
 
-<<<<<<< HEAD
-python postprocessing.py -experiment_dirs $EXPERIMENT_DIR
-python barplot.py -experiment_dirs AlarmSurgical20FromDay4 AlarmSurgical40FromDay4 AlarmSurgical80FromDay4 AlarmFFP220FromDay4 AlarmFFP240FromDay4 AlarmFFP280FromDay4 \
-                  -experiment_labels Surgical-20% Surgical-40% Surgical-80% FFP2-20% FFP2-40% FFP2-80% \
-                  -day_x 30 \
-                  -baseline_experiment AlarmNoCountermeasures
-=======
 # python postprocessing.py -experiment_dirs $EXPERIMENT_DIR
 # python barplot.py -experiment_dirs AlarmSurgical20FromDay4 AlarmSurgical40FromDay4 AlarmSurgical80FromDay4 AlarmFFP220FromDay4 AlarmFFP240FromDay4 AlarmFFP280FromDay4 \
 #                   -experiment_labels Surgical-20% Surgical-40% Surgical-80% FFP2-20% FFP2-40% FFP2-80% \
 #                   -day_x 30 \
 #                   -baseline_experiment AlarmNoCountermeasures
->>>>>>> merge_whatifandresources
