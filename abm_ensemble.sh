@@ -94,6 +94,8 @@ WHOLE_OUTPUT="$(bash generate_configuration.sh -e ON -expdir $EXPERIMENT_DIR 2>&
 SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 PARALLEL_RUN="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f2)"
 
+echo $SEED > results/$EXPERIMENT_DIR/seed.txt
+
 # Build the model
 bash build.sh -cps OFF -g OFF -v OFF
 

@@ -117,6 +117,8 @@ fi
 WHOLE_OUTPUT="$(bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1)"
 SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 
+echo $SEED > results/$EXPERIMENT_DIR/seed.txt
+
 # Build the model
 bash build.sh -cps $CHECKPOINT_SIMULATION -g $DEBUG -v $VISUALISATION
 

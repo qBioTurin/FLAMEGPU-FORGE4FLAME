@@ -33,7 +33,7 @@ namespace host_functions {
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
-        //printf("[RANDOM_HOST],%d,%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), distribution_id, 0, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
+        //printf("[RANDOM_HOST],%d,%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), distribution_id, 0, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
 
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
     }
@@ -60,7 +60,7 @@ namespace host_functions {
     */
     FLAMEGPU_INIT_FUNCTION(initFunction){        
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Beginning initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Beginning initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
@@ -91,9 +91,9 @@ namespace host_functions {
         
         fflush(stdout);
 
-        printf("[INFO],%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), day);
+        printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Ending initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Ending initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
 
@@ -102,7 +102,7 @@ namespace host_functions {
     */
     FLAMEGPU_INIT_FUNCTION(macroPropertyIO) {
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Beginning macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Beginning macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         // Import a macro properties
         FLAMEGPU->environment.importMacroProperty(COORD2INDEX, string("resources/macro_environment/") + COORD2INDEX + ".xml");
@@ -167,7 +167,7 @@ namespace host_functions {
         
 
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Ending macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Ending macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
 
@@ -176,7 +176,7 @@ namespace host_functions {
     */
     FLAMEGPU_INIT_FUNCTION(generateAgents) {
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
         auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
@@ -403,7 +403,7 @@ namespace host_functions {
         evolution_file.close();
 
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Ending generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Ending generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
 
@@ -412,14 +412,14 @@ namespace host_functions {
     */
     FLAMEGPU_STEP_FUNCTION(updateDayAndLog) {
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Beginning updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Beginning updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_HOUR)){
             auto contacts_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
 
             for(int i=0;i<NUMBER_OF_AGENTS_TYPES;i++){
                 for(int j=0;j<=i;j++){
-                    printf("[CONTACTS_MATRIX],%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
+                    printf("2,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
                 }
             }
         }
@@ -431,7 +431,7 @@ namespace host_functions {
 
             FLAMEGPU->environment.setProperty<unsigned short>(DAY, day);
             FLAMEGPU->environment.setProperty<unsigned short>(WEEK_DAY, week_day);
-            printf("[INFO],%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), day);
+            printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
 
             auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
@@ -467,7 +467,7 @@ namespace host_functions {
             counters_file.close();
         }
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
 
@@ -477,7 +477,7 @@ namespace host_functions {
     FLAMEGPU_STEP_FUNCTION(birth) {
         if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
 #ifdef DEBUG
-            printf("[DEBUG],%d,%d,Beginning birth for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+            printf("5,%d,%d,Beginning birth for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
             const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
             const unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
@@ -574,7 +574,7 @@ namespace host_functions {
 
             FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
 #ifdef DEBUG
-            printf("[DEBUG],%d,%d,Ending birth for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+            printf("5,%d,%d,Ending birth for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         }
     }
@@ -584,7 +584,7 @@ namespace host_functions {
     */
     FLAMEGPU_EXIT_FUNCTION(exitFunction){
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         // Log the environment macro properties
         auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
@@ -625,9 +625,9 @@ namespace host_functions {
         rng_state << host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)];
         rng_state.close();
 
-        printf("[INFO],%d,%d,Simulation completed.\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("4,%d,%d,Simulation completed.\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #ifdef DEBUG
-        printf("[DEBUG],%d,%d,Ending exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("5,%d,%d,Ending exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
 }

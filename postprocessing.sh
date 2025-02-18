@@ -61,37 +61,58 @@ for input_file in *.csv; do
         # Use awk, passing the list of existing directories (without spaces)
         awk -v existing_dirs="$existing_dirs" -F, '
         BEGIN {
+            # Read the single seed value from seed.txt
+            getline seed_offset < "seed.txt"
+            seed_offset += 0  # Ensure it is treated as a number
+            close("seed.txt")
+
             # Parse existing_dirs into an array for quick lookup
             split(existing_dirs, dirs, " ")
             for (i in dirs) {
                 dir_exists[dirs[i]] = 1
             }
+
+            # Define mapping for col1 values
+            mapping[0] = "AGENT_POSITION_AND_STATUS"
+            mapping[1] = "CONTACT"
+            mapping[2] = "CONTACTS_MATRIX"
+            mapping[3] = "AEROSOL"
+            mapping[4] = "INFO"
+            mapping[5] = "DEBUG"
         }
         {
             # Extract columns
-            col2 = $2
             col1 = $1
-            # Replace brackets from col1 for file name
-            gsub(/\[|\]/, "", col1)
-            # Define the directory name, and remove spaces from it
+            col2 = $2
+
+            # Add the seed value from seed.txt to col2
+            col2 = col2 + seed_offset
+
+            # Ensure col1 is within the expected range
+            if (!(col1 in mapping)) {
+                print "Unexpected value in col1: " col1 ". Skipping..."
+                next
+            }
+
+            # Map col1 value to its corresponding label
+            mapped_col1 = mapping[col1]
+            gsub(/\[|\]/, "", mapped_col1)
+
+            # Construct the directory name from col2 and remove any spaces
             dir_name = "seed" col2
             dir_name_no_spaces = gensub(/[[:space:]]/, "", "g", dir_name)
 
-            # Check if the directory exists in the pre-checked list (using the no-space version)
+            # Check if the directory exists in the pre-checked list
             if (dir_name_no_spaces in dir_exists) {
-                # Prepare to print all columns from the third column onward, keeping commas
+                # Concatenate columns 3 onward into a single line
                 line = ""
-                for (i=3; i<=NF; i++) {
-                    if (i > 3) {
-                        line = line "," $i
-                    } else {
-                        line = $i
-                    }
+                for (i = 3; i <= NF; i++) {
+                    line = (i == 3 ? $i : line "," $i)
                 }
 
-                # Quote the output file path to handle spaces correctly
-                out_file = dir_name_no_spaces "/" col1 ".csv"
-                # Write the processed line to the appropriate file
+                # Construct the output file path
+                out_file = dir_name_no_spaces "/" mapped_col1 ".csv"
+                # Write the processed line to the file
                 print line >> out_file
             } else {
                 print "Directory " dir_name_no_spaces " does not exist. Skipping..."
