@@ -1454,12 +1454,6 @@ def main():
 	parser.add_argument('-checkpoint', type=str, help='Checkpoint simulation?')
 	args = parser.parse_args()
 
-<<<<<<< HEAD
-
-	total_agents_overestimation = 10000
-	solution_length = 50
-=======
->>>>>>> merge_whatifandresources
 	num_counters = 5
 	y_offset = 10
 
