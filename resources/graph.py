@@ -57,7 +57,8 @@ class Vertex:
                  length: int,
                  width: int,
                  resources: pd.DataFrame,
-                 waitingroom: pd.DataFrame) -> None:
+                 waitingroom_det: pd.DataFrame,
+                 waitingroom_rand: pd.DataFrame) -> None:
         self.id = vid 
         self.coords = coordinates
         self.type = typeof
@@ -66,7 +67,8 @@ class Vertex:
         self.length = length
         self.width = width
         self.resources = resources
-        self.waitingroom = waitingroom
+        self.waitingroom_det = waitingroom_det
+        self.waitingroom_rand = waitingroom_rand
 
     def __str__(self):
         return f"{self.id} {MapEncoding.to_str(self.type)} {int(self.coords.x)} {int(self.coords.y)} {int(self.coords.z)}"
@@ -121,10 +123,10 @@ class SpatialGraph:
             if vtype not in [MapEncoding.WALL, MapEncoding.WALKABLE]:
                 self.vertices[vtype] = []
 
-    def add_vertex(self, x_value: int, y_value: int, z_value: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms: pd.DataFrame):
+    def add_vertex(self, x_value: int, y_value: int, z_value: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame):
         global first_vertex_id
 
-        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms))
+        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand))
         self.__first_vid = self.__first_vid + 1
         first_vertex_id = first_vertex_id + 1
 
@@ -282,7 +284,7 @@ class SpatialGraph:
 
             for i, stair_i in enumerate( stair_vertices )
                 for stair_j in stair_vertices[i+1:]
-                    if abs(stair_i.coords.x - stair_j.coords.x) <= 20 and abs(stair_i.coords.z - stair_j.coords.z) <= 20
+                    if abs(stair_i.coords.x - stair_j.coords.x) <= 10 and abs(stair_i.coords.z - stair_j.coords.z) <= 10
         ]
         self.edgelist.update( stair_links )
 
@@ -331,17 +333,23 @@ class SpatialGraph:
 
     def graph_diameter(self) -> int:
         """
-        Compute the diameter of the graph, i.e., the longest shortest path.
+        Optimized method to compute graph diameter.
+        Uses two BFS passes for efficiency.
         """
         vertices = list(chain.from_iterable(self.vertices.values()))
-        max_shortest_path = 0
+        
+        if not vertices:
+            return 0  # No vertices in the graph
+        
+        # Step 1: Pick an arbitrary vertex and run BFS
+        start_vertex = vertices[0]
+        shortest_paths = self.__bfs_shortest_path(start_vertex)
 
-        # Compute the shortest paths from every vertex
-        for v in vertices:
-            shortest_paths = self.__bfs_shortest_path(v)
-            # Find the maximum shortest path from this vertex
-            max_path_from_v = max(shortest_paths.values())
-            # Track the largest of these maximum values
-            max_shortest_path = max(max_shortest_path, max_path_from_v)
+        # Step 2: Find the farthest vertex from the first BFS
+        farthest_vertex = max(shortest_paths, key=shortest_paths.get)
 
-        return max_shortest_path
+        # Step 3: Run BFS again from this farthest vertex
+        final_shortest_paths = self.__bfs_shortest_path(farthest_vertex)
+
+        # Step 4: Return the longest shortest path found
+        return max(final_shortest_paths.values())

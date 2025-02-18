@@ -27,10 +27,9 @@ namespace device_functions {
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
-        //printf("[RANDOM_AGENT],%d,%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), distribution_id, id, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
         // printf("[RANDOM_AGENT],%d,%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), distribution_id, id, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
 
-        auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
+        auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
         cuda_rng_offsets_pedestrian[FLAMEGPU->getVariable<short>(CONTACTS_ID)]++;
 
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
@@ -99,7 +98,66 @@ namespace device_functions {
         }
     }
 
+ /** 
+     * Find a room of free resources for an event, searching the nearest
+    */
+    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {  
+        
+        const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
+        short event_node = -1;
+        float min_separation = numeric_limits<float>::max();
+        float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
+        //resources
+        auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
+        auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+        auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
+        auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
 
+        do {
+            // Searching the nearest room related to the event
+            //to add the area
+            for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
+
+
+                const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
+                int area_room = message.getVariable<int>(AREA);
+
+
+                float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
+                if(separation < min_separation && separation > previous_separation && area_room_event == area_room){
+                    min_separation = separation;                    
+                    event_node = message.getVariable<short>(GRAPH_NODE);
+                }
+            }
+
+            // Try getting the resources of the room
+            if(event_node != -1){
+                int get_global_resource = ++global_resources_counter[event_node];
+                int get_specific_resource = ++specific_resources_counter[agent_type][event_node];
+
+                if(get_global_resource > global_resources[event_node] || get_specific_resource > specific_resources_counter[agent_type][event_node]){
+                    unsigned int global = --global_resources_counter[event_node];
+                    unsigned int specific = --specific_resources_counter[agent_type][event_node];
+                    previous_separation = min_separation;
+
+                }
+                else {
+                    *available = true;
+                }
+            }
+        }
+        while(!available && event_node != -1);  
+
+        return event_node;
+     }
+
+
+
+
+
+    /** 
+     * Find a room of free resources 
+    */
     FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {  
         
         int random_iterator = random;
@@ -123,9 +181,9 @@ namespace device_functions {
         
             // Try getting the resources of the room
             int get_global_resource = ++global_resources_counter[final_target];
-            int get_specific_resources = ++specific_resources_counter[agent_type][final_target];
+            int get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
-            if(get_global_resource > global_resources[final_target] || get_specific_resources > specific_resources_counter[agent_type][final_target]){
+            if(get_global_resource > global_resources[final_target] || get_specific_resource > specific_resources_counter[agent_type][final_target]){
                 unsigned int global = --global_resources_counter[final_target];
                 unsigned int specific = --specific_resources_counter[agent_type][final_target];
                 random_iterator = (random_iterator + 1) % lenght_rooms;
@@ -151,23 +209,25 @@ namespace device_functions {
         unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
         short final_target = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
 
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
 
-        auto env_room_for_quarantine_type = FLAMEGPU->environment.getMacroProperty<int>(ENV_ROOM_FOR_QUARANTINE_TYPE);
-        auto env_room_for_quarantine_area = FLAMEGPU->environment.getMacroProperty<int>(ENV_ROOM_FOR_QUARANTINE_AREA);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
         auto env_flow_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
         auto env_flow_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_AREA);
-        //resources
+        auto env_room_for_quarantine_type = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_TYPE);
+        auto env_room_for_quarantine_area = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_AREA);
+
+        // Resources
         auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
         auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
         auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
-        auto alternative_resources_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA);
-        auto alternative_resources_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE);
+        auto alternative_resources_area_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_DET);
+        auto alternative_resources_type_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_DET);
 
         const int flow = (int) env_flow[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH];
         const int flow_area = (int) env_flow_area[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH];
@@ -180,13 +240,13 @@ namespace device_functions {
             *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH], contacts_id, env_flow_distr_firstparam[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH], env_flow_distr_secondparam[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH], true);
 
         unsigned short j = 0;
-        if(isValidFlow && ((severity == MAJOR && (int) env_room_for_quarantine_type[agent_type] != SPAWNROOM) || identified == NOT_IDENTIFIED)){
+        if(isValidFlow && ((severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM) || identified == NOT_IDENTIFIED)){
             auto messages = FLAMEGPU->message_in(flow);
             int area = flow_area;
 
             if(severity == MAJOR){
-                messages = FLAMEGPU->message_in((int) env_room_for_quarantine_type[agent_type]);
-                area = (int) env_room_for_quarantine_area[agent_type];
+                messages = FLAMEGPU->message_in((int) env_room_for_quarantine_type[day-1][agent_type]);
+                area = (int) env_room_for_quarantine_area[day-1][agent_type];
             }
 
             unsigned short ward_indeces[SOLUTION_LENGTH];
@@ -212,8 +272,7 @@ namespace device_functions {
             int lenght_rooms = j;
             bool available = false;
             unsigned int get_global_resource;
-            unsigned int get_specific_resources;
-            short nodo = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
+            unsigned int get_specific_resource;
 
             //if the agent is already waiting for a node, go for it
             if(FLAMEGPU->getVariable<short>(NODE_WAITING_FOR) != -1){
@@ -228,11 +287,11 @@ namespace device_functions {
                 final_target = (*list_front).getVariable<short>(GRAPH_NODE);
             }
 
-            if(alternative_resources_type[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
+            if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
                 
                 float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                 FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
-                float min_separation = FLT_MAX;
+                float min_separation = numeric_limits<float>::max();;
 
                 for(const auto& message: FLAMEGPU->message_in(WAITINGROOM)) {
                     const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
@@ -248,7 +307,7 @@ namespace device_functions {
                 FLAMEGPU->setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
                 *stay = 2;
             }
-            else if(alternative_resources_type[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
+            else if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
                 
                 //The agent have waited in waiting room and now go to the right flux room
                 FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, OUTSIDE_WAITING_ROOM);
@@ -256,15 +315,13 @@ namespace device_functions {
                 FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
             
             }
-            else if(alternative_resources_type[agent_type][final_target] != WAITINGROOM && alternative_resources_type[agent_type][final_target] != -1){
+            else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM && alternative_resources_type_det[agent_type][final_target] != -1){
                 
                 // Try getting the resources of the room
                 get_global_resource = ++global_resources_counter[final_target];
-                get_specific_resources = ++specific_resources_counter[agent_type][final_target];
-                int global_resources_n = global_resources[final_target];
-                int specific_resources_n = specific_resources[agent_type][final_target];
+                get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
-                if(get_global_resource <= global_resources[final_target] && get_specific_resources <= specific_resources[agent_type][final_target]){
+                if(get_global_resource <= global_resources[final_target] && get_specific_resource <= specific_resources[agent_type][final_target]){
                    available = true; 
                 } 
 
@@ -272,19 +329,18 @@ namespace device_functions {
                 if(!available){
 
                     get_global_resource = --global_resources_counter[final_target]; 
-                    get_specific_resources = --specific_resources_counter[agent_type][final_target];
+                    get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
                     //search another room of the same type and area
-                    if(alternative_resources_area[agent_type][final_target] == area && alternative_resources_type[agent_type][final_target] == flow){
+                    if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
 
                         random = (random + 1) % lenght_rooms;
                         final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, &available);
-
                     }
                     //search another room of the alternative
-                    else if(alternative_resources_area[agent_type][final_target] == area || alternative_resources_type[agent_type][final_target] == flow){
+                    else if(alternative_resources_area_det[agent_type][final_target] != area || alternative_resources_type_det[agent_type][final_target] != flow){
                         
-                        auto messages = FLAMEGPU->message_in(alternative_resources_type[agent_type][final_target]);
+                        auto messages = FLAMEGPU->message_in(alternative_resources_type_det[agent_type][final_target]);
 
                         unsigned short ward_indeces_alternative[SOLUTION_LENGTH];
                         unsigned short j = 0;
@@ -294,7 +350,7 @@ namespace device_functions {
                         while(i != messages.end()){
                             const int local_area = (*i).getVariable<int>(AREA);
 
-                            if(local_area == alternative_resources_area[agent_type][final_target]){
+                            if(local_area == alternative_resources_area_det[agent_type][final_target]){
                                 ward_indeces_alternative[j] = k;
                                 j++;
                             }
@@ -304,12 +360,12 @@ namespace device_functions {
                         }
 
                         int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, j-1, false));
-                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, &available);
+                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, &available);
                     }
                 }
 
                 //if no other alternave is avaiable or it's explicit, skip
-                if(!available || alternative_resources_type[agent_type][final_target] == -1){
+                if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
                 
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
@@ -338,7 +394,7 @@ namespace device_functions {
     /** 
      * Find the shortest path between two nodes in the graph.
     */
-    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {        
+    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif        
@@ -452,10 +508,10 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif       
-        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
 
@@ -514,7 +570,7 @@ namespace device_functions {
         const unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         const unsigned short identified = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
@@ -540,6 +596,7 @@ namespace device_functions {
         }
         else{
             start_step = ((int) env_hours_schedule[agent_type][week_day_flow][2 * entry_time_index] - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY));
+            start_step = start_step < 1 ? 1: start_step;
         }
 
         if(entry_time_index == 0){
@@ -561,16 +618,17 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning put_in_quarantine for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
-        auto env_quarantine_days_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR);
-        auto env_quarantine_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
-        auto env_quarantine_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
-        auto env_quarantine_swab_days_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
-        auto env_quarantine_swab_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
-        auto env_quarantine_swab_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto env_quarantine_days_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
+        auto env_quarantine_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
+        auto env_quarantine_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
+        auto env_quarantine_swab_days_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
+        auto env_quarantine_swab_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
+        auto env_quarantine_swab_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
 
         unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
         unsigned short identified_bool = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
@@ -578,7 +636,7 @@ namespace device_functions {
         unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         bool already_in_quarantine = quarantine > 0;
         
-        quarantine = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_days_distr[agent_type], contacts_id, (int) env_quarantine_days_distr_firstparam[agent_type], (int) env_quarantine_days_distr_secondparam[agent_type], true);
+        quarantine = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_days_distr[day-1][agent_type], contacts_id, (int) env_quarantine_days_distr_firstparam[day-1][agent_type], (int) env_quarantine_days_distr_secondparam[day-1][agent_type], true);
         FLAMEGPU->setVariable<unsigned short>(QUARANTINE, quarantine);
 
         int stay = 1;
@@ -617,8 +675,8 @@ namespace device_functions {
         if(agent_with_a_rate)
             FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW) * SOLUTION_LENGTH);
 
-        if((int) env_quarantine_swab_days_distr[agent_type] != NO_SWAB){
-            int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_firstparam[agent_type], STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_secondparam[agent_type], true));
+        if((int) env_quarantine_swab_days_distr[day-1][agent_type] != NO_SWAB){
+            int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[day-1][agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_firstparam[day-1][agent_type], STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_secondparam[day-1][agent_type], true));
             FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
         }
         
@@ -634,15 +692,20 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning swab for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const unsigned int disease_state = FLAMEGPU->getVariable<unsigned int>(DISEASE_STATE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
-        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_SWAB_DISTR);
-        auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_FIRSTPARAM);
-        auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_SECONDPARAM);
-        auto env_quarantine_days_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_DAYS_DISTR);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto env_swab_sensitivity = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_SENSITIVITY);
+        auto env_swab_specificity = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_SPECIFICITY);
+        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
+        auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
+        auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
+        auto env_quarantine_days_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
+        auto env_quarantine_swab_sensitivity = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SENSITIVITY);
+        auto env_quarantine_swab_specificity = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SPECIFICITY);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
         unsigned short identified_bool = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
@@ -652,7 +715,7 @@ namespace device_functions {
         bool already_in_quarantine = quarantine > 0;
 
         if(disease_state == INFECTED){
-            const float sensitivity_swab = FLAMEGPU->environment.getProperty<float>(SENSITIVITY_SWAB);
+            const float sensitivity_swab = already_in_quarantine ? (float) env_quarantine_swab_sensitivity[day-1][agent_type]: (float) env_swab_sensitivity[day-1][agent_type];
             float random_sensitivity = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
 
             if(random_sensitivity < sensitivity_swab){
@@ -673,7 +736,7 @@ namespace device_functions {
         }
         else {
             // False positive
-            const float specificity_swab = FLAMEGPU->environment.getProperty<float>(SPECIFICITY_SWAB);
+            const float specificity_swab = already_in_quarantine ? (float) env_quarantine_swab_specificity[day-1][agent_type]: (float) env_swab_specificity[day-1][agent_type];
             float random_specificity = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
 
             if(random_specificity >= specificity_swab){
@@ -704,7 +767,7 @@ namespace device_functions {
              */
             FLAMEGPU->setVariable<int>(SWAB_STEPS, -1);
 
-            if((int) env_quarantine_days_distr[agent_type] != NO_QUARANTINE){
+            if((int) env_quarantine_days_distr[day-1][agent_type] != NO_QUARANTINE){
                 put_in_quarantine(FLAMEGPU);
             }
         }
@@ -714,8 +777,8 @@ namespace device_functions {
                 stay_matrix[contacts_id][target_index].exchange(1);
             }
             else{
-                if((int) env_swab_distr[agent_type] != NO_SWAB){
-                    int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_swab_distr[agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[agent_type], true));
+                if((int) env_swab_distr[day-1][agent_type] != NO_SWAB){
+                    int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_swab_distr[day-1][agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[day-1][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[day-1][agent_type], true));
                     FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
                 }
             }
@@ -733,20 +796,21 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning exit_from_quarantine for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
+        const unsigned short agent_with_a_rate = FLAMEGPU->getVariable<unsigned short>(AGENT_WITH_A_RATE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const short extern_node = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         const int quarantine_node = FLAMEGPU->getVariable<int>(ROOM_FOR_QUARANTINE_INDEX);
-        const unsigned short agent_with_a_rate = FLAMEGPU->getVariable<unsigned short>(AGENT_WITH_A_RATE);
 
         short solution_quarantine_extern[SOLUTION_LENGTH] = {-1};
         unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
 
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
-        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_SWAB_DISTR);
-        auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_FIRSTPARAM);
-        auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float>(ENV_SWAB_DISTR_SECONDPARAM);
+        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
+        auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
+        auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
         printf("[QUARANTINE],%d,%d,%d,%d,%d,1\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<unsigned short>(QUARANTINE) ? 1: 0, FLAMEGPU->getVariable<unsigned short>(SEVERITY));
@@ -784,8 +848,8 @@ namespace device_functions {
                 stay_matrix[contacts_id][target_index].exchange(stay_spawnroom);
         }
 
-        if((int) env_swab_distr[agent_type] != NO_SWAB){
-            int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_swab_distr[agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[agent_type], true));
+        if((int) env_swab_distr[day-1][agent_type] != NO_SWAB){
+            int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_swab_distr[day-1][agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[day-1][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[day-1][agent_type], true));
             FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
         }
 
@@ -814,15 +878,16 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
-        const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const unsigned short identified_bool = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
+        const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
-        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_SWAB_DISTR);
-        auto env_quarantine_swab_days_distr = FLAMEGPU->environment.getMacroProperty<int>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
+        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
+        auto env_quarantine_swab_days_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
 
         int swab_steps = FLAMEGPU->getVariable<int>(SWAB_STEPS);
 
-        if(((int) env_swab_distr[agent_type] != NO_SWAB || (int) env_quarantine_swab_days_distr[agent_type] != NO_QUARANTINE_SWAB) && swab_steps != -1){
+        if(((int) env_swab_distr[day-1][agent_type] != NO_SWAB || (int) env_quarantine_swab_days_distr[day-1][agent_type] != NO_QUARANTINE_SWAB) && swab_steps != -1){
             if(swab_steps){
                 swab_steps = swab_steps - 1;
                 FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
@@ -843,18 +908,19 @@ namespace device_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning external_screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
+        const unsigned int disease_state = FLAMEGPU->getVariable<unsigned int>(DISEASE_STATE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
-        const unsigned int disease_state = FLAMEGPU->getVariable<unsigned int>(DISEASE_STATE);
 
-        auto env_external_screening_first = FLAMEGPU->environment.getMacroProperty<float>(ENV_EXTERNAL_SCREENING_FIRST);
-        auto env_external_screening_second = FLAMEGPU->environment.getMacroProperty<float>(ENV_EXTERNAL_SCREENING_SECOND);
+        auto env_external_screening_first = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
+        auto env_external_screening_second = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_SECOND);
 
         unsigned short identified_bool = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
         if(identified_bool != IDENTIFIED){
             float random_external_screening_first = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
-            if(random_external_screening_first < (float) env_external_screening_first[agent_type]){
+            if(random_external_screening_first < (float) env_external_screening_first[day-1][agent_type]){
                 swab(FLAMEGPU);
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -863,7 +929,7 @@ namespace device_functions {
             }
 
             float random_external_screening_second = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
-            if(disease_state == INFECTED && random_external_screening_second < (float) env_external_screening_second[agent_type]){
+            if(disease_state == INFECTED && random_external_screening_second < (float) env_external_screening_second[day-1][agent_type]){
                 swab(FLAMEGPU);
             }
         }

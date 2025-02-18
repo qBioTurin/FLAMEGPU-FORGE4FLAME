@@ -27,6 +27,14 @@ def distribution(type, types, a, b, flow_time):
 
 	return 1.0 if random_number < 1.0 and flow_time else random_number
 
+def distribution_average(type, a, b):
+	average = a
+
+	if type == "Uniform":
+		average = (a + b) / 2
+
+	return average
+
 def parse_distribution(time, dist):
 	# Deterministic or exponential: n
 	a = time
@@ -89,8 +97,6 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 	color = WHOLEmodel["color"][0]
 	resources = WHOLEmodel["resources"]
 
-	rooms_whatif = pd.DataFrame(WHOLEmodel["rooms_whatif"])
-
 	local_graph = graph.SpatialGraph()
 
 	roomsINcanvas =  [room for room in roomsINcanvas if room["CanvasID"] == floor_name]
@@ -114,11 +120,6 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		area = room["area"]
 		door = room["door"]
 
-		ventilation = 0
-		rooms_whatif_ventilation = rooms_whatif.query("type == \"" + type + "\" and area == \"" + area + "\"")
-		if not rooms_whatif_ventilation.empty:
-			ventilation = int(rooms_whatif_ventilation.iloc[0]["ventilation"]) / 3600
-
 		quanta_concentration = 0
 
 		color_id = np.where(np.array(list(rooms.keys()), dtype=str) == room_name)[0][0]
@@ -128,12 +129,15 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			color_id = np.where(np.array(list(types_IDs.keys()), dtype=str) == type)[0][0]
 
 		resources_room = {}
-		waiting_room = {}
+		waiting_room_det = {}
+		waiting_room_rand = {}
 		agents_specific_resources = {}
 		if len(resources) != 0 and type != "Spawnroom" and type != "Fillingroom" and type != "Stair" and type != "Waitingroom":
-			resources_room = resources[type + "-" + area]["roomResource"]
-			if "waitingRooms" in resources[type + "-" + area]:
-				waiting_room = resources[type + "-" + area]["waitingRooms"]
+			room_type_area = type + "-" + area
+			if room_type_area in resources:
+				resources_room = resources[type + "-" + area]["roomResource"]
+				waiting_room_det = resources[type + "-" + area]["waitingRoomsDeter"]
+				waiting_room_rand = resources[type + "-" + area]["waitingRoomsRand"]
 		
 		for res in resources_room:
 			if res["room"] == room_name:
@@ -142,9 +146,12 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 						agents_specific_resources[key] = value
 
 		resources_dataframe = pd.DataFrame.from_dict(agents_specific_resources, orient = "index")
-		waiting_room_dataframe = pd.DataFrame.from_dict(waiting_room)
-		if len(waiting_room_dataframe) != 0:
-			waiting_room_dataframe = waiting_room_dataframe.set_index("Agent")
+		waiting_room_det_dataframe = pd.DataFrame.from_dict(waiting_room_det)
+		waiting_room_rand_dataframe = pd.DataFrame.from_dict(waiting_room_rand)
+		if len(waiting_room_det_dataframe) != 0:
+			waiting_room_det_dataframe = waiting_room_det_dataframe.set_index("Agent")
+		if len(waiting_room_rand_dataframe) != 0:
+			waiting_room_rand_dataframe = waiting_room_rand_dataframe.set_index("Agent")
 
 		if door == "bottom":
 			yaw = 0
@@ -195,10 +202,10 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			room_file.write("\t\t<yaw>" + str(yaw) + "</yaw>\n")
 			room_file.write("\t\t<init_room>0</init_room>\n")
 			room_file.write("\t\t<area>" + str(areas[area]["ID"]) + "</area>\n")
+			room_file.write("\t\t<type>" + str(types_IDs[type]["ID"]) + "</type>\n")			
 			room_file.write("\t\t<color_id>" + str(color_id) + "</color_id>\n")
 			if type != "Fillingroom":
 				room_file.write("\t\t<volume>" + str(length * width * height) + "</volume>\n")
-				room_file.write("\t\t<ventilation>" + str(ventilation) + "</ventilation>\n")
 				room_file.write("\t\t<room_quanta_concentration>" + str(quanta_concentration) + "</room_quanta_concentration>\n")
 				room_file.write("\t\t<x_center>" + str(center_x)  + "</x_center>\n")
 				room_file.write("\t\t<y_center>" + str(y) + "</y_center>\n")
@@ -206,9 +213,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			room_file.write("\t</xagent>\n")
 			
 		if door != "none":
-			local_graph.add_vertex(x_door, y, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame())
-			local_graph.add_vertex(center_x, y, center_z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_dataframe)
-
+			local_graph.add_vertex(x_door, y, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+			local_graph.add_vertex(center_x, y, center_z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe)
 	
 	nodesINcanvas = WHOLEmodel["nodesINcanvas"]
 	nodesINcanvas = [node for node in nodesINcanvas if node["CanvasID"] == floor_name]
@@ -216,7 +222,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		x = node["x"] - 1
 		z = node["y"] - 1
 
-		local_graph.add_vertex(x, y, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CORRIDOR, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame())
+		local_graph.add_vertex(x, y, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CORRIDOR, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
 	local_graph.init_edges(np.array(WHOLEmodel["matricesCanvas"][floor_name]))
 
@@ -224,7 +230,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 
 
 def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents, ensemble, checkpoint,
-				 env_dims, total_agents_overestimation, sol_length, y_offset, dirname_experiment,
+				 env_dims, y_offset, dirname_experiment,
 				 WHOLEmodel, autogenerated_defines, autogenerated_variables_names, days, floors_IDs, types_IDs,
 				 steps_in_a_day, steps_in_a_hour, steps_in_a_minute, init_week_day, start_step_time, num_counters):
 	
@@ -246,10 +252,10 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define X_CENTER \"x_center\"\n")
 		autogenerated_variables_names.write("#define Y_CENTER \"y_center\"\n")
 		autogenerated_variables_names.write("#define Z_CENTER \"z_center\"\n")
-		autogenerated_variables_names.write("#define VENTILATION \"ventilation\"\n")
 		autogenerated_variables_names.write("#define ROOM_QUANTA_CONCENTRATION \"room_quanta_concentration\"\n")
 		autogenerated_variables_names.write("#define INIT_ROOM \"init_room\"\n")
 		autogenerated_variables_names.write("#define AREA \"area\"\n")
+		autogenerated_variables_names.write("#define TYPE \"type\"\n")
 		autogenerated_variables_names.write("#define COLOR_ID \"color_id\"\n")
 
 		num_floors = len(floors_IDs.items())
@@ -260,6 +266,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			final_graph = graphs[0]
 			
 		final_graph.save("G.txt")
+
+		sol_length = (final_graph.graph_diameter() + 1) * 2 + 1
+		autogenerated_defines.write("#define SOLUTION_LENGTH " + str(sol_length) + "\n\n")
 
 		vlist = sorted(chain.from_iterable(final_graph.vertices.values()), key = lambda v: v.id)
 		index2coord = np.full((3, len(vlist)), -1, dtype=int)
@@ -279,8 +288,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_defines.write("#define ENV_DIM_Z " + str(env_dims[2]) + "\n")
 		autogenerated_defines.write("#define FLOORS " + str(num_floors) + "\n")
 		autogenerated_defines.write("#define YOFFSET " + str(y_offset) + "\n\n")
-
-		autogenerated_defines.write("#define TOTAL_AGENTS_OVERESTIMATION " + str(total_agents_overestimation) + "\n\n")
 
 		autogenerated_defines.write("#define DAYS " + str(days) + "\n\n")
 		
@@ -307,8 +314,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		distributions = {"No swab": -1, "No quarantine": -1, "Deterministic": 0, "Exponential": 1, "Uniform": 2, "Truncated Positive Normal": 3}
 
 		compartments = {"S": 0, "E": 1, "I": 2, "R": 3, "D": 4}
-
-		agents_whatif = pd.DataFrame(WHOLEmodel["agents_whatif"])
 
 		disease = WHOLEmodel["disease"]
 		compartmental_model_name = disease["Name"][0]
@@ -346,24 +351,23 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		autogenerated_defines.write("\n\n")
 
-		whatif = pd.DataFrame(WHOLEmodel["whatif"])
+		outside_contagion = pd.DataFrame(WHOLEmodel["outside_contagion"])
 
 		perc_inf_df = pd.DataFrame(data={'day': range(1, days+1), "percentage_infected": np.zeros(days)})
-		outside_contagion_file = "f4f/" + dirname_experiment + whatif.iloc[0]["outside_contagion_file"]
-		if whatif.iloc[0]["outside_contagion_file"] != "":
-			perc_inf_df = pd.read_csv(outside_contagion_file, dtype=float, index_col="day")
-
-			if len(perc_inf_df) < days:
+		if len(outside_contagion) > 0:
+			if len(outside_contagion) < days:
 				print("ERROR: The dataframe outputted by the macro model must have at least " + str(days) + " rows. At the moment it has " + str(len(perc_inf_df)) + " rows.")
 				sys.exit(-1)
 
-			perc_inf_df = perc_inf_df.iloc[:days, :]
+			perc_inf_df = outside_contagion.iloc[:days, :]
 
 		mask_types = {"No mask": 0, "Surgical mask": 1, "FFP2 mask": 2}
 
 		areas_len_flows = len(areas.keys())
 
 		total_number_of_agents_types = len(agents.keys())
+		num_rooms_types = len(WHOLEmodel["types"]) + 4
+		num_areas = len(WHOLEmodel["areas"])
 
 		env_flow = np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
 		env_flow_area = np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
@@ -375,6 +379,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		env_birth_rates_distr =  np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
 		env_birth_rates_distr_firstparam =  np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
 		env_birth_rates_distr_secondparam =  np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
+
 		env_events = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
 		env_events_area = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
 		env_events_cdf = np.zeros((total_number_of_agents_types, sol_length), dtype=float)
@@ -382,32 +387,40 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		env_events_distr = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
 		env_events_distr_firstparam = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
 		env_events_distr_secondparam = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
-		env_mask_type = np.full(total_number_of_agents_types+1, mask_types["No mask"], dtype=int)
-		env_mask_fraction = np.zeros(total_number_of_agents_types+1, dtype=float)
-		env_vaccination_fraction = np.zeros(total_number_of_agents_types+1, dtype=float)
-		env_vaccination_efficacy = np.zeros(total_number_of_agents_types+1, dtype=float)
-		env_swab_distr = np.full(total_number_of_agents_types+1, -1, dtype=int)
-		env_swab_distr_firstparam = np.full(total_number_of_agents_types+1, -1, dtype=float)
-		env_swab_distr_secondparam = np.full(total_number_of_agents_types+1, -1, dtype=float)
-		env_quarantine_days_distr = np.full(total_number_of_agents_types+1, -1, dtype=int)
-		env_quarantine_days_distr_firstparam = np.full(total_number_of_agents_types+1, -1, dtype=int)
-		env_quarantine_days_distr_secondparam = np.full(total_number_of_agents_types+1, -1, dtype=int)
-		env_quarantine_swab_days_distr = np.full(total_number_of_agents_types+1, -1, dtype=int)
-		env_quarantine_swab_days_distr_firstparam = np.full(total_number_of_agents_types+1, -1, dtype=float)
-		env_quarantine_swab_days_distr_secondparam = np.full(total_number_of_agents_types+1, -1, dtype=float)
-		env_room_for_quarantine_type = np.full(total_number_of_agents_types+1, -1, dtype=int)
-		env_room_for_quarantine_area = np.full(total_number_of_agents_types+1, -1, dtype=int)
-		env_external_screening_first = np.full(total_number_of_agents_types+1, -1, dtype=float)
-		env_external_screening_second = np.full(total_number_of_agents_types+1, -1, dtype=float)
-		
-		initial_infected_type = whatif["initial_infected_type"][0]
 
-		initial_infected_agents = np.zeros(total_number_of_agents_types+1, dtype=int)
-		if initial_infected_type == "Global":
-			initial_infected_agents = np.full(total_number_of_agents_types+1, int(whatif["initial_infected"][0]), dtype=int)
-			initial_infected_agents[total_number_of_agents_types] = 0
-		elif initial_infected_type == "Random":
-			initial_infected_agents[total_number_of_agents_types] = int(whatif["initial_infected"][0])
+		env_ventilation = np.zeros((days, num_areas, num_rooms_types), dtype=float)
+		env_mask_type = np.full((days, total_number_of_agents_types+1), mask_types["No mask"], dtype=int)
+		env_mask_fraction = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_vaccination_fraction = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_vaccination_efficacy = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_vaccination_end_of_immunization_distr = np.zeros((days, total_number_of_agents_types+1), dtype=int)
+		env_vaccination_end_of_immunization_distr_firstparam = np.zeros((days, total_number_of_agents_types+1), dtype=int)
+		env_vaccination_end_of_immunization_distr_secondparam = np.zeros((days, total_number_of_agents_types+1), dtype=int)
+		env_swab_sensitivity = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_swab_specificity = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_swab_distr = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_swab_distr_firstparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
+		env_swab_distr_secondparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
+		env_quarantine_days_distr = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_quarantine_days_distr_firstparam = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_quarantine_days_distr_secondparam = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_quarantine_swab_sensitivity = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_quarantine_swab_specificity = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_quarantine_swab_days_distr = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_quarantine_swab_days_distr_firstparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
+		env_quarantine_swab_days_distr_secondparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
+		env_room_for_quarantine_type = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_room_for_quarantine_area = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_external_screening_first = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+		env_external_screening_second = np.zeros((days, total_number_of_agents_types+1), dtype=float)
+
+		total_agents_estimation = 0
+
+		rooms_whatif = pd.DataFrame(WHOLEmodel["rooms_whatif"])
+		for row in rooms_whatif["Ventilation"]:
+			(type, area) = (types_IDs[row[0].split("-")[0]]["ID"], areas[row[0].split("-")[1]]["ID"])
+			
+			env_ventilation[:, area, type] = row[1:]
 
 		total_number_of_agents = 0
 		number_of_agents_by_type = np.zeros(total_number_of_agents_types+1, dtype=int)
@@ -418,15 +431,18 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		
 		number_of_agents_by_type[total_number_of_agents_types] = total_number_of_agents
 
-		global_resources = np.full(len(vlist), 2147483647, dtype=int)
+		global_resources = np.zeros(len(vlist), dtype=int)
 		global_resources_counter = np.zeros(len(vlist), dtype=int)
-		specific_resources =  np.full((total_number_of_agents_types, len(vlist)), 2147483647, dtype=int)
+		specific_resources =  np.zeros((total_number_of_agents_types, len(vlist)), dtype=int)
 		specific_resources_counter = np.zeros((total_number_of_agents_types, len(vlist)), dtype=int)
-		alternative_resources_type = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
-		alternative_resources_area = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_type_det = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_area_det = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_type_rand = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
+		alternative_resources_area_rand = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
 
 		days_of_a_week = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
 
+		agent_names = {}
 		with open("agents_file.xml", "w") as agent_file:
 			agent_file.write("<agents>\n")
 			nawar = 0
@@ -435,30 +451,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			for agent_name, agent_info in agents.items():
 				n = int(agent_info["NumAgent"][0])
 
-				agent_whatif = agents_whatif.query("name == \"" + agent_name + "\"")
-
-				room_for_quarantine = agent_whatif.iloc[0]["room_for_quarantine"]
-
-				env_mask_type[agent_type_idx] = mask_types[agent_whatif.iloc[0]["mask"]]
-				env_mask_fraction[agent_type_idx] = float(agent_whatif.iloc[0]["mask_fraction"])
-				env_vaccination_fraction[agent_type_idx] = float(agent_whatif.iloc[0]["vaccination"])
-				env_vaccination_efficacy[agent_type_idx] = float(agent_whatif.iloc[0]["vaccination_efficacy"])
-				env_swab_distr[agent_type_idx] = distributions[agent_whatif.iloc[0]["swab_dist"]]
-				env_swab_distr_firstparam[agent_type_idx] = float(agent_whatif.iloc[0]["swab_a"])
-				env_swab_distr_secondparam[agent_type_idx] = float(agent_whatif.iloc[0]["swab_b"])
-				env_quarantine_days_distr[agent_type_idx] = distributions[agent_whatif.iloc[0]["quarantine_days_dist"]]
-				env_quarantine_days_distr_firstparam[agent_type_idx] = int(agent_whatif.iloc[0]["quarantine_days_a"])
-				env_quarantine_days_distr_secondparam[agent_type_idx] = int(agent_whatif.iloc[0]["quarantine_days_b"])
-				env_quarantine_swab_days_distr[agent_type_idx] = distributions[agent_whatif.iloc[0]["quarantine_swab_days_dist"]]
-				env_quarantine_swab_days_distr_firstparam[agent_type_idx] = float(agent_whatif.iloc[0]["quarantine_swab_days_a"])
-				env_quarantine_swab_days_distr_secondparam[agent_type_idx] = float(agent_whatif.iloc[0]["quarantine_swab_days_b"])
-				env_room_for_quarantine_type[agent_type_idx] =  MapEncoding.to_value(room_for_quarantine.split("-")[0].upper())
-				env_room_for_quarantine_area[agent_type_idx] = areas[room_for_quarantine.split("-")[1]]["ID"]
-				env_external_screening_first[agent_type_idx] = float(agent_whatif.iloc[0]["external_screening_first"])
-				env_external_screening_second[agent_type_idx] = float(agent_whatif.iloc[0]["external_screening_second"])
-				
-				if initial_infected_type == "Different for each agent":
-					initial_infected_agents[agent_type_idx] = int(agent_whatif.iloc[0]["initial_infected"])
+				agent_names[agent_name] = {"ID": agent_type_idx}
 
 
 				deterministic_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
@@ -507,6 +500,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								env_activity_type[agent_type_idx][i][flow_index] = f.loc["Activity"]
 
 								flow_index = flow_index + 1
+
+						total_agents_estimation = total_agents_estimation + n
 					else:
 						n = 0
 						
@@ -522,6 +517,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							env_birth_rates_distr[agent_type_idx][i][j] = distributions[eetw.loc["RateDist"]]
 							env_birth_rates_distr_firstparam[agent_type_idx][i][j] = int(a)
 							env_birth_rates_distr_secondparam[agent_type_idx][i][j] = int(b)
+
+							total_agents_estimation = total_agents_estimation + distribution_average(distributions[eetw.loc["RateDist"]], int(a), int(b)) * 2
 
 							if flow_index == 0:
 								if weekday == init_week_day and start_step_time > entry_exit_time_weekday.loc[0, "EntryTime"]:
@@ -575,45 +572,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				for i in range(n):
 					agent_file.write("\t<xagent>\n")
 					agent_file.write("\t\t<name>pedestrian</name>\n")
-					# agent_file.write("\t\t<cuda_initialized>0</cuda_initialized>\n")
-					# agent_file.write("\t\t<x>" + str(starting_x) + "</x>\n")
-					# agent_file.write("\t\t<y>" + str(starting_y) + "</y>\n")
-					# agent_file.write("\t\t<z>" + str(starting_z) + "</z>\n")
-					# agent_file.write("\t\t<animate>0</animate>\n")
-					# agent_file.write("\t\t<velx>0.0</velx>\n")
-					# agent_file.write("\t\t<vely>0.0</vely>\n")
-					# agent_file.write("\t\t<velz>0.0</velz>\n")
-					# agent_file.write("\t\t<quanta_inhaled>0.0</quanta_inhaled>\n")
-					# agent_file.write("\t\t<final_target>" + str(starting_x) + "," + str(entrance_y_coords) + "," + str(starting_z) + "</final_target>\n")
-					# agent_file.write("\t\t<intermediate_targets_x>" + ','.join(map(str, intermediate_targets_x_init)) + "</intermediate_targets_x>\n")
-					# agent_file.write("\t\t<intermediate_targets_y>" + ','.join(map(str, intermediate_targets_y_init)) + "</intermediate_targets_y>\n")
-					# agent_file.write("\t\t<intermediate_targets_z>" + ','.join(map(str, intermediate_targets_z_init)) + "</intermediate_targets_z>\n")
-					# agent_file.write("\t\t<stay>" + ','.join(map(str, stay)) + "</stay>\n")
-					# agent_file.write("\t\t<next_index>0</next_index>\n")
-					# agent_file.write("\t\t<target_index>0</target_index>\n")
-					# agent_file.write("\t\t<flow_index>" + str(days_of_a_week[init_week_day] * sol_length) + "</flow_index>\n")
-					# agent_file.write("\t\t<incubation_days>0</incubation_days>\n")
-					# agent_file.write("\t\t<infection_days>" + str(infection_days) + "</infection_days>\n")
-					# agent_file.write("\t\t<fatality_days>" + str(fatality_days) + "</fatality_days>\n")
-					# agent_file.write("\t\t<end_of_immunization_days>" + str(end_of_immunization_days) + "</end_of_immunization_days>\n")
-					# agent_file.write("\t\t<init>0</init>\n")
-					# agent_file.write("\t\t<infected_contacts_steps>0</infected_contacts_steps>\n")
-					# agent_file.write("\t\t<animate_dir>1</animate_dir>\n")
 					agent_file.write("\t\t<contacts_id>" + str(agents_count) + "</contacts_id>\n")
-					# agent_file.write("\t\t<disease_state>" + str(disease_state) + "</disease_state>\n")
-					# agent_file.write("\t\t<mask_type>" + str(env_mask_type[agent_type_idx] if random_mask < env_mask_fraction[agent_type_idx] else mask_types["No mask"]) + "</mask_type>\n")
-					# agent_file.write("\t\t<room_for_quarantine_index>-1</room_for_quarantine_index>\n")
 					agent_file.write("\t\t<agent_type>" + str(agent_type_idx) + "</agent_type>\n")
-					# agent_file.write("\t\t<agent_with_a_rate>0</agent_with_a_rate>\n")
-					# agent_file.write("\t\t<severity>0</severity>\n")
-					# agent_file.write("\t\t<quarantine>0</quarantine>\n")
-					# agent_file.write("\t\t<identified_infected>0</identified_infected>\n")
-					# agent_file.write("\t\t<swab_steps>" + str(swab_steps) + "</swab_steps>\n")
-					# agent_file.write("\t\t<entry_time_index>0</entry_time_index>\n")
-					# agent_file.write("\t\t<just_exited_from_quarantine>0</just_exited_from_quarantine>\n")
-					# agent_file.write("\t\t<week_day_flow>" + str(weekday_agent) + "</week_day_flow>\n")
-					# agent_file.write("\t\t<in_an_event>0</in_an_event>\n")
-					# agent_file.write("\t\t<last_step_move>0</last_step_move>\n")
 					agent_file.write("\t</xagent>\n")
 
 					agents_count = agents_count + 1
@@ -624,6 +584,15 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				agent_type_idx = agent_type_idx + 1
 
 			agent_file.write("</agents>\n")
+
+		initial_infected = WHOLEmodel["initial_infected"]
+		
+		initial_infected_agents = np.zeros(total_number_of_agents_types+1, dtype=int)
+		for row in initial_infected:
+			if row[0] != "Random":
+				initial_infected_agents[agent_names[row[0]]["ID"]] = int(row[1])
+			else:
+				initial_infected_agents[total_number_of_agents_types] = int(row[1])
 
 		autogenerated_variables_names.write("#define ID \"id\"\n")
 		autogenerated_variables_names.write("#define CUDA_INITIALIZED \"cuda_initialized\"\n")
@@ -663,21 +632,59 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define IDENTIFIED_INFECTED \"identified_infected\"\n")
 		autogenerated_variables_names.write("#define SWAB_STEPS \"swab_steps\"\n")
 		autogenerated_variables_names.write("#define ENTRY_TIME_INDEX \"entry_time_index\"\n")
-		autogenerated_variables_names.write("#define JUST_EXITED_FROM_QUARANTINE \"just_exited_from_quarantine\"\n\n")
-		autogenerated_variables_names.write("#define WEEK_DAY_FLOW \"week_day_flow\"\n\n")
-		autogenerated_variables_names.write("#define IN_AN_EVENT \"in_an_event\"\n\n")
-		autogenerated_variables_names.write("#define LAST_STEP_MOVE \"last_step_move\"\n\n")
-		autogenerated_variables_names.write("#define WAITING_ROOM_TIME \"waiting_room_time\"\n\n")
-		autogenerated_variables_names.write("#define ENTRY_EXIT_FLAG \"entry_exit_flag\"\n\n")
-		autogenerated_variables_names.write("#define WAITING_ROOM_FLAG \"waiting_room_flag\"\n\n")
+		autogenerated_variables_names.write("#define JUST_EXITED_FROM_QUARANTINE \"just_exited_from_quarantine\"\n")
+		autogenerated_variables_names.write("#define WEEK_DAY_FLOW \"week_day_flow\"\n")
+		autogenerated_variables_names.write("#define IN_AN_EVENT \"in_an_event\"\n")
+		autogenerated_variables_names.write("#define ACTUAL_EVENT_NODE \"actual_event_node\"\n")
+		autogenerated_variables_names.write("#define LAST_STEP_MOVE \"last_step_move\"\n")
+		autogenerated_variables_names.write("#define WAITING_ROOM_TIME \"waiting_room_time\"\n")
+		autogenerated_variables_names.write("#define ENTRY_EXIT_FLAG \"entry_exit_flag\"\n")
+		autogenerated_variables_names.write("#define WAITING_ROOM_FLAG \"waiting_room_flag\"\n")
 		autogenerated_variables_names.write("#define NODE_WAITING_FOR \"node_waiting_for\"\n\n")
+		autogenerated_defines.write("#define TOTAL_AGENTS_ESTIMATION " + str(total_agents_estimation) + "\n\n")
 
 		counters = np.zeros(num_counters, dtype=int)
 
-		cuda_rng_offsets_pedestrian = np.zeros(total_agents_overestimation, dtype=int)
+		agents_whatif = pd.DataFrame(WHOLEmodel["agents_whatif"])
+		for col in agents_whatif.columns:
+			for agent_name, _ in agents.items():
+				if col == "Mask":
+					env_mask_type[:, agent_names[agent_name]["ID"]] = [mask_types[mask] for mask in agents_whatif.loc["Type", col][agent_names[agent_name]["ID"]][1:]]
+					env_mask_fraction[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Fraction", col][agent_names[agent_name]["ID"]][1:]
+				if col == "Vaccination":
+					env_vaccination_fraction[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Fraction", col][agent_names[agent_name]["ID"]][1:]
+					env_vaccination_efficacy[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Efficacy", col][agent_names[agent_name]["ID"]][1:]
+					env_vaccination_end_of_immunization_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Coverage Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_vaccination_end_of_immunization_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Coverage Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_vaccination_end_of_immunization_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Coverage Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+				if col == "Swab":
+					env_swab_sensitivity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Sensitivity", col][agent_names[agent_name]["ID"]][1:]
+					env_swab_specificity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Specificity", col][agent_names[agent_name]["ID"]][1:]
+					env_swab_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+					env_swab_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+					env_swab_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+				if col == "Quarantine":
+					env_quarantine_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_sensitivity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Sensitivity", col][agent_names[agent_name]["ID"]][1:]
+					env_quarantine_swab_specificity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Specificity", col][agent_names[agent_name]["ID"]][1:]
+					env_room_for_quarantine_type[:, agent_names[agent_name]["ID"]] = [types_IDs[room.split("-")[0]]["ID"] for room in agents_whatif.loc["Q. Room", col][agent_names[agent_name]["ID"]][1:]]
+					env_room_for_quarantine_area[:, agent_names[agent_name]["ID"]] = [areas[room.split("-")[1]]["ID"] for room in agents_whatif.loc["Q. Room", col][agent_names[agent_name]["ID"]][1:]]
+				if col == "External screening":
+					env_external_screening_first[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["First", col][agent_names[agent_name]["ID"]][1:]
+					env_external_screening_second[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Second", col][agent_names[agent_name]["ID"]][1:]
+
+
+		counters = np.zeros(num_counters, dtype=int)
+		contacts_matrix = np.zeros((total_number_of_agents_types+1, total_number_of_agents_types+1), dtype=int)
+		cuda_rng_offsets_pedestrian = np.zeros(total_agents_estimation, dtype=int)
 		cuda_rng_offsets_room = np.zeros(len(WHOLEmodel["roomsINcanvas"]), dtype=int)
 
-		#setting  resources
+		# Setting resources
 		for v in vlist:
 			if len(v.resources) != 0:
 				global_resources[v.id] = v.resources.loc["MAX", 0]
@@ -688,21 +695,40 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					if agent in v.resources.index:
 						specific_resources[ID][v.id] = v.resources.loc[agent, 0]
 
+		#Setting waiting room both for
+		#det flow
 		for v in vlist:
-			if len(v.waitingroom) != 0:
+			if len(v.waitingroom_det) != 0:
 				for agent, ID in pedestrian_names.items():
-					if agent in v.waitingroom.index:
-						key = v.waitingroom.loc[agent, "Room"]
+					if agent in v.waitingroom_det.index:
+						key = v.waitingroom_det.loc[agent, "Room"]
 						if key == "Same room":
-							alternative_resources_area[ID][v.id] = v.area
-							alternative_resources_type[ID][v.id] = v.type.value
+							alternative_resources_area_det[ID][v.id] = v.area
+							alternative_resources_type_det[ID][v.id] = v.type.value
 						elif key == "Skip room":
-							alternative_resources_area[ID][v.id] = -1
-							alternative_resources_type[ID][v.id] = -1
+							alternative_resources_area_det[ID][v.id] = -1
+							alternative_resources_type_det[ID][v.id] = -1
 						else:
 							type_area = (key.replace(" ", "")).split("-")
-							alternative_resources_type[ID][v.id] = MapEncoding.to_value(type_area[0].upper())
-							alternative_resources_area[ID][v.id] = areas[type_area[1]]["ID"]
+							alternative_resources_type_det[ID][v.id] = MapEncoding.to_value(type_area[0].upper())
+							alternative_resources_area_det[ID][v.id] = areas[type_area[1]]["ID"]
+		
+		for v in vlist:
+			if len(v.waitingroom_rand) != 0:
+				for agent, ID in pedestrian_names.items():
+					if agent in v.waitingroom_rand.index:
+						key = v.waitingroom_rand.loc[agent, "Room"]
+						if key == "Same room":
+							alternative_resources_area_rand[ID][v.id] = v.area
+							alternative_resources_type_rand[ID][v.id] = v.type.value
+						elif key == "Skip room":
+							alternative_resources_area_rand[ID][v.id] = -1
+							alternative_resources_type_rand[ID][v.id] = -1
+						else:
+							type_area = (key.replace(" ", "")).split("-")
+							alternative_resources_type_rand[ID][v.id] = MapEncoding.to_value(type_area[0].upper())
+							alternative_resources_area_rand[ID][v.id] = areas[type_area[1]]["ID"]
+
 		
 		macro_environment_dir = "macro_environment/"
 		os.system("mkdir -p " + macro_environment_dir)
@@ -875,72 +901,205 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			file.write("</ENV_EVENTS_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS_DISTR_SECONDPARAM \"ENV_EVENTS_DISTR_SECONDPARAM\"\n")
 
+		with open(macro_environment_dir + "ENV_VENTILATION.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_VENTILATION>")
+			for i in range(days):
+				for k in range(num_areas):
+					for j in range(num_rooms_types):
+						file.write(str(env_ventilation[i][k][j]) + ("" if((j == num_rooms_types - 1) and (k == num_areas - 1) and (i == days - 1)) else ","))
+			file.write("</ENV_VENTILATION></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_VENTILATION \"ENV_VENTILATION\"\n")
+
 		with open(macro_environment_dir + "ENV_MASK_TYPE.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_MASK_TYPE>" + ','.join(map(str, env_mask_type)) + "</ENV_MASK_TYPE></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_MASK_TYPE>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_mask_type[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_MASK_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_MASK_TYPE \"ENV_MASK_TYPE\"\n")
 
 		with open(macro_environment_dir + "ENV_MASK_FRACTION.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_MASK_FRACTION>" + ','.join(map(str, env_mask_fraction)) + "</ENV_MASK_FRACTION></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_MASK_FRACTION>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_mask_fraction[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_MASK_FRACTION></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_MASK_FRACTION \"ENV_MASK_FRACTION\"\n")
 
 		with open(macro_environment_dir + "ENV_VACCINATION_FRACTION.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_VACCINATION_FRACTION>" + ','.join(map(str, env_vaccination_fraction)) + "</ENV_VACCINATION_FRACTION></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_VACCINATION_FRACTION>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_vaccination_fraction[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_VACCINATION_FRACTION></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_VACCINATION_FRACTION \"ENV_VACCINATION_FRACTION\"\n")
 
 		with open(macro_environment_dir + "ENV_VACCINATION_EFFICACY.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_VACCINATION_EFFICACY>" + ','.join(map(str, env_vaccination_efficacy)) + "</ENV_VACCINATION_EFFICACY></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_VACCINATION_EFFICACY>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_vaccination_efficacy[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_VACCINATION_EFFICACY></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_VACCINATION_EFFICACY \"ENV_VACCINATION_EFFICACY\"\n")
 
+		with open(macro_environment_dir + "ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_vaccination_end_of_immunization_distr[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR \"ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR\"\n")
+
+		with open(macro_environment_dir + "ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_vaccination_end_of_immunization_distr_firstparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM \"ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM\"\n")
+
+		with open(macro_environment_dir + "ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_vaccination_end_of_immunization_distr_secondparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM \"ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM\"\n")
+
+		with open(macro_environment_dir + "ENV_SWAB_SENSITIVITY.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_SWAB_SENSITIVITY>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_swab_sensitivity[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_SWAB_SENSITIVITY></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_SWAB_SENSITIVITY \"ENV_SWAB_SENSITIVITY\"\n")
+
+		with open(macro_environment_dir + "ENV_SWAB_SPECIFICITY.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_SWAB_SPECIFICITY>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_swab_specificity[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_SWAB_SPECIFICITY></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_SWAB_SPECIFICITY \"ENV_SWAB_SPECIFICITY\"\n")
+		
 		with open(macro_environment_dir + "ENV_SWAB_DISTR.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_SWAB_DISTR>" + ','.join(map(str, env_swab_distr)) + "</ENV_SWAB_DISTR></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_SWAB_DISTR>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_swab_distr[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_SWAB_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_SWAB_DISTR \"ENV_SWAB_DISTR\"\n")
 
 		with open(macro_environment_dir + "ENV_SWAB_DISTR_FIRSTPARAM.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_SWAB_DISTR_FIRSTPARAM>" + ','.join(map(str, env_swab_distr_firstparam)) + "</ENV_SWAB_DISTR_FIRSTPARAM></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_SWAB_DISTR_FIRSTPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_swab_distr_firstparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_SWAB_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_SWAB_DISTR_FIRSTPARAM \"ENV_SWAB_DISTR_FIRSTPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_SWAB_DISTR_SECONDPARAM.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_SWAB_DISTR_SECONDPARAM>" + ','.join(map(str, env_swab_distr_secondparam)) + "</ENV_SWAB_DISTR_SECONDPARAM></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_SWAB_DISTR_SECONDPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_swab_distr_secondparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_SWAB_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_SWAB_DISTR_SECONDPARAM \"ENV_SWAB_DISTR_SECONDPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_QUARANTINE_DAYS_DISTR.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR>" + ','.join(map(str, env_quarantine_days_distr)) + "</ENV_QUARANTINE_DAYS_DISTR></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_days_distr[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_DAYS_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_DAYS_DISTR \"ENV_QUARANTINE_DAYS_DISTR\"\n")
 
 		with open(macro_environment_dir + "ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM>" + ','.join(map(str, env_quarantine_days_distr_firstparam)) + "</ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_days_distr_firstparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM \"ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM>" + ','.join(map(str, env_quarantine_days_distr_secondparam)) + "</ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_days_distr_secondparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM \"ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM\"\n")
 
+		with open(macro_environment_dir + "ENV_QUARANTINE_SWAB_SENSITIVITY.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_SENSITIVITY>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_swab_sensitivity[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_SWAB_SENSITIVITY></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_SENSITIVITY \"ENV_QUARANTINE_SWAB_SENSITIVITY\"\n")
+
+		with open(macro_environment_dir + "ENV_QUARANTINE_SWAB_SPECIFICITY.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_SPECIFICITY>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_swab_specificity[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_SWAB_SPECIFICITY></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_SPECIFICITY \"ENV_QUARANTINE_SWAB_SPECIFICITY\"\n")
+
 		with open(macro_environment_dir + "ENV_QUARANTINE_SWAB_DAYS_DISTR.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR>" + ','.join(map(str, env_quarantine_swab_days_distr)) + "</ENV_QUARANTINE_SWAB_DAYS_DISTR></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_swab_days_distr[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_SWAB_DAYS_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_DAYS_DISTR \"ENV_QUARANTINE_SWAB_DAYS_DISTR\"\n")
 
 		with open(macro_environment_dir + "ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM>" + ','.join(map(str, env_quarantine_swab_days_distr_firstparam)) + "</ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_swab_days_distr_firstparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM \"ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM>" + ','.join(map(str, env_quarantine_swab_days_distr_secondparam)) + "</ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_quarantine_swab_days_distr_secondparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM \"ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_ROOM_FOR_QUARANTINE_TYPE.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_ROOM_FOR_QUARANTINE_TYPE>" + ','.join(map(str, env_room_for_quarantine_type)) + "</ENV_ROOM_FOR_QUARANTINE_TYPE></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_ROOM_FOR_QUARANTINE_TYPE>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_room_for_quarantine_type[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_ROOM_FOR_QUARANTINE_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_ROOM_FOR_QUARANTINE_TYPE \"ENV_ROOM_FOR_QUARANTINE_TYPE\"\n")
 
 		with open(macro_environment_dir + "ENV_ROOM_FOR_QUARANTINE_AREA.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_ROOM_FOR_QUARANTINE_AREA>" + ','.join(map(str, env_room_for_quarantine_area)) + "</ENV_ROOM_FOR_QUARANTINE_AREA></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_ROOM_FOR_QUARANTINE_AREA>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_room_for_quarantine_area[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_ROOM_FOR_QUARANTINE_AREA></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_ROOM_FOR_QUARANTINE_AREA \"ENV_ROOM_FOR_QUARANTINE_AREA\"\n")
 
 		with open(macro_environment_dir + "ENV_EXTERNAL_SCREENING_FIRST.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_EXTERNAL_SCREENING_FIRST>" + ','.join(map(str, env_external_screening_first)) + "</ENV_EXTERNAL_SCREENING_FIRST></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_EXTERNAL_SCREENING_FIRST>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_external_screening_first[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_EXTERNAL_SCREENING_FIRST></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EXTERNAL_SCREENING_FIRST \"ENV_EXTERNAL_SCREENING_FIRST\"\n")
 
 		with open(macro_environment_dir + "ENV_EXTERNAL_SCREENING_SECOND.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_EXTERNAL_SCREENING_SECOND>" + ','.join(map(str, env_external_screening_second)) + "</ENV_EXTERNAL_SCREENING_SECOND></macro_environment></states>\n")
+			file.write("<states><macro_environment><ENV_EXTERNAL_SCREENING_SECOND>")
+			for k in range(days):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(env_external_screening_second[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+			file.write("</ENV_EXTERNAL_SCREENING_SECOND></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EXTERNAL_SCREENING_SECOND \"ENV_EXTERNAL_SCREENING_SECOND\"\n")
 
 		with open(macro_environment_dir + "INITIAL_INFECTED.xml", "w") as file:
@@ -950,8 +1109,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		with open(macro_environment_dir + "NUMBER_OF_AGENTS_BY_TYPE.xml", "w") as file:
 			file.write("<states><macro_environment><NUMBER_OF_AGENTS_BY_TYPE>" + ','.join(map(str, number_of_agents_by_type)) + "</NUMBER_OF_AGENTS_BY_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define NUMBER_OF_AGENTS_BY_TYPE \"NUMBER_OF_AGENTS_BY_TYPE\"\n")
-
-		#autogenerated_variables_names.write("#define NUMBER_OF_STEPS_CONTACTS \"NUMBER_OF_STEPS_CONTACTS\"\n")
 
 		with open(macro_environment_dir + "COMPARTMENTAL_MODEL.xml", "w") as file:
 			file.write("<states><macro_environment><COMPARTMENTAL_MODEL>" + ','.join(map(str, compartmental_model)) + "</COMPARTMENTAL_MODEL></macro_environment></states>\n")
@@ -985,25 +1142,51 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			file.write("</SPECIFIC_RESOURCES_COUNTER></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define SPECIFIC_RESOURCES_COUNTER \"SPECIFIC_RESOURCES_COUNTER\"\n")
 
-		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_TYPE.xml", "w") as file:
-			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_TYPE>")
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_TYPE_DET.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_TYPE_DET>")
 			for k in range(total_number_of_agents_types):
 				for j in range(len(vlist)):
-					file.write(str(alternative_resources_type[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
-			file.write("</ALTERNATIVE_RESOURCES_TYPE></macro_environment></states>\n")
-		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_TYPE \"ALTERNATIVE_RESOURCES_TYPE\"\n")
+					file.write(str(alternative_resources_type_det[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_TYPE_DET></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_TYPE_DET \"ALTERNATIVE_RESOURCES_TYPE_DET\"\n")
 
-		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_AREA.xml", "w") as file:
-			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_AREA>")
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_AREA_DET.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_AREA_DET>")
 			for k in range(total_number_of_agents_types):
 				for j in range(len(vlist)):
-					file.write(str(alternative_resources_area[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
-			file.write("</ALTERNATIVE_RESOURCES_AREA></macro_environment></states>\n")
-		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_AREA \"ALTERNATIVE_RESOURCES_AREA\"\n")
+					file.write(str(alternative_resources_area_det[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_AREA_DET></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_AREA_DET \"ALTERNATIVE_RESOURCES_AREA_DET\"\n")
+
+
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_TYPE_RAND.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_TYPE_RAND>")
+			for k in range(total_number_of_agents_types):
+				for j in range(len(vlist)):
+					file.write(str(alternative_resources_type_rand[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_TYPE_RAND></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_TYPE_RAND \"ALTERNATIVE_RESOURCES_TYPE_RAND\"\n")
+
+		with open(macro_environment_dir + "ALTERNATIVE_RESOURCES_AREA_RAND.xml", "w") as file:
+			file.write("<states><macro_environment><ALTERNATIVE_RESOURCES_AREA_RAND>")
+			for k in range(total_number_of_agents_types):
+				for j in range(len(vlist)):
+					file.write(str(alternative_resources_area_rand[k][j]) + ("" if((k == total_number_of_agents_types - 1) and (j == len(vlist) - 1)) else ","))
+			file.write("</ALTERNATIVE_RESOURCES_AREA_RAND></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ALTERNATIVE_RESOURCES_AREA_RAND \"ALTERNATIVE_RESOURCES_AREA_RAND\"\n")
+
 
 		with open(macro_environment_dir + "COUNTERS.xml", "w") as file:
 			file.write("<states><macro_environment><COUNTERS>" + ','.join(map(str, counters)) + "</COUNTERS></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define COUNTERS \"COUNTERS\"\n")
+
+		with open(macro_environment_dir + "CONTACTS_MATRIX.xml", "w") as file:
+			file.write("<states><macro_environment><CONTACTS_MATRIX>")
+			for k in range(total_number_of_agents_types+1):
+				for j in range(total_number_of_agents_types+1):
+					file.write(str(contacts_matrix[k][j]) + ("" if((k == total_number_of_agents_types) and (j == total_number_of_agents_types)) else ","))
+			file.write("</CONTACTS_MATRIX></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define CONTACTS_MATRIX \"CONTACTS_MATRIX\"\n")
 
 		with open(macro_environment_dir + "CUDA_RNG_OFFSETS_PEDESTRIAN.xml", "w") as file:
 			file.write("<states><macro_environment><CUDA_RNG_OFFSETS_PEDESTRIAN>" + ','.join(map(str, cuda_rng_offsets_pedestrian)) + "</CUDA_RNG_OFFSETS_PEDESTRIAN></macro_environment></states>\n")
@@ -1025,8 +1208,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		inhalation_rate_pure = 0.521
 		risk_const = disease["beta_aerosol"][0]
 
-		sensitivity_swab = float(whatif["swab_sensitivity"][0])
-		specificity_swab = float(whatif["swab_specificity"][0])
 		virus_severity = float(WHOLEmodel["virus_severity"][0])
 		
 		nrun = int(WHOLEmodel["starting"][0]["nrun"])
@@ -1071,8 +1252,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				configuration_file.write("\t\t\t\t\"INHALATION_RATE_PURE\": " + str(inhalation_rate_pure) + ",\n")
 				configuration_file.write("\t\t\t\t\"RISK_CONST\": " + str(risk_const) + ",\n")
 				configuration_file.write("\t\t\t\t\"PERC_INF\": [" + ','.join(map(str, perc_inf_df.loc[:, "percentage_infected"])) + "],\n")
-				configuration_file.write("\t\t\t\t\"SENSITIVITY_SWAB\": " + str(sensitivity_swab) + ",\n")
-				configuration_file.write("\t\t\t\t\"SPECIFICITY_SWAB\": " + str(specificity_swab) + ",\n")
 				configuration_file.write("\t\t\t\t\"VIRUS_SEVERITY\": " + str(virus_severity) + ",\n")
 				configuration_file.write("\t\t\t\t\"RUN_IDX\": " + str(run) + "\n")
 				configuration_file.write("\t\t\t}\n")
@@ -1123,8 +1302,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			configuration_file.write("\t\t<INHALATION_RATE_PURE>" + str(inhalation_rate_pure) + "</INHALATION_RATE_PURE>\n")
 			configuration_file.write("\t\t<RISK_CONST>" + str(risk_const) + "</RISK_CONST>\n")
 			configuration_file.write("\t\t<PERC_INF>" + ','.join(map(str, perc_inf_df.loc[:, "percentage_infected"])) + "</PERC_INF>\n")
-			configuration_file.write("\t\t<SENSITIVITY_SWAB>" + str(sensitivity_swab) + "</SENSITIVITY_SWAB>\n")
-			configuration_file.write("\t\t<SPECIFICITY_SWAB>" + str(specificity_swab) + "</SPECIFICITY_SWAB>\n")
 			configuration_file.write("\t\t<VIRUS_SEVERITY>" + str(virus_severity) + "</VIRUS_SEVERITY>\n")
 			configuration_file.write("\t\t<RUN_IDX>0</RUN_IDX>\n")
 			configuration_file.write("\t</environment>\n")
@@ -1160,8 +1337,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define INHALATION_RATE_PURE \"INHALATION_RATE_PURE\"\n")
 		autogenerated_variables_names.write("#define RISK_CONST \"RISK_CONST\"\n")
 		autogenerated_variables_names.write("#define PERC_INF \"PERC_INF\"\n")
-		autogenerated_variables_names.write("#define SENSITIVITY_SWAB \"SENSITIVITY_SWAB\"\n")
-		autogenerated_variables_names.write("#define SPECIFICITY_SWAB \"SPECIFICITY_SWAB\"\n")
 		autogenerated_variables_names.write("#define VIRUS_SEVERITY \"VIRUS_SEVERITY\"\n")
 		autogenerated_variables_names.write("#define RUN_IDX \"RUN_IDX\"\n")
 
@@ -1212,8 +1387,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		autogenerated_defines.write("\n")
 
-		autogenerated_defines.write("#define YEXTERN " + str(int(entrance_y_coords)) + "\n")
-		autogenerated_defines.write("#define AREAS_LENGTH " + str(areas_len_flows) + "\n\n")
+		autogenerated_defines.write("#define NUM_AREAS " + str(areas_len_flows) + "\n\n")
+
+		autogenerated_defines.write("#define YEXTERN " + str(int(entrance_y_coords)) + "\n\n")
 
 		autogenerated_defines.write("#define MINOR 0\n")
 		autogenerated_defines.write("#define MAJOR 1\n\n")
@@ -1225,10 +1401,11 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_defines.write("#define NO_QUARANTINE -1\n")
 		autogenerated_defines.write("#define NO_QUARANTINE_SWAB -1\n\n")
 
-		autogenerated_defines.write("#define INSIDE_WAITING_ROOM 1\n")
 		autogenerated_defines.write("#define OUTSIDE_WAITING_ROOM 0\n")
+		autogenerated_defines.write("#define INSIDE_WAITING_ROOM 1\n\n")
+
 		autogenerated_defines.write("#define STAYING_IN_WAITING_ROOM 0\n")
-		autogenerated_defines.write("#define EXITING_FROM_WAITING_ROOM 1\n")
+		autogenerated_defines.write("#define EXITING_FROM_WAITING_ROOM 1\n\n")
 
 		autogenerated_defines.write("#define NUM_COUNTERS " + str(num_counters) + "\n")
 		autogenerated_defines.write("#define COUNTERS_CREATED_AGENTS_WITH_RATE 0\n")
@@ -1253,9 +1430,10 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_defines.write("#define PEDESTRIAN_SWAB_DISTR_IDX 8\n")
 		autogenerated_defines.write("#define PEDESTRIAN_HOURS_SCHEDULE_DISTR_IDX 9\n")
 		autogenerated_defines.write("#define PEDESTRIAN_END_OF_IMMUNIZATION_DISTR_IDX 10\n")
-		autogenerated_defines.write("#define PEDESTRIAN_INFECTION_DISTR_IDX 11\n")
-		autogenerated_defines.write("#define PEDESTRIAN_FATALITY_DISTR_IDX 12\n")
-		autogenerated_defines.write("#define PEDESTRIAN_INCUBATION_DISTR_IDX 13\n\n")
+		autogenerated_defines.write("#define PEDESTRIAN_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX 11\n")
+		autogenerated_defines.write("#define PEDESTRIAN_INFECTION_DISTR_IDX 12\n")
+		autogenerated_defines.write("#define PEDESTRIAN_FATALITY_DISTR_IDX 13\n")
+		autogenerated_defines.write("#define PEDESTRIAN_INCUBATION_DISTR_IDX 14\n\n")
 
 		autogenerated_defines.write("#define HOST_UNIFORM_0_1_DISTR_IDX 0\n")
 		autogenerated_defines.write("#define HOST_RATE_DISTR_IDX 1\n")
@@ -1265,8 +1443,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_defines.write("#define HOST_FLOW_DISTR_IDX 5\n")
 		autogenerated_defines.write("#define HOST_HOURS_SCHEDULE_DISTR_IDX 6\n")
 		autogenerated_defines.write("#define HOST_END_OF_IMMUNIZATION_DISTR_IDX 7\n")
-		autogenerated_defines.write("#define HOST_INFECTION_DISTR_IDX 8\n")
-		autogenerated_defines.write("#define HOST_FATALITY_DISTR_IDX 9\n")
+		autogenerated_defines.write('#define HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX 8\n')
+		autogenerated_defines.write("#define HOST_INFECTION_DISTR_IDX 9\n")
+		autogenerated_defines.write("#define HOST_FATALITY_DISTR_IDX 10\n")
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -1275,9 +1454,12 @@ def main():
 	parser.add_argument('-checkpoint', type=str, help='Checkpoint simulation?')
 	args = parser.parse_args()
 
+<<<<<<< HEAD
 
 	total_agents_overestimation = 10000
 	solution_length = 50
+=======
+>>>>>>> merge_whatifandresources
 	num_counters = 5
 	y_offset = 10
 
@@ -1335,9 +1517,11 @@ def main():
 			autogenerated_defines.write("#ifndef _AUTOGENERATED_DEFINES_CUH_\n")
 			autogenerated_defines.write("#define _AUTOGENERATED_DEFINES_CUH_\n\n")
 
-			autogenerated_defines.write("#define NUM_ROOMS_TYPES 2\n")
+			autogenerated_defines.write("#define NUM_ROOMS_OBJ_TYPES 2\n")
 			autogenerated_defines.write("#define ROOMS {\"room\", \"fillingroom\"}\n\n")
 			autogenerated_defines.write("#define NUM_ROOMS " + str(len(WHOLEmodel["roomsINcanvas"])) + "\n")
+
+			autogenerated_defines.write("#define NUM_ROOMS_TYPES " + str(len(WHOLEmodel["types"]) + 4) + "\n")
 
 			color = WHOLEmodel["color"][0]
 
@@ -1350,8 +1534,6 @@ def main():
 			else:
 				autogenerated_defines.write("#define NUM_COLORS " + str(len(areas.keys())) + "\n")
 				autogenerated_defines.write("#define COLORS {" + ', '.join(map(str, ["visualiser::Color{" + str(value["RGB"][0]) + ", " + str(value["RGB"][1]) + ", " + str(value["RGB"][2]) + "}" for _, value in areas.items()])) + "}\n\n")
-
-			autogenerated_defines.write("#define SOLUTION_LENGTH " + str(solution_length) + "\n\n")
 
 			autogenerated_defines.write("#define STEP " + str(step) + "\n")
 			autogenerated_defines.write("#define START_STEP_TIME " + str(int(start_step_time)) + "\n")
@@ -1378,7 +1560,7 @@ def main():
 			environment_dimensions = (int(canvas_dimensions["x"]), (len(floors_IDs) + 1) * y_offset, int(canvas_dimensions["z"]))
 
 			generate_xml(input_file, seed, rooms_info, areas, pedestrian_names, agents, args.ensemble, args.checkpoint,
-						environment_dimensions, total_agents_overestimation, solution_length, y_offset, args.dirname_experiment + "/",
+						environment_dimensions, y_offset, args.dirname_experiment + "/",
 						WHOLEmodel,	autogenerated_defines, autogenerated_variables_names, days, floors_IDs, types_IDs,
 						steps_in_a_day, steps_in_a_hour, steps_in_a_minute, init_week_day, start_step_time, num_counters)
 

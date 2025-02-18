@@ -125,15 +125,23 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_EVENTS_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_EVENTS_DISTR_SECONDPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_MASK_TYPE, string("resources/macro_environment/") + ENV_MASK_TYPE + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_VENTILATION, string("resources/macro_environment/") + ENV_VENTILATION + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_MASK_FRACTION, string("resources/macro_environment/") + ENV_MASK_FRACTION + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_FRACTION, string("resources/macro_environment/") + ENV_VACCINATION_FRACTION + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_EFFICACY, string("resources/macro_environment/") + ENV_VACCINATION_EFFICACY + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR, string("resources/macro_environment/") + ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_SWAB_SENSITIVITY, string("resources/macro_environment/") + ENV_SWAB_SENSITIVITY + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_SWAB_SPECIFICITY, string("resources/macro_environment/") + ENV_SWAB_SPECIFICITY + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_SWAB_DISTR, string("resources/macro_environment/") + ENV_SWAB_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_SWAB_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_SWAB_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_SWAB_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_SWAB_DISTR_SECONDPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_DAYS_DISTR, string("resources/macro_environment/") + ENV_QUARANTINE_DAYS_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_SENSITIVITY, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_SENSITIVITY + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_SPECIFICITY, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_SPECIFICITY + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_DAYS_DISTR, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_DAYS_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM + ".xml");
@@ -149,11 +157,14 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(GLOBAL_RESOURCES_COUNTER, string("resources/macro_environment/") + GLOBAL_RESOURCES_COUNTER + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES, string("resources/macro_environment/") + SPECIFIC_RESOURCES + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES_COUNTER, string("resources/macro_environment/") + SPECIFIC_RESOURCES_COUNTER + ".xml"); 
-        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE + ".xml");
-        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_DET + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA_DET + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_RAND, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_RAND + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA_RAND, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA_RAND + ".xml");
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_PEDESTRIAN, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_PEDESTRIAN + ".xml");
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_ROOM, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_ROOM + ".xml");
 
+        
 
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Ending macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
@@ -167,41 +178,44 @@ namespace host_functions {
 #ifdef DEBUG
         printf("[DEBUG],%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
-        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
         auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
         auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
         auto env_flow_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
         auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
-        auto env_mask_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
-        auto env_mask_fraction = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
-        auto env_vaccination_fraction = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
-        auto env_vaccination_efficacy = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_EFFICACY);
-        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
-        auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
-        auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
+        auto env_mask_type = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
+        auto env_mask_fraction = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
+        auto env_vaccination_fraction = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
+        auto env_vaccination_efficacy = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_EFFICACY);
+        auto env_vaccination_end_of_immunization_distr = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR);
+        auto env_vaccination_end_of_immunization_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM);
+        auto env_vaccination_end_of_immunization_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM);
+        auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
+        auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
+        auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
         auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
         auto initial_infected = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(INITIAL_INFECTED);
         auto number_of_agents_by_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(NUMBER_OF_AGENTS_BY_TYPE);
 
         // Generate initial infected agents
         vector<int> selectedIndices;
+        vector<int> availableIndices;
         unsigned short init_i = 0;
         unsigned short final_i = NUMBER_OF_AGENTS_TYPES_PLUS_1-1;
-        if((int) initial_infected[NUMBER_OF_AGENTS_TYPES] > 0){
-            init_i = NUMBER_OF_AGENTS_TYPES_PLUS_1-1;
-            final_i = NUMBER_OF_AGENTS_TYPES_PLUS_1;
-        }
 
+        // Handle Global and Specific
+        int totalAgents = 0;
         for (unsigned short i = init_i; i < final_i; i++) {
             int numInfected = (int) initial_infected[i];
-            int totalAgents = (int) number_of_agents_by_type[i];
+            int totalAgentsByType = (int) number_of_agents_by_type[i];
+            totalAgents += totalAgentsByType;
 
             // Generate all possible indices for the current type
-            vector<int> indices(totalAgents);
+            vector<int> indices(totalAgentsByType);
             iota(indices.begin(), indices.end(), 0);
 
             // Shuffle and pick the first `numInfected` indices
@@ -211,6 +225,22 @@ namespace host_functions {
             // Append selected indices to the result
             selectedIndices.insert(selectedIndices.end(), indices.begin(), indices.end());
         }
+
+        // Handle Random
+        // Generate all possible indices, excluding already selected ones
+        for (int i = 0; i < totalAgents; i++) {
+            if (find(selectedIndices.begin(), selectedIndices.end(), i) != selectedIndices.end()) { // Exclude already selected
+                availableIndices.push_back(i);
+            }
+        }
+
+        // Shuffle and pick `n` random indices
+        shuffle(availableIndices.begin(), availableIndices.end(), host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]);
+        availableIndices.resize(initial_infected[NUMBER_OF_AGENTS_TYPES_PLUS_1-1]); // Keep only `n` elements
+
+        // Append new indices to `selectedIndices`
+        selectedIndices.insert(selectedIndices.end(), availableIndices.begin(), availableIndices.end());
+
         xml_document doc_agents;
         doc_agents.load_file("resources/agents_file.xml");
 
@@ -246,11 +276,11 @@ namespace host_functions {
                 
                 float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
                 float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
-                unsigned short end_of_immunization_days = 0;
-                if(random < (float) env_vaccination_fraction[agent_type] && random_efficacy < (float) env_vaccination_efficacy[agent_type]){
+                unsigned short vaccination_end_of_immunization_days = 0;
+                if(random < (float) env_vaccination_fraction[0][agent_type] && random_efficacy < (float) env_vaccination_efficacy[0][agent_type]){
                     new_agent_state = RECOVERED;
 #ifdef REINFECTION
-                    end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_END_OF_IMMUNIZATION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_END_OF_IMMUNIZATION_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_END_OF_IMMUNIZATION_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_END_OF_IMMUNIZATION_DAYS, 2), false)));
+                    vaccination_end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][agent_type], (int) env_vaccination_end_of_immunization_distr_firstparam[0][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[0][agent_type], false)));
 #endif
                 }
 
@@ -272,15 +302,15 @@ namespace host_functions {
                 new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
                 new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
                 new_pedestrian.setVariable<int>(AGENT_TYPE, agent_type);
-                new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[agent_type]) ? (int) env_mask_type[agent_type]: NO_MASK);
-                new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, end_of_immunization_days);
+                new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[0][agent_type]) ? (int) env_mask_type[0][agent_type]: NO_MASK);
+                new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                 new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
                 new_pedestrian.setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
                 new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, weekday_agent);
 
                 int swab_steps = -1;
-                if((int) env_swab_distr[agent_type] != NO_SWAB)
-                    swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[agent_type], true));
+                if((int) env_swab_distr[0][agent_type] != NO_SWAB)
+                    swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[0][agent_type], true));
                 new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
                 const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (int) env_flow_distr_firstparam[agent_type][weekday_agent][0], (int) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
@@ -292,6 +322,8 @@ namespace host_functions {
                 new_pedestrian.setVariable<int>(WAITING_ROOM_TIME, 0);
                 new_pedestrian.setVariable<int>(WAITING_ROOM_FLAG, 0);
                 new_pedestrian.setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
+                new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
+                new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
                 num_seird[new_agent_state]++;
                 
@@ -319,8 +351,8 @@ namespace host_functions {
                 unsigned char init_room = (unsigned char) xagent.child("init_room").text().as_int();
                 int area = xagent.child("area").text().as_int();
                 int color_id = xagent.child("color_id").text().as_int();
+                int type = xagent.child("type").text().as_int();
                 float volume = xagent.child("volume").text().as_float();
-                float ventilation = xagent.child("ventilation").text().as_float();
                 float room_quanta_concentration = xagent.child("room_quanta_concentration").text().as_float();
                 unsigned short x_center = (unsigned short) xagent.child("x_center").text().as_int();
                 unsigned short y_center = (unsigned short) xagent.child("y_center").text().as_int();
@@ -339,9 +371,10 @@ namespace host_functions {
                 new_room.setVariable<unsigned char>(INIT_ROOM, init_room);
                 new_room.setVariable<int>(AREA, area);
                 new_room.setVariable<int>(COLOR_ID, color_id);
+                new_room.setVariable<int>(TYPE, type);
+
                 if(name != FILLINGROOM_AGENT_STRING){
                     new_room.setVariable<float>(VOLUME, volume);
-                    new_room.setVariable<float>(VENTILATION, ventilation);
                     new_room.setVariable<float>(ROOM_QUANTA_CONCENTRATION, room_quanta_concentration);
                     new_room.setVariable<unsigned short>(X_CENTER, x_center);
                     new_room.setVariable<unsigned short>(Y_CENTER, y_center);
@@ -377,11 +410,21 @@ namespace host_functions {
     /** 
      * Update the simulation day and log.
     */
-    FLAMEGPU_STEP_FUNCTION(updateDay) {
-        if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
+    FLAMEGPU_STEP_FUNCTION(updateDayAndLog) {
 #ifdef DEBUG
-            printf("[DEBUG],%d,%d,Beginning updateDay for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+        printf("[DEBUG],%d,%d,Beginning updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
+        if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_HOUR)){
+            auto contacts_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
+
+            for(int i=0;i<NUMBER_OF_AGENTS_TYPES;i++){
+                for(int j=0;j<=i;j++){
+                    printf("[CONTACTS_MATRIX],%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
+                }
+            }
+        }
+
+        if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
             unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY) + 1;
             unsigned short week_day = (FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY) + 1) % DAYS_IN_A_WEEK;
             
@@ -422,10 +465,10 @@ namespace host_functions {
 
             counters_file << endl;
             counters_file.close();
-#ifdef DEBUG
-            printf("[DEBUG],%d,%d,Ending updateDay for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
-#endif
         }
+#ifdef DEBUG
+        printf("[DEBUG],%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
+#endif
     }
 
     /** 
@@ -441,22 +484,25 @@ namespace host_functions {
             
             short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID);
 
-            auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-            auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-            auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-            auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, SOLUTION_LENGTH>(STAY);
+            auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+            auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+            auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+            auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
             auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
             auto env_rate_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR);
             auto env_rate_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR_FIRSTPARAM);
             auto env_rate_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR_SECONDPARAM);
-            auto env_mask_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
-            auto env_mask_fraction = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
-            auto env_vaccination_fraction = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
-            auto env_vaccination_efficacy = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_EFFICACY);
-            auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
-            auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
-            auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
+            auto env_mask_type = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
+            auto env_mask_fraction = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
+            auto env_vaccination_fraction = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
+            auto env_vaccination_efficacy = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_EFFICACY);
+            auto env_vaccination_end_of_immunization_distr = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR);
+            auto env_vaccination_end_of_immunization_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM);
+            auto env_vaccination_end_of_immunization_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM);
+            auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
+            auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
+            auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
             for(int i = NUMBER_OF_AGENTS_TYPES_WITHOUT_A_RATE; i < NUMBER_OF_AGENTS_TYPES; i++){
@@ -475,11 +521,11 @@ namespace host_functions {
 
                         float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
                         float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
-                        unsigned short end_of_immunization_days = 0;
+                        unsigned short vaccination_end_of_immunization_days = 0;
                         if(random < (float) env_vaccination_fraction[i] && random_efficacy < (float) env_vaccination_efficacy[i]){
                             new_agent_state = RECOVERED;
 #ifdef REINFECTION
-                            end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_END_OF_IMMUNIZATION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_END_OF_IMMUNIZATION_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_END_OF_IMMUNIZATION_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_END_OF_IMMUNIZATION_DAYS, 2), true);
+                            vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][agent_type], (int) env_vaccination_end_of_immunization_distr_firstparam[0][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[0][agent_type], true);
 #endif
                         }
 
@@ -494,9 +540,9 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned short>(FLOW_INDEX, week_day * SOLUTION_LENGTH);
                         new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
-                        new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[i]) ? (int) env_mask_type[i]: NO_MASK);
+                        new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[0][i]) ? (int) env_mask_type[0][i]: NO_MASK);
                         new_pedestrian.setVariable<int>(AGENT_TYPE, i);
-                        new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, end_of_immunization_days);
+                        new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                         new_pedestrian.setVariable<unsigned short>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned short>(SEVERITY, MINOR);
                         new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
@@ -504,8 +550,8 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
 
                         int swab_steps = -1;
-                        if((int) env_swab_distr[i] != NO_SWAB)
-                            swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[i], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[i], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[i], true));
+                        if((int) env_swab_distr[0][i] != NO_SWAB)
+                            swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][i], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[0][i], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[0][i], true));
 
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
@@ -516,6 +562,7 @@ namespace host_functions {
                         intermediate_target_y[contacts_id][0] = y;
                         intermediate_target_z[contacts_id][0] = z;
                         new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
+                        new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
                         contacts_id = contacts_id + 1;
                         num_seird[new_agent_state]++;
@@ -540,7 +587,6 @@ namespace host_functions {
         printf("[DEBUG],%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getStepCounter());
 #endif
         // Log the environment macro properties
-        //auto number_of_steps_contacts = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_OVERESTIMATION, TOTAL_AGENTS_OVERESTIMATION>(NUMBER_OF_STEPS_CONTACTS);
         auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
@@ -573,15 +619,6 @@ namespace host_functions {
         }
         counters_file << endl;
         counters_file.close();
-
-        // filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/number_of_steps_contacts.csv";
-        // ofstream number_of_steps_contacts_file(filename.c_str(), ofstream::out);
-        // for (int i = 0; i < TOTAL_AGENTS_OVERESTIMATION; i++) {
-        //    for (int j = 0; j < TOTAL_AGENTS_OVERESTIMATION; j++)
-        //        number_of_steps_contacts_file << number_of_steps_contacts[i][j] <<',';
-        //    number_of_steps_contacts_file << '\n';
-        // }
-        // number_of_steps_contacts_file.close();
 
         filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/host_rng_state.txt";
         ofstream rng_state(filename.c_str(), ofstream::out);
