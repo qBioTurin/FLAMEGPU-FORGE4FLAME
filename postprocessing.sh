@@ -77,14 +77,12 @@ for input_file in *.csv; do
             dir_name = "seed" col2
             dir_name_no_spaces = gensub(/[[:space:]]/, "", "g", dir_name)
 
-            system("rm -f \"" dir_name_no_spaces "/" col1 ".csv\"")
-
             # Check if the directory exists in the pre-checked list (using the no-space version)
             if (dir_name_no_spaces in dir_exists) {
                 # Prepare to print all columns from the third column onward, keeping commas
                 line = ""
                 for (i=3; i<=NF; i++) {
-                    if (i > 2) {
+                    if (i > 3) {
                         line = line "," $i
                     } else {
                         line = $i
@@ -104,9 +102,9 @@ for input_file in *.csv; do
     fi
 done
 
-cd ../../resources
-
 rm simulation.csv
+
+cd ../../resources
 
 # python postprocessing.py -experiment_dirs $EXPERIMENT_DIR
 # python barplot.py -experiment_dirs AlarmSurgical20FromDay4 AlarmSurgical40FromDay4 AlarmSurgical80FromDay4 AlarmFFP220FromDay4 AlarmFFP240FromDay4 AlarmFFP280FromDay4 \
