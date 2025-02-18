@@ -26,10 +26,10 @@ namespace host_functions {
     float cuda_host_rng(HostAPI* FLAMEGPU, unsigned short distribution_id, int type, int a, int b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? normal_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]): uniform_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]);
 
-        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10)){
+        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
             do{
                 random = uniform_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]);
-            }while(compare_float((double) random, 1.0f, 1e-10));
+            }while(compare_float((double) random, 1.0f, 1e-10f));
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
@@ -419,7 +419,8 @@ namespace host_functions {
 
             for(int i=0;i<NUMBER_OF_AGENTS_TYPES;i++){
                 for(int j=0;j<=i;j++){
-                    printf("2,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
+                    if((unsigned int) contacts_matrix[i][j] != 0)
+                        printf("2,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
                 }
             }
         }
@@ -547,7 +548,6 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned short>(SEVERITY, MINOR);
                         new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
                         new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, week_day);
-                        new_pedestrian.setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
 
                         int swab_steps = -1;
                         if((int) env_swab_distr[0][i] != NO_SWAB)

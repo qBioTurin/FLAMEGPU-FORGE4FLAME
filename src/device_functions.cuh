@@ -20,10 +20,10 @@ namespace device_functions {
     FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, int a, int b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
         
-        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10)){
+        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
             do{
                 random = curand_uniform(&cuda_states[id]);
-            }while(compare_float((double) random, 1.0f, 1e-10));
+            }while(compare_float((double) random, 1.0f, 1e-10f));
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
@@ -41,10 +41,10 @@ namespace device_functions {
     FLAMEGPU_DEVICE_FUNCTION float cuda_room_rng(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, int a, int b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
 
-        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10)){
+        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
             do{
                 random = curand_uniform(&cuda_states[id]);
-            }while(compare_float((double) random, 1.0f, 1e-10));
+            }while(compare_float((double) random, 1.0f, 1e-10f));
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
@@ -859,8 +859,7 @@ namespace device_functions {
 
         float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
 
-        printf("0,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,0,1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), (int) agent_pos[0], (int) agent_pos[1], (int) agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW), FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX), FLAMEGPU->getStepCounter() - FLAMEGPU->getVariable<unsigned int>(LAST_STEP_MOVE));
-        FLAMEGPU->setVariable<unsigned int>(LAST_STEP_MOVE, FLAMEGPU->getStepCounter());
+        printf("0,%d,%d,%d,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), (int) agent_pos[0], (int) agent_pos[1], (int) agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
 
         if(quarantine_node != extern_node)
             FLAMEGPU->setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 1);
