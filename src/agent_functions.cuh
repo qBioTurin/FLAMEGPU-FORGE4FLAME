@@ -90,7 +90,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         if(disease_state == SUSCEPTIBLE && random < ((float) env_vaccination_fraction[day-1][agent_type]) && random_efficacy < ((float) env_vaccination_efficacy[day-1][agent_type])){
             disease_state = RECOVERED;
 #ifdef REINFECTION
-            unsigned short vaccination_end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[day-1][agent_type], (int) env_vaccination_end_of_immunization_distr_firstparam[day-1][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[day-1][agent_type], false)));
+            unsigned short vaccination_end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_vaccination_end_of_immunization_distr[day-1][agent_type], contacts_id, (int) env_vaccination_end_of_immunization_distr_firstparam[day-1][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[day-1][agent_type], false)));
             FLAMEGPU->setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
 #endif
             FLAMEGPU->setVariable<int>(DISEASE_STATE, disease_state);
