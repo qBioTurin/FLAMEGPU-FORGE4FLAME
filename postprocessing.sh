@@ -61,74 +61,77 @@ for input_file in *.csv; do
         # Use awk, passing the list of existing directories (without spaces)
         awk -v existing_dirs="$existing_dirs" -F, '
         BEGIN {
-            # Read the single seed value from seed.txt
+            # Read the seed value from seed.txt (a single numeric value)
             getline seed_offset < "seed.txt"
-            seed_offset += 0  # Ensure it is treated as a number
+            seed_offset += 0
             close("seed.txt")
 
-            # Parse existing_dirs into an array for quick lookup
+            # Build a lookup of existing directory names (assumed space-separated in existing_dirs)
             split(existing_dirs, dirs, " ")
-            for (i in dirs) {
+            for (i in dirs)
                 dir_exists[dirs[i]] = 1
-            }
 
-            # Define mapping for col1 values
+            # Map the numeric code in column 1 to a category label
             mapping[0] = "AGENT_POSITION_AND_STATUS"
             mapping[1] = "CONTACT"
             mapping[2] = "CONTACTS_MATRIX"
             mapping[3] = "AEROSOL"
             mapping[4] = "INFO"
-            mapping[5] = "DEBUG"
+            mapping[5] = "DEBUG"   # This example does not enforce a column count for DEBUG
+
+            # Define the expected number of columns for each category
+            expected["AGENT_POSITION_AND_STATUS"] = 9
+            expected["CONTACT"] = 6
+            expected["CONTACTS_MATRIX"] = 6
+            expected["AEROSOL"] = 5
+            expected["INFO"] = 4
         }
         {
-            # Extract columns
             col1 = $1
             col2 = $2
 
-            # Add the seed value from seed.txt to col2
-            col2 = col2 + seed_offset
-
-            # Ensure col1 is within the expected range
+            # Only process if col1 maps to a known category
             if (!(col1 in mapping)) {
                 print "Unexpected value in col1: " col1 ". Skipping..."
                 next
             }
+            category = mapping[col1]
 
-            # Map col1 value to its corresponding label
-            mapped_col1 = mapping[col1]
-            gsub(/\[|\]/, "", mapped_col1)
+            # If the category has an expected column count, verify it
+            if ((category in expected) && (NF != expected[category])) {
+                print "Skipping line due to incorrect column count for " category ": " $0 " (" NF " fields, expected " expected[category] ")" > "/dev/stderr"
+                next
+            }
 
-            # Construct the directory name from col2 and remove any spaces
+            # Adjust col2 by adding the seed offset
+            col2 = col2 + seed_offset
+
+            # Build the directory name from col2 (removing any spaces)
             dir_name = "seed" col2
             dir_name_no_spaces = gensub(/[[:space:]]/, "", "g", dir_name)
 
-            # Check if the directory exists in the pre-checked list
-            if (dir_name_no_spaces in dir_exists) {
-                # Concatenate columns 3 onward into a single line
-                line = ""
-                for (i = 3; i <= NF; i++) {
-                    line = (i == 3 ? $i : line "," $i)
-                }
-
-                # Construct the output file path
-                out_file = dir_name_no_spaces "/" mapped_col1 ".csv"
-                # Write the processed line to the file
-                print line >> out_file
-            } else {
-                print "Directory " dir_name_no_spaces " does not exist. Skipping..."
+            # Only process if the directory exists in the pre-checked list
+            if (!(dir_name_no_spaces in dir_exists)) {
+                print "Directory " dir_name_no_spaces " does not exist. Skipping..." > "/dev/stderr"
+                next
             }
-        }' "$input_file"
+
+            # Concatenate columns 3 through NF into a single comma-separated string
+            line = ""
+            for (i = 3; i <= NF; i++) {
+                line = (i == 3 ? $i : line "," $i)
+            }
+
+            # Define the output file path and write the processed line
+            out_file = dir_name_no_spaces "/" category ".csv"
+            print line >> out_file
+        }
+    ' "$input_file"
     else
         echo "No CSV files found in the directory."
     fi
 done
 
-# rm simulation.csv
+rm simulation.csv
 
-cd ../../resources
-
-# python postprocessing.py -experiment_dirs $EXPERIMENT_DIR
-# python barplot.py -experiment_dirs AlarmSurgical20FromDay4 AlarmSurgical40FromDay4 AlarmSurgical80FromDay4 AlarmFFP220FromDay4 AlarmFFP240FromDay4 AlarmFFP280FromDay4 \
-#                   -experiment_labels Surgical-20% Surgical-40% Surgical-80% FFP2-20% FFP2-40% FFP2-80% \
-#                   -day_x 30 \
-#                   -baseline_experiment AlarmNoCountermeasures
+cd ../..

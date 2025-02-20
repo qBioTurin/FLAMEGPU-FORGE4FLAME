@@ -70,12 +70,12 @@ def plot_seir_states_with_average(base_dirs, scenario_names, custom_order, filen
 if __name__ == '__main__':
     scenarios = [
         "../results/AlarmNoCountermeasures",
-        "../results/AlarmSurgical20FromDay4",
-        "../results/AlarmSurgical40FromDay4",
-        "../results/AlarmFFP220FromDay4",
-        "../results/AlarmFFP240FromDay4",
-        "../results/AlarmSurgical80FromDay4",
-        "../results/AlarmFFP280FromDay4",
+        "../results/AlarmSurgical20",
+        "../results/AlarmSurgical40",
+        "../results/AlarmFFP220",
+        "../results/AlarmFFP240",
+        "../results/AlarmSurgical80",
+        "../results/AlarmFFP280",
     ]
     
     scenario_names = [
