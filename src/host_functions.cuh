@@ -526,7 +526,7 @@ namespace host_functions {
                         if(random < (float) env_vaccination_fraction[i] && random_efficacy < (float) env_vaccination_efficacy[i]){
                             new_agent_state = RECOVERED;
 #ifdef REINFECTION
-                            vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][agent_type], (int) env_vaccination_end_of_immunization_distr_firstparam[0][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[0][agent_type], true);
+                            vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][i], (int) env_vaccination_end_of_immunization_distr_firstparam[0][i], (int) env_vaccination_end_of_immunization_distr_secondparam[0][i], true);
 #endif
                         }
 
