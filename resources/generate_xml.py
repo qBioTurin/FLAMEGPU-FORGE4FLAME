@@ -500,8 +500,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								env_activity_type[agent_type_idx][i][flow_index] = f.loc["Activity"]
 
 								flow_index = flow_index + 1
-
-						total_agents_estimation = total_agents_estimation + n
 					else:
 						n = 0
 						
@@ -568,6 +566,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					env_events_distr[agent_type_idx][0] = distributions["Deterministic"]
 					env_events_distr_firstparam[agent_type_idx][0] = 0
 					env_events_distr_secondparam[agent_type_idx][0] = 0
+
+				if n > 0:
+					total_agents_estimation = total_agents_estimation + n
 
 				for i in range(n):
 					agent_file.write("\t<xagent>\n")

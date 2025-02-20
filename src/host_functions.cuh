@@ -419,8 +419,10 @@ namespace host_functions {
 
             for(int i=0;i<NUMBER_OF_AGENTS_TYPES;i++){
                 for(int j=0;j<=i;j++){
-                    if((unsigned int) contacts_matrix[i][j] != 0)
+                    if((unsigned int) contacts_matrix[i][j] != 0){
                         printf("2,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), i, j, (unsigned int) contacts_matrix[i][j]);
+                        contacts_matrix[i][j] = 0;
+                    }
                 }
             }
         }
