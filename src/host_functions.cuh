@@ -389,7 +389,7 @@ namespace host_functions {
 
         const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
 
-        evolution_file << day-1 << "," << FLAMEGPU->environment.getProperty<unsigned int>(SEED) << ",";
+        evolution_file << day-1 << ",";
         for(int i = 0; i < DISEASE_STATES; i++){
             if(i == (DISEASE_STATES - 1)){
                 evolution_file << num_seird[i];

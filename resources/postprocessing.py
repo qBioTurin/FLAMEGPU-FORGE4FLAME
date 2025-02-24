@@ -53,6 +53,8 @@ def plot_seir_states_with_average(base_dirs, scenario_names, custom_order, filen
     state_order = ['Susceptible', 'Exposed', 'Infected', 'Recovered']
     melted_data['State'] = pd.Categorical(melted_data['State'], categories=state_order, ordered=True)
 
+    melted_data = melted_data.groupby("Scenario", group_keys=False).apply(lambda x: x.iloc[:-1])
+
     # Create the plot with facet_wrap
     plot = (ggplot(melted_data, aes(x='Day', y='Population', color='Scenario')) +
             geom_line(size=1, alpha=0.8) +
