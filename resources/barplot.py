@@ -85,7 +85,7 @@ def plot_percentage_difference_at_day_x(
         ggplot(plot_df, aes(x='Experiment_Label', y='Percentage_Diff', fill='Group')) +
         geom_bar(stat='identity', position='dodge') +
         geom_text(
-            aes(label=plot_df['Percentage_Diff'].round(2) + "%"),
+            aes(label=plot_df['Percentage_Diff'].round(2).astype(str) + '%'),
             va='center',
             color='black',
             size=10,

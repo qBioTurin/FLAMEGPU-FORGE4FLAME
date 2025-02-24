@@ -728,7 +728,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
                 unsigned int infected_contacts_steps = FLAMEGPU->getVariable<unsigned int>(INFECTED_CONTACTS_STEPS);
                 FLAMEGPU->setVariable<unsigned int>(INFECTED_CONTACTS_STEPS, infected_contacts_steps + 1);
 
-                printf("1,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), message.getVariable<short>(CONTACTS_ID), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+                printf("1,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), agent_type, message.getVariable<short>(AGENT_TYPE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
             }
         }
     }

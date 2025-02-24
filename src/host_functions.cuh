@@ -74,8 +74,8 @@ namespace host_functions {
 
             filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
             ofstream counters_file(filename.c_str(), ofstream::out);
-            counters_file << "Day,Seed,COUNTERS_CREATED_AGENTS_WITH_RATE,COUNTERS_KILLED_AGENTS_WITH_RATE,AGENTS_IN_QUARANTINE,SWABS,NUM_INFECTED_OUTSIDE" << endl;
-            counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY)-1 << "," << FLAMEGPU->environment.getProperty<unsigned int>(SEED) << ",0,0,0" << endl;
+            counters_file << "Day,COUNTERS_CREATED_AGENTS_WITH_RATE,COUNTERS_KILLED_AGENTS_WITH_RATE,AGENTS_IN_QUARANTINE,SWABS,NUM_INFECTED_OUTSIDE" << endl;
+            counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY)-1 << ",0,0,0" << endl;
             counters_file.close();
         }
         else{
@@ -385,7 +385,7 @@ namespace host_functions {
 
         string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";
         ofstream evolution_file(filename.c_str(), ofstream::out);
-        evolution_file << "Day,Seed,Susceptible,Exposed,Infected,Recovered,Died" << endl;
+        evolution_file << "Day,Susceptible,Exposed,Infected,Recovered,Died" << endl;
 
         const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
 
@@ -441,7 +441,7 @@ namespace host_functions {
 
             string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";
             ofstream evolution_file(filename.c_str(), ofstream::app);
-            evolution_file << day-1 << "," << FLAMEGPU->environment.getProperty<unsigned int>(SEED) << ",";
+            evolution_file << day-1 << ",";
             for(int i = 0; i < DISEASE_STATES; i++){
                 if(i == (DISEASE_STATES - 1)){
                     evolution_file << num_seird[i];
@@ -456,7 +456,7 @@ namespace host_functions {
 
             filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
             ofstream counters_file(filename.c_str(), ofstream::app);
-            counters_file << day-1 << "," << FLAMEGPU->environment.getProperty<unsigned int>(SEED) << ",";
+            counters_file << day-1 << ",";
             for(int i = 0; i < NUM_COUNTERS; i++){
                 if(i == (NUM_COUNTERS - 1)){
                     counters_file << counters[i];
@@ -596,7 +596,7 @@ namespace host_functions {
 
         filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";
         ofstream evolution_file(filename.c_str(), ofstream::app);
-        evolution_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << "," << FLAMEGPU->environment.getProperty<unsigned int>(SEED) << ",";
+        evolution_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << ",";
         for(int i = 0; i < DISEASE_STATES; i++){
             if(i == (DISEASE_STATES - 1)){
                 evolution_file << num_seird[i];
@@ -610,7 +610,7 @@ namespace host_functions {
 
         filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
         ofstream counters_file(filename.c_str(), ofstream::app);
-        counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << "," << FLAMEGPU->environment.getProperty<unsigned int>(SEED) << ",";
+        counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << ",";
         for(int i = 0; i < NUM_COUNTERS; i++){
             if(i == (NUM_COUNTERS - 1)){
                 counters_file << counters[i];
