@@ -646,6 +646,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		counters = np.zeros(num_counters, dtype=int)
 
 		agents_whatif = pd.DataFrame(WHOLEmodel["agents_whatif"])
+		print(agents_whatif)
 		for col in agents_whatif.columns:
 			for agent_name, _ in agents.items():
 				if col == "Mask":
@@ -654,9 +655,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				if col == "Vaccination":
 					env_vaccination_fraction[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Fraction", col][agent_names[agent_name]["ID"]][1:]
 					env_vaccination_efficacy[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Efficacy", col][agent_names[agent_name]["ID"]][1:]
-					env_vaccination_end_of_immunization_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Coverage Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
-					env_vaccination_end_of_immunization_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Coverage Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
-					env_vaccination_end_of_immunization_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Coverage Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_vaccination_end_of_immunization_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Coverage Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_vaccination_end_of_immunization_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Coverage Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_vaccination_end_of_immunization_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Coverage Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
 				if col == "Swab":
 					env_swab_sensitivity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Sensitivity", col][agent_names[agent_name]["ID"]][1:]
 					env_swab_specificity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Specificity", col][agent_names[agent_name]["ID"]][1:]
@@ -667,13 +668,13 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					env_quarantine_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
 					env_quarantine_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
 					env_quarantine_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_swab_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_swab_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_swab_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist. Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
 					env_quarantine_swab_sensitivity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Sensitivity", col][agent_names[agent_name]["ID"]][1:]
 					env_quarantine_swab_specificity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Specificity", col][agent_names[agent_name]["ID"]][1:]
-					env_room_for_quarantine_type[:, agent_names[agent_name]["ID"]] = [types_IDs[room.split("-")[0]]["ID"] for room in agents_whatif.loc["Q. Room", col][agent_names[agent_name]["ID"]][1:]]
-					env_room_for_quarantine_area[:, agent_names[agent_name]["ID"]] = [areas[room.split("-")[1]]["ID"] for room in agents_whatif.loc["Q. Room", col][agent_names[agent_name]["ID"]][1:]]
+					env_room_for_quarantine_type[:, agent_names[agent_name]["ID"]] = [types_IDs[room.split("-")[0]]["ID"] for room in agents_whatif.loc["Q.Room", col][agent_names[agent_name]["ID"]][1:]]
+					env_room_for_quarantine_area[:, agent_names[agent_name]["ID"]] = [areas[room.split("-")[1]]["ID"] for room in agents_whatif.loc["Q.Room", col][agent_names[agent_name]["ID"]][1:]]
 				if col == "External screening":
 					env_external_screening_first[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["First", col][agent_names[agent_name]["ID"]][1:]
 					env_external_screening_second[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Second", col][agent_names[agent_name]["ID"]][1:]
