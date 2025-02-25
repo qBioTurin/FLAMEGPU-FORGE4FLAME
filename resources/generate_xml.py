@@ -646,7 +646,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		counters = np.zeros(num_counters, dtype=int)
 
 		agents_whatif = pd.DataFrame(WHOLEmodel["agents_whatif"])
-		print(agents_whatif)
 		for col in agents_whatif.columns:
 			for agent_name, _ in agents.items():
 				if col == "Mask":
