@@ -62,7 +62,7 @@ def plot_seir_states_with_average(base_dirs, scenario_names, custom_order, filen
             facet_wrap('~State', ncol=2, scales='free_y') +  # Facet by state (S, E, I, R)
             theme_bw() +
             labs(x='Day', y='Population', color='Scenario') +
-            theme(strip_text_x=element_text(size=16), legend_position="bottom", legend_title=element_text(weight="bold", size=16), legend_text=element_text(size=14), legend_key_size=20, axis_text=element_text(size=12), axis_title=element_text(size=14, weight="bold")))
+            theme(strip_text_x=element_text(size=16), legend_position="bottom", legend_title=element_text(weight="bold", size=16), legend_text=element_text(size=14), legend_key_size=30, axis_text=element_text(size=12), axis_title=element_text(size=14, weight="bold")))
 
     # Save the plot
     output_path = os.path.join(output_dir, output_file)
