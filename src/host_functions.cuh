@@ -250,84 +250,81 @@ namespace host_functions {
         // Loop through each xagent node
         for (xml_node xagent = agents.child("xagent"); xagent; xagent = xagent.next_sibling("xagent")) {
             // Extract child nodes of xagent, like <name>, <state>, <x>, etc.
-          //  {
-                string name = xagent.child("name").text().as_string();
-                short contacts_id = (short) xagent.child("contacts_id").text().as_int();
-                int agent_type = xagent.child("agent_type").text().as_int();
-                
-                const unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
+            string name = xagent.child("name").text().as_string();
+            short contacts_id = (short) xagent.child("contacts_id").text().as_int();
+            int agent_type = xagent.child("agent_type").text().as_int();
+            
+            const unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
 
-                HostAgentAPI pedestrian_type = FLAMEGPU->agent(name);
-                HostNewAgentAPI new_pedestrian = pedestrian_type.newAgent();
+            HostAgentAPI pedestrian_type = FLAMEGPU->agent(name);
+            HostNewAgentAPI new_pedestrian = pedestrian_type.newAgent();
 
-                float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 0), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 1), false) + 0.5;
-                float y = YEXTERN;
-                float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 2), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 3), false) + 0.5;
+            float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 0), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 1), false) + 0.5;
+            float y = YEXTERN;
+            float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 2), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 3), false) + 0.5;
 
-                unsigned short empty_days = 0;
-                unsigned short weekday_agent = week_day;
+            unsigned short empty_days = 0;
+            unsigned short weekday_agent = week_day;
 
-                while((int) env_flow[agent_type][weekday_agent][0] == -1){
-                    empty_days++;
-                    weekday_agent = (weekday_agent + 1) % DAYS_IN_A_WEEK;
-                }
+            while((int) env_flow[agent_type][weekday_agent][0] == -1){
+                empty_days++;
+                weekday_agent = (weekday_agent + 1) % DAYS_IN_A_WEEK;
+            }
 
-                int new_agent_state = SUSCEPTIBLE;
-                
-                float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
-                float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
-                unsigned short vaccination_end_of_immunization_days = 0;
-                if(random < (float) env_vaccination_fraction[0][agent_type] && random_efficacy < (float) env_vaccination_efficacy[0][agent_type]){
-                    new_agent_state = RECOVERED;
+            int new_agent_state = SUSCEPTIBLE;
+            
+            float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
+            float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
+            unsigned short vaccination_end_of_immunization_days = 0;
+            if(random < (float) env_vaccination_fraction[0][agent_type] && random_efficacy < (float) env_vaccination_efficacy[0][agent_type]){
+                new_agent_state = RECOVERED;
 #ifdef REINFECTION
-                    vaccination_end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][agent_type], (int) env_vaccination_end_of_immunization_distr_firstparam[0][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[0][agent_type], false)));
+                vaccination_end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][agent_type], (int) env_vaccination_end_of_immunization_distr_firstparam[0][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[0][agent_type], false)));
 #endif
-                }
+            }
 
-                unsigned short infection_days = 0;
-                unsigned short fatality_days = 0;
-                if(new_agent_state == SUSCEPTIBLE && find(selectedIndices.begin(), selectedIndices.end(), contacts_id) != selectedIndices.end()){
-                    new_agent_state = INFECTED;
-                    infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 2), false)));
+            unsigned short infection_days = 0;
+            unsigned short fatality_days = 0;
+            if(new_agent_state == SUSCEPTIBLE && find(selectedIndices.begin(), selectedIndices.end(), contacts_id) != selectedIndices.end()){
+                new_agent_state = INFECTED;
+                infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 2), false)));
 #ifdef FATALITY
-                    fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 2), false)));
+                fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 2), false)));
 #endif
-                }
+            }
 
-                new_pedestrian.setVariable<float>(X, x);
-                new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
-                new_pedestrian.setVariable<float>(Z, z);
-                new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
-                new_pedestrian.setVariable<unsigned short>(FLOW_INDEX, weekday_agent * SOLUTION_LENGTH);
-                new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
-                new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
-                new_pedestrian.setVariable<int>(AGENT_TYPE, agent_type);
-                new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[0][agent_type]) ? (int) env_mask_type[0][agent_type]: NO_MASK);
-                new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
-                new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
-                new_pedestrian.setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
-                new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, weekday_agent);
+            new_pedestrian.setVariable<float>(X, x);
+            new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
+            new_pedestrian.setVariable<float>(Z, z);
+            new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
+            new_pedestrian.setVariable<unsigned short>(FLOW_INDEX, weekday_agent * SOLUTION_LENGTH);
+            new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
+            new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
+            new_pedestrian.setVariable<int>(AGENT_TYPE, agent_type);
+            new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[0][agent_type]) ? (int) env_mask_type[0][agent_type]: NO_MASK);
+            new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
+            new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
+            new_pedestrian.setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
+            new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, weekday_agent);
 
-                int swab_steps = -1;
-                if((int) env_swab_distr[0][agent_type] != NO_SWAB)
-                    swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[0][agent_type], true));
-                new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
+            int swab_steps = -1;
+            if((int) env_swab_distr[0][agent_type] != NO_SWAB)
+                swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[0][agent_type], true));
+            new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
-                const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (int) env_flow_distr_firstparam[agent_type][weekday_agent][0], (int) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
-                stay_matrix[contacts_id][0] = initial_stay;
+            const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (int) env_flow_distr_firstparam[agent_type][weekday_agent][0], (int) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
+            stay_matrix[contacts_id][0] = initial_stay;
 
-                intermediate_target_x[contacts_id][0] = x;
-                intermediate_target_y[contacts_id][0] = y;
-                intermediate_target_z[contacts_id][0] = z;
-                new_pedestrian.setVariable<int>(WAITING_ROOM_TIME, 0);
-                new_pedestrian.setVariable<int>(WAITING_ROOM_FLAG, 0);
-                new_pedestrian.setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
-                new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
-                new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
+            intermediate_target_x[contacts_id][0] = x;
+            intermediate_target_y[contacts_id][0] = y;
+            intermediate_target_z[contacts_id][0] = z;
+            new_pedestrian.setVariable<int>(WAITING_ROOM_TIME, 0);
+            new_pedestrian.setVariable<int>(WAITING_ROOM_FLAG, 0);
+            new_pedestrian.setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
+            new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
+            new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
-                num_seird[new_agent_state]++;
-                
-           // }
+            num_seird[new_agent_state]++;
         }
 
         xml_document doc;
@@ -339,47 +336,45 @@ namespace host_functions {
         // Loop through each xagent node
         for (xml_node xagent = rooms.child("xagent"); xagent; xagent = xagent.next_sibling("xagent")) {
             // Extract child nodes of xagent, like <name>, <state>, <x>, etc.
-       //     {
-                string name = xagent.child("name").text().as_string();
-                float x = xagent.child("x").text().as_float();
-                float y = xagent.child("y").text().as_float();
-                float z = xagent.child("z").text().as_float();
-                float length_obj = xagent.child("length_obj").text().as_float();
-                float width_obj = xagent.child("width_obj").text().as_float();
-                float height_obj = xagent.child("height_obj").text().as_float();
-                float yaw = xagent.child("yaw").text().as_float();
-                unsigned char init_room = (unsigned char) xagent.child("init_room").text().as_int();
-                int area = xagent.child("area").text().as_int();
-                int color_id = xagent.child("color_id").text().as_int();
-                int type = xagent.child("type").text().as_int();
-                float volume = xagent.child("volume").text().as_float();
-                float room_quanta_concentration = xagent.child("room_quanta_concentration").text().as_float();
-                unsigned short x_center = (unsigned short) xagent.child("x_center").text().as_int();
-                unsigned short y_center = (unsigned short) xagent.child("y_center").text().as_int();
-                unsigned short z_center = (unsigned short) xagent.child("z_center").text().as_int();
+            string name = xagent.child("name").text().as_string();
+            float x = xagent.child("x").text().as_float();
+            float y = xagent.child("y").text().as_float();
+            float z = xagent.child("z").text().as_float();
+            float length_obj = xagent.child("length_obj").text().as_float();
+            float width_obj = xagent.child("width_obj").text().as_float();
+            float height_obj = xagent.child("height_obj").text().as_float();
+            float yaw = xagent.child("yaw").text().as_float();
+            unsigned char init_room = (unsigned char) xagent.child("init_room").text().as_int();
+            int area = xagent.child("area").text().as_int();
+            int color_id = xagent.child("color_id").text().as_int();
+            int type = xagent.child("type").text().as_int();
+            float volume = xagent.child("volume").text().as_float();
+            float room_quanta_concentration = xagent.child("room_quanta_concentration").text().as_float();
+            unsigned short x_center = (unsigned short) xagent.child("x_center").text().as_int();
+            unsigned short y_center = (unsigned short) xagent.child("y_center").text().as_int();
+            unsigned short z_center = (unsigned short) xagent.child("z_center").text().as_int();
 
-                HostAgentAPI room_type = FLAMEGPU->agent(name);
-                HostNewAgentAPI new_room = room_type.newAgent();
+            HostAgentAPI room_type = FLAMEGPU->agent(name);
+            HostNewAgentAPI new_room = room_type.newAgent();
 
-                new_room.setVariable<float>(X, x);
-                new_room.setVariable<float>(Y, y);
-                new_room.setVariable<float>(Z, z);
-                new_room.setVariable<float>(LENGTH_OBJ, length_obj);
-                new_room.setVariable<float>(WIDTH_OBJ, width_obj);
-                new_room.setVariable<float>(HEIGHT_OBJ, height_obj);
-                new_room.setVariable<float>(YAW, yaw);
-                new_room.setVariable<unsigned char>(INIT_ROOM, init_room);
-                new_room.setVariable<int>(AREA, area);
-                new_room.setVariable<int>(COLOR_ID, color_id);
-                new_room.setVariable<int>(TYPE, type);
+            new_room.setVariable<float>(X, x);
+            new_room.setVariable<float>(Y, y);
+            new_room.setVariable<float>(Z, z);
+            new_room.setVariable<float>(LENGTH_OBJ, length_obj);
+            new_room.setVariable<float>(WIDTH_OBJ, width_obj);
+            new_room.setVariable<float>(HEIGHT_OBJ, height_obj);
+            new_room.setVariable<float>(YAW, yaw);
+            new_room.setVariable<unsigned char>(INIT_ROOM, init_room);
+            new_room.setVariable<int>(AREA, area);
+            new_room.setVariable<int>(COLOR_ID, color_id);
+            new_room.setVariable<int>(TYPE, type);
 
-                if(name != FILLINGROOM_AGENT_STRING){
-                    new_room.setVariable<float>(VOLUME, volume);
-                    new_room.setVariable<float>(ROOM_QUANTA_CONCENTRATION, room_quanta_concentration);
-                    new_room.setVariable<unsigned short>(X_CENTER, x_center);
-                    new_room.setVariable<unsigned short>(Y_CENTER, y_center);
-                    new_room.setVariable<unsigned short>(Z_CENTER, z_center);
-             //   }
+            if(name != FILLINGROOM_AGENT_STRING){
+                new_room.setVariable<float>(VOLUME, volume);
+                new_room.setVariable<float>(ROOM_QUANTA_CONCENTRATION, room_quanta_concentration);
+                new_room.setVariable<unsigned short>(X_CENTER, x_center);
+                new_room.setVariable<unsigned short>(Y_CENTER, y_center);
+                new_room.setVariable<unsigned short>(Z_CENTER, z_center);
             }
         }
 
