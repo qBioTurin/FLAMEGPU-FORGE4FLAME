@@ -413,6 +413,7 @@ void define_layers(ModelDescription& model){
     model.addInitFunction(generateAgents);
     model.addStepFunction(updateDayAndLog);
     model.addStepFunction(birth);
+    model.addExitCondition(endOfSimulation);
     model.addExitFunction(exitFunction);
 }
 
