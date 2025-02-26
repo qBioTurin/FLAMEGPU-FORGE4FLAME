@@ -30,8 +30,14 @@ def distribution(type, types, a, b, flow_time):
 def distribution_average(type, a, b):
 	average = a
 
+	if type == "Truncated Positive Normal":
+		average = a + 4 * b
+
 	if type == "Uniform":
-		average = (a + b) / 2
+		average = b
+
+	if type == "Exponential":
+		average = a * 5
 
 	return average
 
