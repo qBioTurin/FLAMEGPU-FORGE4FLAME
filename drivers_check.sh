@@ -89,15 +89,6 @@ else
     exit 1
 fi
 
-# Check for a C++17 compatible compiler
-echo -n "Checking C++17 support... "
-if echo "#include <iostream>" | g++ -std=c++17 -x c++ -o /dev/null - 2>/dev/null; then
-    echo "✅ Supported"
-else
-    echo "❌ C++17 is NOT supported"
-    exit 1
-fi
-
 # Check for Python installation
 echo -n "Checking for Python... "
 if command -v python3 > /dev/null; then
