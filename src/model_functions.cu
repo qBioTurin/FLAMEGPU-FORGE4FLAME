@@ -412,8 +412,8 @@ void define_layers(ModelDescription& model){
     model.addInitFunction(macroPropertyIO);
     model.addInitFunction(generateAgents);
     model.addStepFunction(updateDayAndLog);
-    model.addStepFunction(birth);
     model.addExitCondition(endOfSimulation);
+    model.addStepFunction(birth);
     model.addExitFunction(exitFunction);
 }
 
