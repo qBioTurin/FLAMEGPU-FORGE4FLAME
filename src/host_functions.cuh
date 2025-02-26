@@ -577,6 +577,26 @@ namespace host_functions {
     }
 
     /** 
+     * End of simulation condition.
+    */
+    FLAMEGPU_EXIT_CONDITION(endOfSimulation){
+#ifdef DEBUG
+        printf("5,%d,%d,Beginning endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
+#endif
+        if(FLAMEGPU->environment.getProperty<unsigned short>(DAY) == DAYS){
+#ifdef DEBUG
+            printf("5,%d,%d,Ending endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
+#endif
+            return EXIT;
+        }
+
+#ifdef DEBUG
+        printf("5,%d,%d,Ending endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
+#endif
+        return CONTINUE;
+    }
+
+    /** 
      * End the simulation logging some information.
     */
     FLAMEGPU_EXIT_FUNCTION(exitFunction){
