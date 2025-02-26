@@ -522,7 +522,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							env_birth_rates_distr_firstparam[agent_type_idx][i][j] = int(a)
 							env_birth_rates_distr_secondparam[agent_type_idx][i][j] = int(b)
 
-							total_agents_estimation = total_agents_estimation + distribution_average(distributions[eetw.loc["RateDist"]], int(a), int(b)) * 2
+							total_agents_estimation = total_agents_estimation + distribution_average(eetw.loc["RateDist"], int(a), int(b)) * 2
 
 							if flow_index == 0:
 								if weekday == init_week_day and start_step_time > entry_exit_time_weekday.loc[0, "EntryTime"]:
