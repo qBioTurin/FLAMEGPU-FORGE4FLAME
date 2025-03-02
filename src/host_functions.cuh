@@ -464,7 +464,7 @@ namespace host_functions {
             counters_file.close();
 
             auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
-            printf("[INFO]GLOBAL_RESOURCES_COUNTER: ");
+            printf("4,%d,%d,GLOBAL_RESOURCES_COUNTER: ", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
             for(int i = 0; i < V; i++){
                 printf("%d, ", (unsigned int) global_resources_counter[i]);
             }
