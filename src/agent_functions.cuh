@@ -238,13 +238,12 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, event_distr_firstparam, event_distr_secondparam, true);
             
             if(get_global_resource <= global_resources[event_node] && get_specific_resource <= specific_resources[agent_type][event_node]){
-                available = true; 
+                available = true;
             } 
 
             //if the initial room is not avaiable because the resources are over, explore the alternatives:
             if(!available){
-
-                get_global_resource = --global_resources_counter[event_node]; 
+                get_global_resource = --global_resources_counter[event_node];
                 get_specific_resource = --specific_resources_counter[agent_type][event_node];
 
                 //search another room of the same type and area
@@ -341,7 +340,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         if(next_index == target_index && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
             FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
             short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
-            get_global_resource = --global_resources_counter[event_node]; 
+            get_global_resource = --global_resources_counter[event_node];
             get_specific_resource = --specific_resources_counter[agent_type][event_node];
             FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
         }

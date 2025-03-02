@@ -649,8 +649,6 @@ namespace device_functions {
         
         stay_matrix[contacts_id][target_index].exchange(0);
 
-        // printf("[QUARANTINE],%d,%d,%d,%d,%d,0\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), already_in_quarantine ? 1: 0, severity);
-
         if(!already_in_quarantine){
             const short start_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
             const short quarantine_node = take_new_destination_flow(FLAMEGPU, &stay, identified_bool, severity);
