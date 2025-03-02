@@ -602,7 +602,7 @@ namespace device_functions {
         if(entry_time_index == 0){
             unsigned int stay_flow_index_0 = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][week_day_flow][0], contacts_id, env_flow_distr_firstparam[agent_type][week_day_flow][0], env_flow_distr_secondparam[agent_type][week_day_flow][0], true);
             stay_matrix[contacts_id][target_index].exchange((unsigned int) (empty_days * STEPS_IN_A_DAY + (STEPS_IN_A_DAY - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)) + start_step + stay_flow_index_0));
-            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, week_day_flow);
+            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, 0);
         }
         else{
             stay_matrix[contacts_id][target_index].exchange((unsigned int) start_step);
