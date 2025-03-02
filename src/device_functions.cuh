@@ -229,15 +229,15 @@ namespace device_functions {
         auto alternative_resources_area_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_DET);
         auto alternative_resources_type_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_DET);
 
-        const int flow = (int) env_flow[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH];
-        const int flow_area = (int) env_flow_area[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH];
+        const int flow = (int) env_flow[agent_type][week_day_flow][flow_index];
+        const int flow_area = (int) env_flow_area[agent_type][week_day_flow][flow_index];
 
         FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, flow_index);
 
         const bool isValidFlow = (flow != -1 && flow != SPAWNROOM);
 
-        if(env_flow_distr[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH] != -1)
-            *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH], contacts_id, env_flow_distr_firstparam[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH], env_flow_distr_secondparam[agent_type][week_day_flow][flow_index % SOLUTION_LENGTH], true);
+        if(env_flow_distr[agent_type][week_day_flow][flow_index] != -1)
+            *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][week_day_flow][flow_index], contacts_id, env_flow_distr_firstparam[agent_type][week_day_flow][flow_index], env_flow_distr_secondparam[agent_type][week_day_flow][flow_index], true);
 
         unsigned short j = 0;
         if(isValidFlow && ((severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM) || identified == NOT_IDENTIFIED)){
@@ -382,7 +382,7 @@ namespace device_functions {
         if(identified == IDENTIFIED)
             FLAMEGPU->setVariable<int>(ROOM_FOR_QUARANTINE_INDEX, final_target);
 
-        if((int) env_flow[agent_type][week_day_flow][(flow_index + 1) % SOLUTION_LENGTH] == -1 && final_target == FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE))
+        if((int) env_flow[agent_type][week_day_flow][flow_index + 1] == -1 && final_target == FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE))
             *stay = 1;
 
 #ifdef DEBUG
@@ -600,8 +600,9 @@ namespace device_functions {
         }
 
         if(entry_time_index == 0){
-            stay_matrix[contacts_id][target_index].exchange((unsigned int) (empty_days * STEPS_IN_A_DAY + (STEPS_IN_A_DAY - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)) + start_step));
-            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, week_day_flow * SOLUTION_LENGTH);
+            unsigned int stay_flow_index_0 = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][week_day_flow][0], contacts_id, env_flow_distr_firstparam[agent_type][week_day_flow][0], env_flow_distr_secondparam[agent_type][week_day_flow][0], true);
+            stay_matrix[contacts_id][target_index].exchange((unsigned int) (empty_days * STEPS_IN_A_DAY + (STEPS_IN_A_DAY - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)) + start_step + stay_flow_index_0));
+            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, week_day_flow);
         }
         else{
             stay_matrix[contacts_id][target_index].exchange((unsigned int) start_step);
@@ -673,7 +674,7 @@ namespace device_functions {
             stay_matrix[contacts_id][target_index].exchange(quarantine * STEPS_IN_A_DAY);
 
         if(agent_with_a_rate)
-            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW) * SOLUTION_LENGTH);
+            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW));
 
         if((int) env_quarantine_swab_days_distr[day-1][agent_type] != NO_SWAB){
             int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[day-1][agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_firstparam[day-1][agent_type], STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_secondparam[day-1][agent_type], true));
