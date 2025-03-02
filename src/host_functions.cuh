@@ -465,7 +465,7 @@ namespace host_functions {
 
             printf("[INFO]GLOBAL_RESOURCES_COUNTER: ");
             for(int i = 0; i < V; i++){
-                prinf("%d, ", FLAMEGPU->getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER, i));
+                prinf("%d, ", FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER, i));
             }
             printf("\n");
         }
