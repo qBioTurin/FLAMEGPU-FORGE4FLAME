@@ -674,7 +674,7 @@ namespace device_functions {
             stay_matrix[contacts_id][target_index].exchange(quarantine * STEPS_IN_A_DAY);
 
         if(agent_with_a_rate)
-            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW));
+            FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, 0);
 
         if((int) env_quarantine_swab_days_distr[day-1][agent_type] != NO_SWAB){
             int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[day-1][agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_firstparam[day-1][agent_type], STEPS_IN_A_DAY * (float) env_quarantine_swab_days_distr_secondparam[day-1][agent_type], true));

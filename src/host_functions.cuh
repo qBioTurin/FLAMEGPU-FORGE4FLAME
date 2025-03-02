@@ -297,7 +297,6 @@ namespace host_functions {
             new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
             new_pedestrian.setVariable<float>(Z, z);
             new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
-            new_pedestrian.setVariable<unsigned short>(FLOW_INDEX, weekday_agent);
             new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
             new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
             new_pedestrian.setVariable<int>(AGENT_TYPE, agent_type);
@@ -535,7 +534,6 @@ namespace host_functions {
                         new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
                         new_pedestrian.setVariable<float>(Z, z);
                         new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
-                        new_pedestrian.setVariable<unsigned short>(FLOW_INDEX, week_day);
                         new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
                         new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[day-1][i]) ? (int) env_mask_type[day-1][i]: NO_MASK);
