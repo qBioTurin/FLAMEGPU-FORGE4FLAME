@@ -510,7 +510,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 						n = 0
 						
 						entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
-						entry_exit_time_weekday["ExitTime"] = entry_exit_time_weekday["ExitTime"].transform(lambd\a x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
+						entry_exit_time_weekday["ExitTime"] = entry_exit_time_weekday["ExitTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
 						entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
 
 						for j, eetw in entry_exit_time_weekday.iterrows():

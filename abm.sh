@@ -18,11 +18,11 @@
   Authors: Daniele Baccega, Nicola Licheri, Irene Terrone, Simone Pernice
 '
 
-bash drivers_check.sh
-if [ $? -eq 1 ];
-then
-  exit 1
-fi
+# bash drivers_check.sh
+# if [ $? -eq 1 ];
+# then
+#   exit 1
+# fi
 
 # Default values for input parameters
 EXPERIMENT_DIR="Scenario_$(date +%s)"
@@ -120,7 +120,8 @@ then
 fi
 
 # Generate the configuration file to give in input to the ABM model
-WHOLE_OUTPUT="$(bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1)"
+#WHOLE_OUTPUT="$(bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1)"
+bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR
 SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 
 echo $SEED > results/$EXPERIMENT_DIR/seed.txt
