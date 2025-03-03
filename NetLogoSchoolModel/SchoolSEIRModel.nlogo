@@ -260,7 +260,7 @@ to setup-general-variables
       set error? true
     ]
 
-  set movement-time-in-seconds 4
+  set movement-time-in-seconds 1
   set movements-per-tick tick-duration-in-seconds / movement-time-in-seconds
 
   if not staggered-admissions? or
@@ -325,7 +325,7 @@ to setup-counters-variables
   set num-in-queue2 0
 
   set starting-hour 7
-  set starting-minute 25
+  set starting-minute 35
   set starting-second 0
 
   set day 0
@@ -1329,7 +1329,7 @@ to setup-common-attributes
 
   ifelse breed = janitors
     [ set start-school-move-time-in-ticks 0 ]
-    [ set start-school-move-time-in-ticks random offset-between-entrance-and-start-lessons-in-ticks + 1 ]
+    [ set start-school-move-time-in-ticks 35 ]
 
   set end-school-move-time-in-ticks 0
 
@@ -2310,7 +2310,7 @@ to end-school-day [g]
         [ set start-day-time-in-ticks start-day-time-in-ticks + (24 * 60 * 60 * 2) / tick-duration-in-seconds ]
       setup-day-school-variables
       ask turtles with [ breed != janitors ]
-        [ set start-school-move-time-in-ticks random offset-between-entrance-and-start-lessons-in-ticks + 1 ]
+        [ set start-school-move-time-in-ticks 35 ]
 
       ask patches with [ occupied? ]
         [ set occupied? false ]
