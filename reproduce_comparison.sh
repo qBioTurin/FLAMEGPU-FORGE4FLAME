@@ -6,8 +6,8 @@ cd NetLogoSchoolModel
 ./run.sh Configurations/F4FComparison/Countermeasures.conf 16
 cd ..
 
-./run_docker_ensemble ComparisonNoCountermeasures
-./run_docker_ensemble ComparisonCountermeasures
+./run_docker_ensemble SchoolComparisonNoCountermeasures
+./run_docker_ensemble SchoolComparisonCountermeasures
 
 cd resources
 R -e "if (!requireNamespace('dplyr', quietly = TRUE)) install.packages('dplyr')"

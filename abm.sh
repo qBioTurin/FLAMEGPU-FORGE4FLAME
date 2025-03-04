@@ -49,11 +49,6 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    -cps|--checkpoint_simulation)
-      CHECKPOINT_SIMULATION="$2"
-      shift
-      shift
-      ;;
     -g|--debug)
       DEBUG="$2"
       shift
@@ -70,7 +65,6 @@ while [[ $# -gt 0 ]]; do
       printf "        -expdir or --experiment_dir:         directory with the scenario to simulate (default: .)\n"
       printf "        -ob     or --only_build:             build the model without execute it (default: OFF; possible values: ON, OFF)\n"
       printf "        -v      or --visualisation:          activate the visualisation (default: OFF; possible values: ON, OFF)\n"
-      printf "        -cps    or --checkpoint_simulation:  run the model in a simplified version with the aim to obtain a checkpoint (default: OFF; possible values: ON, OFF)\n"
       printf "        -g      or --debug:                  execute the simulation with debug prints (default: OFF; possible values: ON, OFF)\n"
       printf "        -c      or --clean:                  clean old files and directories (default: OFF; possible values: ON, OFF)\n"
       exit 1
