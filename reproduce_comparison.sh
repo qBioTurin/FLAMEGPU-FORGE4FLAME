@@ -6,8 +6,8 @@
 # ./run.sh Configurations/F4FComparison/Countermeasures.conf 16
 # cd ..
 
-# ./run_docker_ensemble SchoolComparisonNoCountermeasures
-# ./run_docker_ensemble SchoolComparisonCountermeasures
+# ./run_docker_ensemble.sh SchoolComparisonNoCountermeasures
+./run_docker_ensemble.sh SchoolComparisonCountermeasures
 
 cd resources
 R -e "if (!requireNamespace('dplyr', quietly = TRUE)) install.packages('dplyr')"
