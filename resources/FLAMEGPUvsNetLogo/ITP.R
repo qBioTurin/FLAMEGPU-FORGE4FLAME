@@ -179,13 +179,13 @@ fdatest_netlogo_vs_flamegpu2 <- function(netlogo_data, flamegpu_data, name){
 
 netlogo_data <- collect_data(
   mode = "NetLogo",
-  parent_directory = "../NetLogoSchoolModel/ResultsCountermeasures/",
+  parent_directory = "../../NetLogoSchoolModel/ResultsCountermeasures/",
   file_pattern = "result*"
 )
 
 flamegpu_data <- collect_data(
   mode = "FLAMEGPU2",
-  parent_directory = "../results/ComparisonCountermeasures",
+  parent_directory = "../../results/SchoolComparisonCountermeasures",
   directory_pattern = "seed*",
   filename = "evolution.csv"
 )
@@ -196,13 +196,13 @@ plot_traces_Countermeasures <- plots[[2]]
 
 netlogo_data <- collect_data(
   mode = "NetLogo",
-  parent_directory = "../NetLogoSchoolModel/ResultsNoCountermeasures/",
+  parent_directory = "../../NetLogoSchoolModel/ResultsNoCountermeasures/",
   file_pattern = "result*"
 )
 
 flamegpu_data <- collect_data(
   mode = "FLAMEGPU2",
-  parent_directory = "../results/ComparisonNoCountermeasures",
+  parent_directory = "../../results/SchoolComparisonNoCountermeasures",
   directory_pattern = "seed*",
   filename = "evolution.csv"
 )
