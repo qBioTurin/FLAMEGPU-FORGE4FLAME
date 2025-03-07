@@ -91,7 +91,11 @@ AbsolutePathToTheDirectoryWithTheModel represents the absolute path to the local
 directory named CustomModel inside the Docker (in FLAMEGPU-FORGE4FLAME/resources/f4f).
 Results will be saved in a directory named results/CustomModel within the current directory.
 
-# How to reproduce the results
+## Slurm
+
+--TODO
+
+## How to reproduce the results
 
 To reproduce the results presented in the main document—comparing FLAMEGPU2 and
 NetLogo using the ITP and the alert scenarios—run the following Bash commands (note that
