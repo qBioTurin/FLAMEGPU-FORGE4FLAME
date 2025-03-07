@@ -15,7 +15,7 @@
       -g      or --debug:                  execute the simulation with debug prints
       -c      or --clean:                  clean old files and directories
 
-  Authors: Daniele Baccega, Nicola Licheri, Irene Terrone, Simone Pernice
+  Authors: Daniele Baccega, Irene Terrone, Simone Pernice
 '
 
 bash drivers_check.sh
