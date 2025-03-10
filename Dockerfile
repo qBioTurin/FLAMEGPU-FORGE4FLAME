@@ -18,5 +18,3 @@ RUN git clone https://github.com/qBioTurin/FLAMEGPU-FORGE4FLAME.git /home/docker
 RUN chmod -R 777 /home/docker/flamegpu2
 
 WORKDIR /home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME
-
-RUN git checkout School
