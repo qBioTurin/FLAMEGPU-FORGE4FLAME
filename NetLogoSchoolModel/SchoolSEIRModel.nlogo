@@ -522,7 +522,7 @@ to setup-time-variables
   set lesson-duration-in-ticks lesson-duration-in-minutes * 60 / tick-duration-in-seconds    ;50 or 60 minutes in ticks
   set interval-duration-in-ticks 15 * 60 / tick-duration-in-seconds                          ;15 minutes in ticks
 
-  set offset-between-entrance-and-start-lessons-in-ticks 45 * 60 / tick-duration-in-seconds  ;45 minutes in ticks
+  set offset-between-entrance-and-start-lessons-in-ticks 35 * 60 / tick-duration-in-seconds  ;35 minutes in ticks
 
   set supply-teachers []
   set supply-janitors []

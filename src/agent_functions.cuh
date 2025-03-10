@@ -63,9 +63,10 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
         // External screening
         external_screening(FLAMEGPU);
+    }
 
 
-
+    if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME - 1) % STEPS_IN_A_DAY)){
         // Update daily What-If
         const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
