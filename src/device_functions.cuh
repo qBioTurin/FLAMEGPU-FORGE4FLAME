@@ -103,6 +103,7 @@ namespace device_functions {
     */
     FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {  
         
+        printf("qui dentro findfreeroom\n");
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         short event_node = -1;
         float min_separation = numeric_limits<float>::max();
@@ -147,6 +148,9 @@ namespace device_functions {
             }
         }
         while(!available && event_node != -1);  
+
+        printf("qui uscendo findfreeroom\n");
+
 
         return event_node;
      }

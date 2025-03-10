@@ -462,6 +462,14 @@ namespace host_functions {
 
             counters_file << endl;
             counters_file.close();
+
+            auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+            printf("global counter\n");
+            for(int i = 0; i< V; i++){
+                unsigned int glob = global_resources_counter[i];
+                printf("%d\n", glob);
+            }
+
         }
 #ifdef DEBUG
         printf("5,%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());

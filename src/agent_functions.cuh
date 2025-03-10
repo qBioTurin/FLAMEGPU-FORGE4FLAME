@@ -142,7 +142,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
 
 
-
     // Generate event
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
@@ -180,6 +179,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     if(FLAMEGPU->getVariable<unsigned char>(INIT) && !quarantine && !FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT)){
         float random = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
 
+        printf("ti spatagnerai qui?\n");
         auto env_events = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS);
         auto env_events_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_AREA);
         auto env_events_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR);
@@ -202,9 +202,13 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             int event_distr_firstparam = (int) env_events_distr_firstparam[agent_type][event];
             int event_distr_secondparam = (int) env_events_distr_secondparam[agent_type][event];
 
+            printf("type rom event %d\n", type_room_event);
+            printf("area_room event %d\n", area_room_event);
+
 
             // Searching the nearest room related to the event
             for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
+
 
                 const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
                 int area_room = message.getVariable<int>(AREA);
@@ -217,6 +221,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             }
             previous_separation = min_separation;
 
+            printf("e quiiiii\n");
+
             short start_node;
             
             if(next_index != target_index)
@@ -226,6 +232,10 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
             const short final_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
+
+            printf("ma si spacca sullo start node? %d\n", start_node);
+            printf("ma si spacca sull'event node? %d", event);
+            printf("ma si spacca sul final node? %d", final_node);
             short solution_start_event[SOLUTION_LENGTH] = {-1};
             short solution_event_target[SOLUTION_LENGTH] = {-1};
 
@@ -243,6 +253,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
             //if the initial room is not avaiable because the resources are over, explore the alternatives:
             if(!available){
+
+                printf("dentro l'avaiable\n");
                 get_global_resource = --global_resources_counter[event_node];
                 get_specific_resource = --specific_resources_counter[agent_type][event_node];
 
@@ -258,8 +270,13 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                 }
             }
 
+            printf("o qui?\n");
+
+
             //if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
             if(available && alternative_resources_type_rand[agent_type][event_node] != -1){
+                printf("non credo entri qui?\n");
+
 
                 a_star(FLAMEGPU, start_node, event_node, solution_start_event);
                 a_star(FLAMEGPU, event_node, final_node, solution_event_target);
@@ -361,7 +378,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay);
             const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
 
+            printf("quindi succede che entri qui ma non sotto con start node %d e final node %d e il nodo spawn è %d\n", start_node, final_node, extern_node);
             if(start_node != extern_node && start_node != final_node && start_node_type != WAITINGROOM){
+                printf("invece qui nell'if con start node %d\n", start_node);
                 get_global_resource = --global_resources_counter[start_node]; 
                 get_specific_resource = --specific_resources_counter[agent_type][start_node];
             }
