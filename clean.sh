@@ -16,6 +16,9 @@ rm -fr macro_environment
 
 cd FLAMEGPUvsNetLogo
 rm *.png
+cd ..
+cd AlertFiles
+rm *.png
 cd ../..
 
 cd src
