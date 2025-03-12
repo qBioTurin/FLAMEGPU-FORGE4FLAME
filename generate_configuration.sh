@@ -16,7 +16,7 @@
 '
 
 # Default values for input parameters
-EXPERIMENT_DIR="Scenario_$(date +%s)"
+EXPERIMENT_DIR="None"
 ENSEMBLE="OFF"
 CHECKPOINT_SIMULATION="OFF"
 
@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
   	  printf "./run.sh - run the ABM\n\n"
   	  printf "Arguments:\n"
-      printf "        -expdir or --experiment_dir:          directory with the scenario to simulate (default: .)\n"
+      printf "        -expdir or --experiment_dir:          directory with the scenario to simulate\n"
       printf "        -e      or --ensemble:                run with ensemble (default: OFF; possible values: ON, OFF)\n"
       printf "        -cps    or --checkpoint_simulation:   run the model in a simplified version with the aim to obtain a checkpoint (default: OFF; possible values: ON, OFF)"
       exit 1
@@ -57,6 +57,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL_ARGS[@]}"  # Restore positional parameters
+
+DIR="resources/f4f/$EXPERIMENT_DIR"
+
+# Check if the directory exists
+if [ ! -d "$DIR" ]; then
+    echo "❌ Error: Directory $DIR does not exist."
+    exit 1
+fi
 
 # Generate the XML file
 cd resources
