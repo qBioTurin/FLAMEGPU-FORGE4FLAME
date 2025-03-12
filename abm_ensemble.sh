@@ -22,7 +22,7 @@ then
 fi
 
 # Default values for input parameters
-EXPERIMENT_DIR="Scenario_$(date +%s)"
+EXPERIMENT_DIR="None"
 ONLY_BUILD="OFF"
 CLEAN="OFF"
 
@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
   	  printf "./run.sh - run the ABM\n\n"
   	  printf "Arguments:\n"
-      printf "        -expdir or --experiment_dir:  directory with the scenario to simulate (default: .)\n"
+      printf "        -expdir or --experiment_dir:  directory with the scenario to simulate\n"
       printf "        -ob     or --only_build:      build the model without execute it (default: OFF; possible values: ON, OFF)\n"
       printf "        -c      or --clean:           clean old files and directories (default: OFF; possible values: ON, OFF)\n"
       exit 1
@@ -63,6 +63,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL_ARGS[@]}"  # Restore positional parameters
+
+DIR="resources/f4f/$EXPERIMENT_DIR"
+
+# Check if the directory exists
+if [ ! -d "$DIR" ]; then
+    echo "❌ Error: Directory $DIR does not exist."
+    exit 1
+fi
 
 DIR_PATH="results/$EXPERIMENT_DIR"
 
