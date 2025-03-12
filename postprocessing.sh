@@ -48,6 +48,8 @@ if [ ! -d "$DIR" ]; then
     exit 1
 fi
 
+cd $DIR
+
 # Pre-check which "seed" directories exist and store them in an environment variable
 existing_dirs=""
 for dir in seed*; do
