@@ -1463,7 +1463,9 @@ def main():
 	num_counters = 5
 	y_offset = 10
 
-	with open("f4f/" + args.dirname_experiment + "/WHOLEmodel.json") as file:
+	files = os.listdir("f4f/" + args.dirname_experiment)
+	json_files = [file for file in files if file.endswith('.json')]
+	with open("f4f/" + args.dirname_experiment + "/" + json_files[0]) as file:
 		WHOLEmodel = json.load(file)
 
 	seed = int(WHOLEmodel["starting"][0]["seed"])
