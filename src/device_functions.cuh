@@ -152,9 +152,6 @@ namespace device_functions {
      }
 
 
-
-
-
     /** 
      * Find a room of free resources 
     */
@@ -201,7 +198,7 @@ namespace device_functions {
     /** 
      * Take the next destination inside the determined flow of the agent.
     */
-    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int *stay, const bool identified = false, const unsigned short severity = MINOR){  
+    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int *stay,  const short start_node, const bool identified = false, const unsigned short severity = MINOR){  
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -291,7 +288,7 @@ namespace device_functions {
                 
                 float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                 FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
-                float min_separation = numeric_limits<float>::max();;
+                float min_separation = numeric_limits<float>::max();
 
                 for(const auto& message: FLAMEGPU->message_in(WAITINGROOM)) {
                     const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
@@ -315,14 +312,14 @@ namespace device_functions {
                 FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
             
             }
-            else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM && alternative_resources_type_det[agent_type][final_target] != -1){
+            else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM){
                 
                 // Try getting the resources of the room
                 get_global_resource = ++global_resources_counter[final_target];
                 get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
                 if(get_global_resource <= global_resources[final_target] && get_specific_resource <= specific_resources[agent_type][final_target]){
-                   available = true; 
+                    available = true; 
                 } 
 
                 //if the initial room is not avaiable because the resources are over, explore the alternatives:
@@ -336,9 +333,10 @@ namespace device_functions {
 
                         random = (random + 1) % lenght_rooms;
                         final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, &available);
+                    
                     }
                     //search another room of the alternative
-                    else if(alternative_resources_area_det[agent_type][final_target] != area || alternative_resources_type_det[agent_type][final_target] != flow){
+                    else if((alternative_resources_area_det[agent_type][final_target] != area || alternative_resources_type_det[agent_type][final_target] != flow)){
                         
                         auto messages = FLAMEGPU->message_in(alternative_resources_type_det[agent_type][final_target]);
 
@@ -367,6 +365,8 @@ namespace device_functions {
                 //if no other alternave is avaiable or it's explicit, skip
                 if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
                 
+                    get_global_resource = ++global_resources_counter[start_node]; 
+                    get_specific_resource = ++specific_resources_counter[agent_type][start_node];
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
                     final_target = coord2index[(unsigned short)(final_target_vec[1]/YOFFSET)][(unsigned short)final_target_vec[2]][(unsigned short)final_target_vec[0]];
@@ -649,9 +649,20 @@ namespace device_functions {
         
         stay_matrix[contacts_id][target_index].exchange(0);
 
+        auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+        auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+        const unsigned short extern_node = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
+
         if(!already_in_quarantine){
             const short start_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
-            const short quarantine_node = take_new_destination_flow(FLAMEGPU, &stay, identified_bool, severity);
+            const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
+
+            if(start_node != extern_node && start_node_type != WAITINGROOM){
+                --global_resources_counter[start_node]; 
+                --specific_resources_counter[agent_type][start_node];
+            }
+
+            const short quarantine_node = take_new_destination_flow(FLAMEGPU, &stay, identified_bool, severity, start_node);
 
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
@@ -720,10 +731,10 @@ namespace device_functions {
             if(random_sensitivity < sensitivity_swab){
                 // True positive
                 if(!already_in_quarantine){
-                    const float severity = FLAMEGPU->environment.getProperty<float>(VIRUS_SEVERITY);
+                    const float severity_covid = FLAMEGPU->environment.getProperty<float>(VIRUS_SEVERITY);
                     float random_severity = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
 
-                    if(random_severity < severity)
+                    if(random_severity < severity_covid)
                         severity = MAJOR;
                 }
                 identified_bool = IDENTIFIED;

@@ -272,7 +272,7 @@ void define_room_messages(ModelDescription& model){
     room_message.newVariable<unsigned short>(Z);
     room_message.newVariable<short>(GRAPH_NODE);
     room_message.newVariable<int>(AREA);
-    room_message.setBounds(0, V);
+    room_message.setBounds(0, NUM_ROOMS_TYPES);
     room_message.setPersistent(true);
 
     // Handle resources message
