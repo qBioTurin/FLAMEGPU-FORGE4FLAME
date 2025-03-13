@@ -462,7 +462,6 @@ namespace host_functions {
 
             counters_file << endl;
             counters_file.close();
-        }
 #ifdef DEBUG
         printf("5,%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
