@@ -365,8 +365,8 @@ namespace device_functions {
                 //if no other alternave is avaiable or it's explicit, skip
                 if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
                 
-                    get_global_resource = ++global_resources_counter[start_node]; 
-                    get_specific_resource = ++specific_resources_counter[agent_type][start_node];
+                    ++global_resources_counter[start_node]; 
+                    ++specific_resources_counter[agent_type][start_node];
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
                     final_target = coord2index[(unsigned short)(final_target_vec[1]/YOFFSET)][(unsigned short)final_target_vec[2]][(unsigned short)final_target_vec[0]];

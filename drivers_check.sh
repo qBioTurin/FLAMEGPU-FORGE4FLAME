@@ -23,7 +23,7 @@ fi
 
 # Check for CUDA installation
 echo -n "Checking for CUDA... "
-if command -v nvcc > /dev/null; then
+if command -v nvcc > /dev/null then
     CUDA_VERSION=$(nvcc --version | grep -oP "release \K[0-9]+(\.[0-9]+)*")
     CUDA_MAJOR=$(echo "$CUDA_VERSION" | cut -d. -f1)
     if (( CUDA_MAJOR >= 11 )); then
