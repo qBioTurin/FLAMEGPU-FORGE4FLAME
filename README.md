@@ -1,10 +1,8 @@
 # How to download
 ## FLAMEGPU2 
-
 To install FLAME GPU 2 dependencies, refer to the official documentation [here](https://github.com/FLAMEGPU/FLAMEGPU2).
 
 ## Docker
-
 Users can download the Docker images for FLAME GPU 2 to avoid any potential dependency-related issues. In this context, the user must have Docker installed on their
 computer. For more information, refer to [this document](https://docs.docker.com/engine/installation/).
 
@@ -36,7 +34,7 @@ To run FLAME GPU 2 simulations on an HPC system, the user must install Slurm on 
 However, on HPC4AI [1] (more information [here](https://hpc4ai.unito.it/documentation/)), FLAME GPU 2 can also be executed using Docker, thanks to a tool that addresses privacy concerns.
 
 # How to Run
-## Run without docker
+## Without docker
 To run FLAME GPU 2 without using Docker, run the following Bash command:
 
 ```
@@ -70,7 +68,7 @@ To run FLAME GPU 2 without using Docker, run the following Bash command:
 
 In particular, `NameOfTheModel` must be the name of the desired model and must correspond to a directory within `FLAMEGPU-FORGE4FLAME/resources/f4f` that contains both a JSON file and an RDs file. Results will be saved in `FLAMEGPU-FORGE4FLAME/results/NameOfTheModel`.
 
-## Run with docker
+## With docker
 To run FLAME GPU 2 using Docker, run the following Bash commands:
 
 ```
