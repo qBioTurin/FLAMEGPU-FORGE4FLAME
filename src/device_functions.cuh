@@ -364,8 +364,8 @@ namespace device_functions {
                 //if no other alternave is avaiable or it's explicit, skip
                 if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
                 
-                    --global_resources_counter[start_node]; 
-                    --specific_resources_counter[agent_type][start_node];
+                    ++global_resources_counter[start_node]; 
+                    ++specific_resources_counter[agent_type][start_node];
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
                     final_target = coord2index[(unsigned short)(final_target_vec[1]/YOFFSET)][(unsigned short)final_target_vec[2]][(unsigned short)final_target_vec[0]];
@@ -730,10 +730,10 @@ namespace device_functions {
             if(random_sensitivity < sensitivity_swab){
                 // True positive
                 if(!already_in_quarantine){
-                    const float severity = FLAMEGPU->environment.getProperty<float>(VIRUS_SEVERITY);
+                    const float severity_covid = FLAMEGPU->environment.getProperty<float>(VIRUS_SEVERITY);
                     float random_severity = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, 1, false);
 
-                    if(random_severity < severity)
+                    if(random_severity < severity_covid)
                         severity = MAJOR;
                 }
                 identified_bool = IDENTIFIED;
