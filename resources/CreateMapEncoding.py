@@ -1,8 +1,11 @@
 import argparse
 import json
+import os
 
 def CreateMapEncoding(dirname_experiment):
-	with open(dirname_experiment + "WHOLEmodel.json") as f:
+	files = os.listdir(dirname_experiment)
+	json_files = [file for file in files if file.endswith('.json')]
+	with open(dirname_experiment + json_files[0]) as f:
 		WHOLEmodel = json.load(f)
 	
 	types = WHOLEmodel["types"]

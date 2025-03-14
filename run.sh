@@ -17,7 +17,7 @@
 '
 
 # Default values for input parameters
-EXPERIMENT_DIR="Scenario_$(date +%s)"
+EXPERIMENT_DIR="None"
 PARALLEL_RUN="10"
 ENSEMBLE="OFF"
 VISUALISATION="OFF"
@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
   	  printf "./run.sh - run the ABM\n\n"
   	  printf "Arguments:\n"
-      printf "        -expdir or --experiment_dir:   directory with the scenario to simulate (default: .)"
+      printf "        -expdir or --experiment_dir:   directory with the scenario to simulate"
       printf "        -prun   or --parallel_run:     number of run to execute in parallel on GPUs (default: 10)\n"
       printf "        -e      or --ensemble:         run with ensemble (default: OFF; possible values: ON, OFF)\n"
       printf "        -v      or --visualisation:    activate the visualisation (default: OFF; possible values: ON, OFF)\n"
@@ -65,6 +65,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL_ARGS[@]}"  # Restore positional parameters
+
+DIR="resources/f4f/$EXPERIMENT_DIR"
+
+# Check if the directory exists
+if [ ! -d "$DIR" ]; then
+    echo "❌ Error: Directory $DIR does not exist."
+    exit 1
+fi
 
 if [ $VISUALISATION != "ON" ];
 then

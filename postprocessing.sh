@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
   	  printf "./run.sh - run the ABM\n\n"
   	  printf "Arguments:\n"
-      printf "        -expdir or --experiment_dir:  directory with the scenario to simulate (default: .)\n"
+      printf "        -expdir or --experiment_dir:  directory with the scenario to simulate\n"
       exit 1
       ;;
     -*|--*)
@@ -40,7 +40,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-cd results/$EXPERIMENT_DIR || { echo "Directory not found!"; exit 1; }
+DIR="results/$EXPERIMENT_DIR"
+
+# Check if the directory exists
+if [ ! -d "$DIR" ]; then
+    echo "❌ Error: Directory $DIR does not exist."
+    exit 1
+fi
+
+cd $DIR
 
 # Pre-check which "seed" directories exist and store them in an environment variable
 existing_dirs=""
