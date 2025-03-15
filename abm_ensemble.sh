@@ -23,6 +23,7 @@ fi
 
 # Default values for input parameters
 EXPERIMENT_DIR="None"
+RESULTS_DIR="results"
 ONLY_BUILD="OFF"
 CLEAN="OFF"
 
@@ -30,6 +31,11 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -expdir|--experiment_dir)
       EXPERIMENT_DIR="$2"
+      shift
+      shift
+      ;;
+    -resdir|--results_dir)
+      RESULTS_DIR="$2"
       shift
       shift
       ;;
@@ -121,6 +127,10 @@ fi
 
 if [ -f /.dockerenv ]; then
   cp -r results flamegpu2_results
+else
+  if [ $RESULTS_DIR != "results" ]; then
+    cp -r results $RESULTS_DIR
+  fi
 fi
 
 deactivate
