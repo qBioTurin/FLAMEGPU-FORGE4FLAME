@@ -293,7 +293,7 @@ class SpatialGraph:
         Perform BFS from a start vertex and return the shortest path lengths
         to all other vertices.
         """
-        distances = {v: float('inf') for v in chain.from_iterable(self.vertices.values())}
+        distances = {v: float('-inf') for v in chain.from_iterable(self.vertices.values())}
         distances[start_vertex] = 0
         queue = deque([start_vertex])
 
@@ -302,10 +302,10 @@ class SpatialGraph:
             
             # For all edges connected to the current vertex
             for edge in self.edgelist:
-                if edge.v1 == current and distances[edge.v2] == float('inf'):
+                if edge.v1 == current and distances[edge.v2] == float('-inf'):
                     distances[edge.v2] = distances[current] + 1
                     queue.append(edge.v2)
-                elif edge.v2 == current and distances[edge.v1] == float('inf'):
+                elif edge.v2 == current and distances[edge.v1] == float('-inf'):
                     distances[edge.v1] = distances[current] + 1
                     queue.append(edge.v1)
 
