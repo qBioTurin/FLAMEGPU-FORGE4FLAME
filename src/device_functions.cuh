@@ -327,6 +327,8 @@ namespace device_functions {
 
                 //if the initial room is not avaiable because the resources are over, explore the alternatives:
                 if(!available){
+                    get_global_resource = --global_resources_counter[final_target]; 
+                    get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
                     //search another room of the same type and area
                     if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
@@ -363,7 +365,6 @@ namespace device_functions {
 
                 //if no other alternave is avaiable or it's explicit, skip
                 if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
-                
                     ++global_resources_counter[start_node]; 
                     ++specific_resources_counter[agent_type][start_node];
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);

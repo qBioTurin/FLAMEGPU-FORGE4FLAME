@@ -369,9 +369,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             
             const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node);
 
-
-        
-
             a_star(FLAMEGPU, start_node, final_node, solution);
 
             update_targets(FLAMEGPU, solution, &target_index, false, flow_stay);
