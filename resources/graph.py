@@ -296,6 +296,7 @@ class SpatialGraph:
         distances = {v: float('-inf') for v in chain.from_iterable(self.vertices.values())}
         distances[start_vertex] = 0
         queue = deque([start_vertex])
+        
 
         while queue:
             current = queue.popleft()
