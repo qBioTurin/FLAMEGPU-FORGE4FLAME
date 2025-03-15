@@ -129,7 +129,7 @@ if [ -f /.dockerenv ]; then
   cp -r results flamegpu2_results
   chmod -R 777 flamegpu2_results/results
 else
-  if [ $RESULTS_DIR != "results" ]; then
+  if [ "$RESULTS_DIR" != "results" ]; then
     cp -r results $RESULTS_DIR
     chmod -R 777 $RESULTS_DIR/results
   fi

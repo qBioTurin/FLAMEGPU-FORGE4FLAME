@@ -463,6 +463,8 @@ namespace host_functions {
             counters_file << endl;
             counters_file.close();
 
+            
+
         }
 
 #ifdef DEBUG

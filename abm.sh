@@ -26,6 +26,7 @@ fi
 
 # Default values for input parameters
 EXPERIMENT_DIR="None"
+RESULTS_DIR="results"
 ONLY_BUILD="OFF"
 VISUALISATION="OFF"
 CHECKPOINT_SIMULATION="OFF"
@@ -123,6 +124,7 @@ fi
 
 # Generate the configuration file to give in input to the ABM model
 WHOLE_OUTPUT="$(bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1)"
+#bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1
 SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 
 echo $SEED > results/$EXPERIMENT_DIR/seed.txt
@@ -140,7 +142,7 @@ if [ -f /.dockerenv ]; then
   cp -r results flamegpu2_results
   chmod -R 777 flamegpu2_results/results
 else
-  if [ $RESULTS_DIR != "results" ]; then
+  if [ "$RESULTS_DIR" != "results" ]; then
     cp -r results $RESULTS_DIR
     chmod -R 777 $RESULTS_DIR/results
   fi
