@@ -32,6 +32,8 @@ VISUALISATION="OFF"
 CHECKPOINT_SIMULATION="OFF"
 DEBUG="OFF"
 CLEAN="OFF"
+SUBSTITUTE_DIR="OFF"
+
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -57,6 +59,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -c|--clean)
       CLEAN="$2"
+      shift
+      shift
+      ;;
+    -subdir|--substitute_dir)
+      SUBSTITUTE_DIR="$2"
       shift
       shift
       ;;
@@ -95,7 +102,7 @@ DIR_PATH="results/$EXPERIMENT_DIR"
 
 if [ -d "$DIR_PATH" ]; then
     read -p "The directory '$DIR_PATH' already exists. Do you want to replace it? (y/n): " response
-    if [[ "$response" == "y" ]]; then
+    if [ "$response" == "y" ] || [ $SUBSTITUTE_DIR == "ON" ]; then
         rm -rf "$DIR_PATH"  # Remove the directory and its contents
         mkdir -p "$DIR_PATH"  # Recreate the directory
         echo "The directory '$DIR_PATH' has been replaced."
