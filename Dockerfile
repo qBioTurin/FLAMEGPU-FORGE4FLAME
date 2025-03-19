@@ -13,7 +13,7 @@ RUN apt update \
 
 RUN mkdir -p /home/docker/flamegpu2
 
-RUN git clone https://github.com/qBioTurin/FLAMEGPU-FORGE4FLAME.git /home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME
+RUN git clone -b School https://github.com/qBioTurin/FLAMEGPU-FORGE4FLAME.git /home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME
 
 RUN chmod -R 777 /home/docker/flamegpu2
 
