@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 
 def CreateMapEncoding(dirname_experiment):
 	files = os.listdir(dirname_experiment)
