@@ -131,7 +131,17 @@ fi
 
 # Generate the configuration file to give in input to the ABM model
 WHOLE_OUTPUT="$(bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1)"
-#bash generate_configuration.sh -e OFF -expdir $EXPERIMENT_DIR 2>&1
+
+# Count the number of words in WHOLE_OUTPUT
+WORD_COUNT=$(echo "$WHOLE_OUTPUT" | wc -w)
+
+# Check if exactly two values are present
+if [ "$WORD_COUNT" -ne 2 ]; then
+    echo "Error: Expected 2 values in WHOLE_OUTPUT, but got $WORD_COUNT."
+    echo "Output: $WHOLE_OUTPUT"
+    exit 1
+fi
+
 SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 
 echo $SEED > results/$EXPERIMENT_DIR/seed.txt
