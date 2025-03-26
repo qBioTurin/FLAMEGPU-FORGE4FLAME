@@ -42,6 +42,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -resdir|--results_dir)
+      RESULTS_DIR="$2"
+      shift
+      shift
+      ;;
     -ob|--only_build)
       ONLY_BUILD="$2"
       shift
