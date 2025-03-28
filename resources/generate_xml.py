@@ -97,7 +97,6 @@ def obtain_areas(WHOLEmodel):
 	return areas_dict
 
 def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name, types_IDs):
-
 	roomsINcanvas = WHOLEmodel["roomsINcanvas"]
 
 	color = WHOLEmodel["color"][0]
