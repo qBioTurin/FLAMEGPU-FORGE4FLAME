@@ -92,6 +92,8 @@ namespace host_functions {
         fflush(stdout);
 
         printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
+
+        
 #ifdef DEBUG
         printf("5,%d,%d,Ending initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
@@ -423,13 +425,14 @@ namespace host_functions {
 
         if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
             unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY) + 1;
+            //printf("DAY preso giusto? %d\n", day);
             unsigned short week_day = (FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY) + 1) % DAYS_IN_A_WEEK;
             
 
             FLAMEGPU->environment.setProperty<unsigned short>(DAY, day);
             FLAMEGPU->environment.setProperty<unsigned short>(WEEK_DAY, week_day);
             printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
-
+           
             auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
@@ -463,9 +466,30 @@ namespace host_functions {
             counters_file << endl;
             counters_file.close();
 
-            
+            #ifdef DEBUG
 
-        }
+            auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+            auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+            printf("[DEBUG],%d,%d,GLOBAL_RESOURCES_COUNTER: ", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
+            for(int i = 0; i < V; i++){
+                printf("%d,", (unsigned int) global_resources_counter[i]);
+                if((unsigned int) global_resources_counter[i] == 4){
+                    printf("INDICEEE %d\n", i);
+                }
+            }
+            printf("\n");
+            printf("[DEBUG],%d,%d,SPECIFIC_RESOURCES_COUNTER: ", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
+            for(int i = 0; i < NUMBER_OF_AGENTS_TYPES; i++){
+                for(int j = 0; j < V; j++){
+                    printf("%d, ", (unsigned int) specific_resources_counter[i][j]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+            #endif
+
+
+         }
 
 #ifdef DEBUG
         printf("5,%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());

@@ -208,7 +208,9 @@ namespace device_functions {
         unsigned short flow_index = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX) + 1;
         unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
         short final_target = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
-
+        const unsigned short extern_node = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
+        const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
+        
         const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
@@ -365,8 +367,10 @@ namespace device_functions {
 
                 //if no other alternave is avaiable or it's explicit, skip
                 if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
-                    ++global_resources_counter[start_node]; 
-                    ++specific_resources_counter[agent_type][start_node];
+                    if(start_node != extern_node && start_node_type != WAITINGROOM) {
+                        --global_resources_counter[start_node]; 
+                        --specific_resources_counter[agent_type][start_node];
+                    }
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
                     final_target = coord2index[(unsigned short)(final_target_vec[1]/YOFFSET)][(unsigned short)final_target_vec[2]][(unsigned short)final_target_vec[0]];
