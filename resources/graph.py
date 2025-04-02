@@ -288,24 +288,28 @@ class SpatialGraph:
         ]
         self.edgelist.update( stair_links )
 
-    def __bfs_shortest_path(self, start_vertex) -> dict:
+    def __bfs_shortest_path(self, start_vertex: Vertex) -> dict:
         """
         Perform BFS from a start vertex and return the shortest path lengths
         to all other vertices.
         """
-        # Initialize all distances to infinity
-        distances = {v: float('inf') for v in chain.from_iterable(self.vertices.values())}
+        distances = {v: float('-inf') for v in chain.from_iterable(self.vertices.values())}
+
         distances[start_vertex] = 0
         queue = deque([start_vertex])
-        
+
+
         while queue:
             current = queue.popleft()
-            
-            # Traverse adjacent vertices instead of scanning edges list
-            for neighbor in self.vertices.get(current, []):  
-                if distances[neighbor] == float('inf'):  
-                    distances[neighbor] = distances[current] + 1
-                    queue.append(neighbor)
+
+            # For all edges connected to the current vertex
+            for edge in self.edgelist:
+                if edge.v1 == current and distances[edge.v2] == float('-inf'):
+                    distances[edge.v2] = distances[current] + 1
+                    queue.append(edge.v2)
+                elif edge.v2 == current and distances[edge.v1] == float('-inf'):
+                    distances[edge.v1] = distances[current] + 1
+                    queue.append(edge.v1)
 
         return distances
 

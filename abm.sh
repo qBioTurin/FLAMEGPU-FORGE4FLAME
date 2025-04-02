@@ -18,11 +18,11 @@
   Authors: Daniele Baccega, Irene Terrone, Simone Pernice
 '
 
-bash drivers_check.sh
-if [ $? -eq 1 ];
-then
-  exit 1
-fi
+# bash drivers_check.sh
+# if [ $? -eq 1 ];
+# then
+#   exit 1
+# fi
 
 # Default values for input parameters
 EXPERIMENT_DIR="None"
