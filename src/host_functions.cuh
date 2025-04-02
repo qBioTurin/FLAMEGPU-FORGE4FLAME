@@ -473,9 +473,6 @@ namespace host_functions {
             printf("[DEBUG],%d,%d,GLOBAL_RESOURCES_COUNTER: ", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
             for(int i = 0; i < V; i++){
                 printf("%d,", (unsigned int) global_resources_counter[i]);
-                if((unsigned int) global_resources_counter[i] == 4){
-                    printf("INDICEEE %d\n", i);
-                }
             }
             printf("\n");
             printf("[DEBUG],%d,%d,SPECIFIC_RESOURCES_COUNTER: ", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
@@ -486,6 +483,7 @@ namespace host_functions {
                 printf("\n");
             }
             printf("\n");
+            
             #endif
 
 

@@ -245,8 +245,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
                 //if the initial room is not avaiable because the resources are over, explore the alternatives:
                 if(!available){
-                    get_global_resource = --global_resources_counter[event_node];
-                    get_specific_resource = --specific_resources_counter[agent_type][event_node];
+                    --global_resources_counter[event_node];
+                    --specific_resources_counter[agent_type][event_node];
 
                     //search another room of the same type and area
                     if(alternative_resources_area_rand[agent_type][event_node] == area_room_event && alternative_resources_type_rand[agent_type][event_node] == type_room_event){
@@ -343,8 +343,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         if(next_index == target_index && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
             FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
             short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
-            get_global_resource = --global_resources_counter[event_node];
-            get_specific_resource = --specific_resources_counter[agent_type][event_node];
+            --global_resources_counter[event_node];
+            --specific_resources_counter[agent_type][event_node];
             FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
         }
 
@@ -363,8 +363,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
 
             if(start_node != extern_node && start_node_type != WAITINGROOM) {
-                get_global_resource = --global_resources_counter[start_node]; 
-                get_specific_resource = --specific_resources_counter[agent_type][start_node];
+                --global_resources_counter[start_node]; 
+                --specific_resources_counter[agent_type][start_node];
             }
             
             const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node);
@@ -832,7 +832,7 @@ FLAMEGPU_AGENT_FUNCTION(handlingQueueinWaitingRoom, MessageBucket, MessageBucket
         const short node = coord2index[(unsigned short)(room_pos[1]/YOFFSET)][(unsigned short)room_pos[2]][(unsigned short)room_pos[0]];
 
         for(const auto& message: FLAMEGPU->message_in(node)){
-
+            
             int agent_type = message.getVariable<int>(AGENT_TYPE);
             unsigned int get_global_resource = ++global_resources_counter[node];
             unsigned int get_specific_resource = ++specific_resources_counter[agent_type][node];
@@ -856,8 +856,8 @@ FLAMEGPU_AGENT_FUNCTION(handlingQueueinWaitingRoom, MessageBucket, MessageBucket
                 break;
             }
             else {
-                get_global_resource = --global_resources_counter[node];
-                get_specific_resource = --specific_resources_counter[agent_type][node];
+                --global_resources_counter[node];
+                --specific_resources_counter[agent_type][node];
             }
         }
 

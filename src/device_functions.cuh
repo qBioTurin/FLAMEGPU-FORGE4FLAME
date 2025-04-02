@@ -135,9 +135,9 @@ namespace device_functions {
                 int get_global_resource = ++global_resources_counter[event_node];
                 int get_specific_resource = ++specific_resources_counter[agent_type][event_node];
 
-                if(get_global_resource > global_resources[event_node] || get_specific_resource > specific_resources_counter[agent_type][event_node]){
-                    unsigned int global = --global_resources_counter[event_node];
-                    unsigned int specific = --specific_resources_counter[agent_type][event_node];
+                if(get_global_resource > global_resources[event_node] || get_specific_resource > specific_resources[agent_type][event_node]){
+                    --global_resources_counter[event_node];
+                    --specific_resources_counter[agent_type][event_node];
                     previous_separation = min_separation;
 
                 }
@@ -183,9 +183,9 @@ namespace device_functions {
             int get_global_resource = ++global_resources_counter[final_target];
             int get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
-            if(get_global_resource > global_resources[final_target] || get_specific_resource > specific_resources_counter[agent_type][final_target]){
-                unsigned int global = --global_resources_counter[final_target];
-                unsigned int specific = --specific_resources_counter[agent_type][final_target];
+            if(get_global_resource > global_resources[final_target] || get_specific_resource > specific_resources[agent_type][final_target]){
+                --global_resources_counter[final_target];
+                --specific_resources_counter[agent_type][final_target];
                 random_iterator = (random_iterator + 1) % lenght_rooms;
             }
             else {
