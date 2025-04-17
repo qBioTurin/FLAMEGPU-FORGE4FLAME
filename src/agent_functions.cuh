@@ -573,7 +573,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
 
     float total_n_r = 0.0f;
     for(const auto& message: FLAMEGPU->message_in(node)) {
-        if(message.getVariable<int>(DISEASE_STATE) == INFECTED && node_type != CORRIDOR && node_type != DOOR){
+        if(message.getVariable<int>(DISEASE_STATE) == INFECTED && node_type != CPOINT && node_type != DOOR){
             const float activity_type = message.getVariable<float>(ACTIVITY_TYPE);
 
             float exhalation_mask_efficacy = FLAMEGPU->environment.getProperty<float, 3>(EXHALATION_MASK_EFFICACY, message.getVariable<int>(MASK_TYPE));

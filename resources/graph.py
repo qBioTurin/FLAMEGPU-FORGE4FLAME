@@ -120,7 +120,7 @@ class SpatialGraph:
         self.__first_vid = first_vertex_id
 
         for vtype in MapEncoding:
-            if vtype not in [MapEncoding.WALL, MapEncoding.WALKABLE]:
+            if vtype not in [MapEncoding.CORRIDOR, MapEncoding.INSIDEROOM]:
                 self.vertices[vtype] = []
 
     def add_vertex(self, x_value: int, y_value: int, z_value: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame):
@@ -150,12 +150,12 @@ class SpatialGraph:
                 raise RuntimeError("Please provide either a filename or a numpy matrix as input parameter.")
 
         for me in MapEncoding:
-            if me not in [MapEncoding.WALL, MapEncoding.WALKABLE, MapEncoding.DOOR, MapEncoding.CORRIDOR, MapEncoding.FILLINGROOM]:
+            if me not in [MapEncoding.CORRIDOR, MapEncoding.INSIDEROOM, MapEncoding.DOOR, MapEncoding.CPOINT, MapEncoding.FILLINGROOM]:
                 self.edgelist.update(self.__match_doors(MapEncoding.DOOR, me))
 
         self.edgelist.update(self.__match_vertices(MapEncoding.DOOR, MapEncoding.DOOR))
-        self.edgelist.update(self.__match_vertices(MapEncoding.CORRIDOR, MapEncoding.DOOR))
-        self.edgelist.update(self.__match_vertices(MapEncoding.CORRIDOR, MapEncoding.CORRIDOR))
+        self.edgelist.update(self.__match_vertices(MapEncoding.CPOINT, MapEncoding.DOOR))
+        self.edgelist.update(self.__match_vertices(MapEncoding.CPOINT, MapEncoding.CPOINT))
 
     @property
     def num_vertices(self):
@@ -187,17 +187,26 @@ class SpatialGraph:
         points_t2 = self.vertices.get(type2)
 
         edgelist = {
-            GraphEdge(t1, t2, len(self.__check_vertex_compatibility(t1, t2)))
-                for t1 in points_t1
-                    for t2 in points_t2
-                        if t1 != t2 and np.sum([(1 if self.matrix[x][z] == 0 else 0) for (z, x) in self.__check_vertex_compatibility(t1, t2)]) == 0
+            GraphEdge(t1, t2, len(path))
+            for t1 in points_t1
+                for t2 in points_t2
+                    if t1 != t2 and (path := self.__check_vertex_compatibility(t1, t2)) and self.__check_middle_values(path, self.matrix)
         }
-        logging.info(f"{type1} vs {type2}: {len(edgelist)} edges")
+
         return edgelist
+    
+    def __check_middle_values(self, path, matrix):
+        if len(path) <= 2:
+            return True
+        
+        middle = path[1:-1]
+        ref = next((matrix[x][z] for (z, x) in middle if matrix[x][z] != MapEncoding.to_value("DOOR") and matrix[x][z] != MapEncoding.to_value("CPOINT")), None)
+        return all(matrix[x][z] == ref or matrix[x][z] == MapEncoding.to_value("DOOR") or matrix[x][z] == MapEncoding.to_value("CPOINT") for (z, x) in middle)
+
 
     def __match_doors(self, type1: MapEncoding, type2: MapEncoding) -> List[GraphEdge]:
         """ Build edges between two vertices v1 and v2 s.t. type(v1) = type_v1 and type(v2) = type_v2
-            and their coordinates are on the same line and without obstacles NEL MEZZO """
+            and their coordinates are on the same line and without obstacles """
         
         points_t1 = self.vertices.get(type1)
         points_t2 = self.vertices.get(type2)
@@ -234,46 +243,48 @@ class SpatialGraph:
     def __match_vertex(self, v1: Vertex, v2: Vertex) -> bool:
         return abs(v1.coords.vec - v2.coords.vec) == 0
 
-    def __check_line(self, lb, ub, x = None, z = None) -> bool:
-        """ Check if there are no obstacles between two aligned points """
-        assert x or z
+    def __check_line(self, lb, ub, x=None, z=None) -> bool:
+        """Check if there are no obstacles between two aligned points (allowing value 2)"""
+        assert x is not None or z is not None
         u, v = (lb, ub) if lb < ub else (ub, lb)
 
-        data = self.matrix[ int(z), int(u):int(v) ] if z else self.matrix[ int(u):int(v), int(x) ]
-        
-        return np.all(data > 0)
+        data = self.matrix[int(z), int(u):int(v)] if z is not None else self.matrix[int(u):int(v), int(x)]
+
+        return np.all((data > 0) | (data == 2))
+
 
     def __check_vertex_compatibility(self, v1: Vertex, v2: Vertex) -> bool:
         """ Check if two vertices are on the same line (either horizontal or vertical) and there are no wall between them """
-        x_offset_v1 = 0
-        z_offset_v1 = 0
-        x_offset_v2 = 0
-        z_offset_v2 = 0
-        if v1.type == MapEncoding.DOOR:
-            if v1.yaw == math.pi / 2:
-                x_offset_v1 = -1
-            if v1.yaw == 3 * math.pi / 2:
-                x_offset_v1 = 1
+        # x_offset_v1 = 0
+        # z_offset_v1 = 0
+        # x_offset_v2 = 0
+        # z_offset_v2 = 0
+        # if v1.type == MapEncoding.DOOR:
+        #     if v1.yaw == math.pi / 2:
+        #         x_offset_v1 = -1
+        #     if v1.yaw == 3 * math.pi / 2:
+        #         x_offset_v1 = 1
 
-        if v2.type == MapEncoding.DOOR:
-            if v2.yaw == math.pi / 2:
-                x_offset_v2 = -1
-            if v2.yaw == 3 * math.pi / 2:
-                x_offset_v2 = 1
+        # if v2.type == MapEncoding.DOOR:
+        #     if v2.yaw == math.pi / 2:
+        #         x_offset_v2 = -1
+        #     if v2.yaw == 3 * math.pi / 2:
+        #         x_offset_v2 = 1
 
-        if v1.type == MapEncoding.DOOR:
-            if v1.yaw == 0:
-                z_offset_v1 = 1
-            if v1.yaw == math.pi:
-                z_offset_v1 = -1
+        # if v1.type == MapEncoding.DOOR:
+        #     if v1.yaw == 0:
+        #         z_offset_v1 = 1
+        #     if v1.yaw == math.pi:
+        #         z_offset_v1 = -1
 
-        if v2.type == MapEncoding.DOOR:
-            if v2.yaw == 0:
-                z_offset_v2 = 1
-            if v2.yaw == math.pi:
-                z_offset_v2 = -1
+        # if v2.type == MapEncoding.DOOR:
+        #     if v2.yaw == 0:
+        #         z_offset_v2 = 1
+        #     if v2.yaw == math.pi:
+        #         z_offset_v2 = -1
 
-        path = list(bresenham(int(v1.coords.x + x_offset_v1), int(v1.coords.z + z_offset_v1), int(v2.coords.x + x_offset_v2), int(v2.coords.z + z_offset_v2)))
+        # path = list(bresenham(int(v1.coords.x + x_offset_v1), int(v1.coords.z + z_offset_v1), int(v2.coords.x + x_offset_v2), int(v2.coords.z + z_offset_v2)))
+        path = list(bresenham(int(v1.coords.x), int(v1.coords.z), int(v2.coords.x), int(v2.coords.z)))
 
         return path
 
@@ -284,7 +295,7 @@ class SpatialGraph:
 
             for i, stair_i in enumerate( stair_vertices )
                 for stair_j in stair_vertices[i+1:]
-                    if abs(stair_i.coords.x - stair_j.coords.x) <= 10 and abs(stair_i.coords.z - stair_j.coords.z) <= 10
+                    if abs(stair_i.coords.x - stair_j.coords.x) <= 5 and abs(stair_i.coords.z - stair_j.coords.z) <= 5
         ]
         self.edgelist.update( stair_links )
 
@@ -326,8 +337,8 @@ class SpatialGraph:
             
             whole_graph.edgelist.update( graph.edgelist )
 
-        del whole_graph.vertices[ MapEncoding.WALKABLE ]
-        del whole_graph.vertices[ MapEncoding.WALL ]
+        del whole_graph.vertices[ MapEncoding.INSIDEROOM ]
+        del whole_graph.vertices[ MapEncoding.CORRIDOR ]
 
         whole_graph.__match_stairs()
 
