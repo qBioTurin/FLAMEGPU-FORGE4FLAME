@@ -64,8 +64,6 @@ namespace device_functions {
         const float yaw = FLAMEGPU->environment.getProperty<float, V>(NODE_YAW, new_target);
         const bool yaw_condition = compare_float(yaw, M_PI/2, 0.5f) || compare_float(yaw, 2*M_PI - M_PI/2, 0.5f);
 
-        float x = FLAMEGPU->environment.getProperty<float, V>(NODE_X, new_target);
-        float z = FLAMEGPU->environment.getProperty<float, V>(NODE_Z, new_target);
         int length = FLAMEGPU->environment.getProperty<int, V>(NODE_LENGTH, new_target);
         int width = FLAMEGPU->environment.getProperty<int, V>(NODE_WIDTH, new_target);
         float offset_x, offset_z;
@@ -73,8 +71,8 @@ namespace device_functions {
         offset_x = yaw_condition ? width: length;
         offset_z = yaw_condition ? length: width;
 
-        *jitter_x = x + cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, offset_x, false);
-        *jitter_z = z + cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, offset_z, false);
+        *jitter_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, offset_x, false);
+        *jitter_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, offset_z, false);
     }
 
  /** 
@@ -519,10 +517,13 @@ namespace device_functions {
             if(i+1 < SOLUTION_LENGTH && new_targets[i+1] == -1){
                 generate_offset(FLAMEGPU, &jitter_x, &jitter_z, new_targets[i]);
             }
+
+            float x = FLAMEGPU->environment.getProperty<float, V>(NODE_X, new_target);
+            float z = FLAMEGPU->environment.getProperty<float, V>(NODE_Z, new_target);
             
-            new_target_x = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, new_targets[i]) + 0.5f + jitter_x;
+            new_target_x = x + jitter_x;
             new_target_y = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, new_targets[i]);
-            new_target_z = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, new_targets[i]) + 0.5f + jitter_z;
+            new_target_z = z + jitter_z;
 
             intermediate_target_x[contacts_id][*target_index].exchange(new_target_x);
             intermediate_target_y[contacts_id][*target_index].exchange(new_target_y);
