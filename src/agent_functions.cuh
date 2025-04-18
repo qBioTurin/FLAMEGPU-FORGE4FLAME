@@ -172,7 +172,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     float agent_pos_init[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
     float intermediate_target[3] = {(float) intermediate_target_x[contacts_id][next_index], (float) intermediate_target_y[contacts_id][next_index], (float) intermediate_target_z[contacts_id][next_index]};
 
-    //resources
+    // Resources
     auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
     auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
     auto alternative_resources_area_rand = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
@@ -183,14 +183,58 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
         auto env_events = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
         auto env_events_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
+        auto env_events_starttime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
+        auto env_events_endtime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
+        auto env_events_probability = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
         auto env_events_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
         auto env_events_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
         auto env_events_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
         
-        unsigned int num_events = 0;
-        unsigned short event = findLeftmostIndex(FLAMEGPU, 0, num_events+1, random);
-        while((int) env_events[agent_type][num_events] != -1)
-            num_events++;
+        // while((int) env_events[agent_type][num_events] != -1)
+        //     num_events++;
+
+        float env_events_cdf[EVENT_LENGTH];
+        int env_events_mapping[EVENT_LENGTH];
+        env_events_cdf[0] = 1.0f;
+        env_events_mapping[0] = 0;
+
+        unsigned int num_events = 1;
+        unsigned int i = 1;
+        while((int) env_events[agent_type][i] != -1){
+            int start_time = (int) env_events_starttime[agent_type][i];
+            int end_time = (int) env_events_endtime[agent_type][i];
+            int step = FLAMEGPU->getStepCounter() % STEPS_IN_A_DAY;
+
+            if(start_time <= step && end_time >= step){
+                env_events_mapping[num_events] = i;
+                num_events++;
+            }
+
+            i++;
+        }
+
+        i = 0;
+        unsigned int num_events_decr = num_events;
+        while((int) env_events[agent_type][i] != -1){
+            int start_time = (int) env_events_starttime[agent_type][i];
+            int end_time = (int) env_events_endtime[agent_type][i];
+            int step = FLAMEGPU->getStepCounter() % STEPS_IN_A_DAY;
+
+            if(start_time <= step && end_time >= step){
+                if(num_events_decr == num_events){
+                    env_events_cdf[num_events_decr-1] = env_events_probability[i];
+                }
+                else{
+                    env_events_cdf[num_events_decr-1] = env_events_cdf[num_events_decr] + env_events_probability[i];
+                }
+
+                num_events_decr--
+            }
+
+            i++;
+        }
+
+        unsigned short event = env_events_mapping[findLeftmostIndex(FLAMEGPU, 0, num_events-1, random, env_events_cdf)];
 
         if(event){
             short event_node = -1;

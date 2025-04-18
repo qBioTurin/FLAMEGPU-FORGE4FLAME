@@ -64,38 +64,17 @@ namespace device_functions {
         const float yaw = FLAMEGPU->environment.getProperty<float, V>(NODE_YAW, new_target);
         const bool yaw_condition = compare_float(yaw, M_PI/2, 0.5f) || compare_float(yaw, 2*M_PI - M_PI/2, 0.5f);
 
+        float x = FLAMEGPU->environment.getProperty<float, V>(NODE_X, new_target);
+        float z = FLAMEGPU->environment.getProperty<float, V>(NODE_Z, new_target);
         int length = FLAMEGPU->environment.getProperty<int, V>(NODE_LENGTH, new_target);
         int width = FLAMEGPU->environment.getProperty<int, V>(NODE_WIDTH, new_target);
-        float offset_x = 0.0f;
-        float offset_z = 0.0f;
-        char even_offset_length = 0;
-        char even_offset_width = 0;
+        float offset_x, offset_z;
 
-        even_offset_length = (length % 2 == 0) ? 1: 0;
-        even_offset_width = (width % 2 == 0) ? 1: 0;
+        offset_x = yaw_condition ? width: length;
+        offset_z = yaw_condition ? length: width;
 
-        length = length + even_offset_length;
-        width = width + even_offset_width;
-
-        offset_x = ((yaw_condition) ? width: length) - 1;
-        offset_z = ((yaw_condition) ? length: width) - 1;
-
-        if(compare_float(yaw, 0, 0.5f)){
-            *jitter_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_x/2, offset_x/2 - even_offset_length, false);
-            *jitter_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_z/2 + even_offset_width, offset_z / 2, false);
-        }
-        else if(compare_float(yaw, M_PI/2, 0.5f)){
-            *jitter_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_x/2, offset_x/2 - even_offset_width, false);
-            *jitter_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_z/2, offset_z/2 - even_offset_length, false);
-        }
-        else if(compare_float(yaw, M_PI, 0.5f)){
-            *jitter_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_x/2 + even_offset_length, offset_x/2, false);
-            *jitter_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_z/2, offset_z/2 - even_offset_width, false);
-        }
-        else{
-            *jitter_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_x/2 + even_offset_width, offset_x/2, false);
-            *jitter_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, -offset_z/2 + even_offset_length, offset_z/2, false);
-        }
+        *jitter_x = x + cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, offset_x, false);
+        *jitter_z = z + cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0, offset_z, false);
     }
 
  /** 
@@ -1169,12 +1148,12 @@ namespace device_functions {
     /** 
      * Find the correct occurred event.
     */
-    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int left, int right, const float target) {
+    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int left, int right, const float target, const float *env_events_cdf) {
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
-        auto env_events_cdf = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_CDF);
+        // auto env_events_cdf = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_CDF);
         
-        if(target > (float) env_events_cdf[agent_type][1])
+        if(target > (float) env_events_cdf[1])
             return left;
 
         int result = right;
@@ -1182,11 +1161,11 @@ namespace device_functions {
         while (left <= right) {
             int mid = (int) (left + (right - left) / 2);
 
-            if ((float) env_events_cdf[agent_type][mid] < target) {
+            if ((float) env_events_cdf[mid] < target) {
                 right = mid - 1;
             } else {
                 left = mid + 1;
-                result = mid; // Store the current index as a potential answer
+                result = mid;
             }
         }
 
