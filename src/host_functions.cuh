@@ -123,7 +123,7 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS, string("resources/macro_environment/") + ENV_EVENTS + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AREA, string("resources/macro_environment/") + ENV_EVENTS_AREA + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_PROBABILITY, string("resources/macro_environment/") + ENV_EVENTS_PROBABILITY + ".xml");
-        FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED, ring("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED, sring("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_STARTTIME, string("resources/macro_environment/") + ENV_EVENTS_STARTTIME + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_ENDTIME, string("resources/macro_environment/") + ENV_EVENTS_ENDTIME + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_ACTIVITY_TYPE, string("resources/macro_environment/") + ENV_EVENTS_ACTIVITY_TYPE + ".xml");

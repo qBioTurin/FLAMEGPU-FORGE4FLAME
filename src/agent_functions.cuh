@@ -228,7 +228,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                     env_events_cdf[num_events_decr-1] = env_events_cdf[num_events_decr] + env_events_probability[i];
                 }
 
-                num_events_decr--
+                num_events_decr--;
             }
 
             i++;
