@@ -569,23 +569,23 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					for rf in random_flow:
 						if rf["Room"] == "Do nothing":
 								continue
-
+	
 						room = rf["Room"].strip().split("-")
-
+	
 						a, b = parse_distribution(rf["Time"], rf["Dist"])
-
+	
 						env_events[agent_type_idx][e] = MapEncoding.to_value(room[0].upper())
 						env_events_area[agent_type_idx][e] = areas[room[1]]["ID"]
 						if e == len(random_flow) - 1:
 							env_events_cdf[agent_type_idx][e] = float(rf["Weight"])
 						else:
 							env_events_cdf[agent_type_idx][e] = float(rf["Weight"]) + env_events_cdf[agent_type_idx][e+1]
-					env_events_activity[agent_type_idx][e] = rf["Activity"]
-					env_events_distr[agent_type_idx][e] = distributions[rf["Dist"]]
-					env_events_distr_firstparam[agent_type_idx][e] = int(a) * steps_in_a_minute
-					env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
-
-					e = e - 1
+						env_events_activity[agent_type_idx][e] = rf["Activity"]
+						env_events_distr[agent_type_idx][e] = distributions[rf["Dist"]]
+						env_events_distr_firstparam[agent_type_idx][e] = int(a) * steps_in_a_minute
+						env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
+	
+						e = e - 1
 					
 					env_events[agent_type_idx][0] = 0
 					env_events_area[agent_type_idx][0] = -1
