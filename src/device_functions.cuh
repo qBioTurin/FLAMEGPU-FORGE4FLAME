@@ -518,8 +518,8 @@ namespace device_functions {
                 generate_offset(FLAMEGPU, &jitter_x, &jitter_z, new_targets[i]);
             }
 
-            float x = FLAMEGPU->environment.getProperty<float, V>(NODE_X, new_target);
-            float z = FLAMEGPU->environment.getProperty<float, V>(NODE_Z, new_target);
+            float x = FLAMEGPU->environment.getProperty<float, V>(NODE_X, new_targets[i]);
+            float z = FLAMEGPU->environment.getProperty<float, V>(NODE_Z, new_targets[i]);
             
             new_target_x = x + jitter_x;
             new_target_y = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, new_targets[i]);
