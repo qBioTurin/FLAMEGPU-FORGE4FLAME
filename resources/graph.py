@@ -51,6 +51,8 @@ class Vertex:
 
     def __init__(self, vid: int, 
                  coordinates: Coordinates,
+                 x: int,
+                 z: int,
                  typeof: MapEncoding,
                  area: int,
                  yaw: float,
@@ -61,6 +63,8 @@ class Vertex:
                  waitingroom_rand: pd.DataFrame) -> None:
         self.id = vid 
         self.coords = coordinates
+        self.x = x
+        self.z = z
         self.type = typeof
         self.area = area
         self.yaw = yaw
@@ -123,10 +127,10 @@ class SpatialGraph:
             if vtype not in [MapEncoding.CORRIDOR, MapEncoding.INSIDEROOM]:
                 self.vertices[vtype] = []
 
-    def add_vertex(self, x_value: int, y_value: int, z_value: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame):
+    def add_vertex(self, x_value: int, y_value: int, z_value: int, x: int, z: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame):
         global first_vertex_id
 
-        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand))
+        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), x, z, vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand))
         self.__first_vid = self.__first_vid + 1
         first_vertex_id = first_vertex_id + 1
 
@@ -255,35 +259,7 @@ class SpatialGraph:
 
     def __check_vertex_compatibility(self, v1: Vertex, v2: Vertex) -> bool:
         """ Check if two vertices are on the same line (either horizontal or vertical) and there are no wall between them """
-        # x_offset_v1 = 0
-        # z_offset_v1 = 0
-        # x_offset_v2 = 0
-        # z_offset_v2 = 0
-        # if v1.type == MapEncoding.DOOR:
-        #     if v1.yaw == math.pi / 2:
-        #         x_offset_v1 = -1
-        #     if v1.yaw == 3 * math.pi / 2:
-        #         x_offset_v1 = 1
 
-        # if v2.type == MapEncoding.DOOR:
-        #     if v2.yaw == math.pi / 2:
-        #         x_offset_v2 = -1
-        #     if v2.yaw == 3 * math.pi / 2:
-        #         x_offset_v2 = 1
-
-        # if v1.type == MapEncoding.DOOR:
-        #     if v1.yaw == 0:
-        #         z_offset_v1 = 1
-        #     if v1.yaw == math.pi:
-        #         z_offset_v1 = -1
-
-        # if v2.type == MapEncoding.DOOR:
-        #     if v2.yaw == 0:
-        #         z_offset_v2 = 1
-        #     if v2.yaw == math.pi:
-        #         z_offset_v2 = -1
-
-        # path = list(bresenham(int(v1.coords.x + x_offset_v1), int(v1.coords.z + z_offset_v1), int(v2.coords.x + x_offset_v2), int(v2.coords.z + z_offset_v2)))
         path = list(bresenham(int(v1.coords.x), int(v1.coords.z), int(v2.coords.x), int(v2.coords.z)))
 
         return path

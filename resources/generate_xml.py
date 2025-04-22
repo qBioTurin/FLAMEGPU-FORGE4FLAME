@@ -214,8 +214,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			room_file.write("\t</xagent>\n")
 			
 		if door != "none":
-			local_graph.add_vertex(x_door, y, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
-			local_graph.add_vertex(center_x, y, center_z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe)
+			local_graph.add_vertex(x_door, y, z_door, x_door, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+			local_graph.add_vertex(center_x, y, center_z, x, z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe)
 	
 	nodesINcanvas = WHOLEmodel["nodesINcanvas"]
 	nodesINcanvas = [node for node in nodesINcanvas if node["CanvasID"] == floor_name]
@@ -223,7 +223,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		x = node["x"]
 		z = node["y"]
 
-		local_graph.add_vertex(x, y, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CPOINT, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+		local_graph.add_vertex(x, y, z, x, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CPOINT, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
 	local_graph.init_edges(np.array(WHOLEmodel["matricesCanvas"][floor_name]))
 
@@ -305,8 +305,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 			node_type[v.id] = v.type.value
 			node_yaw[v.id] = v.yaw
-			node_x[v.id] = float(v.coords.x)
-			node_z[v.id] = float(v.coords.z)
+			node_x[v.id] = float(v.x)
+			node_z[v.id] = float(v.z)
 			node_length[v.id] = v.length
 			node_width[v.id] = v.width
 
