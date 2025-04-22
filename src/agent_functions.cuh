@@ -193,8 +193,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         // while((int) env_events[agent_type][num_events] != -1)
         //     num_events++;
 
-        float env_events_cdf[EVENT_LENGTH];
-        int env_events_mapping[EVENT_LENGTH];
+        float env_events_cdf[EVENT_LENGTH + 1];
+        int env_events_mapping[EVENT_LENGTH + 1];
         env_events_cdf[0] = 1.0f;
         env_events_mapping[0] = 0;
 
@@ -214,6 +214,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         }
 
         i = 0;
+        env_events_cdf[num_events] = 0.0f;
+        env_events_mapping[num_events] = 0;
         unsigned int num_events_decr = num_events;
         while((int) env_events[agent_type][i] != -1){
             int start_time = (int) env_events_starttime[agent_type][i];
@@ -234,7 +236,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             i++;
         }
 
-        unsigned short event = env_events_mapping[findLeftmostIndex(FLAMEGPU, 0, num_events-1, random, env_events_cdf)];
+        unsigned short event = env_events_mapping[findLeftmostIndex(FLAMEGPU, random, env_events_cdf, num_events)];
 
         if(event){
             short event_node = -1;

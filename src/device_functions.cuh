@@ -1149,29 +1149,32 @@ namespace device_functions {
     /** 
      * Find the correct occurred event.
     */
-    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int left, int right, const float target, const float *env_events_cdf) {
-        const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
-
-        // auto env_events_cdf = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_CDF);
-        
-        if(target > (float) env_events_cdf[1])
-            return left;
-
-        int result = right;
-
-        while (left <= right) {
-            int mid = (int) (left + (right - left) / 2);
-
-            if ((float) env_events_cdf[mid] < target) {
-                right = mid - 1;
-            } else {
-                left = mid + 1;
-                result = mid;
-            }
-        }
-
-
-        return result;
-    }
+   FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const float target, const float *env_events_cdf, const short num_events) { 
+       int left = 0;
+       int right = num_events - 2;
+   
+       if (target > env_events_cdf[1])
+           return left;
+   
+       if (target <= env_events_cdf[right])
+           return right;
+   
+       while (left <= right) {
+           int mid = left + (right - left) / 2;
+   
+           float upper = env_events_cdf[mid];
+           float lower = env_events_cdf[mid + 1];
+   
+           if (target <= upper && target > lower) {
+               return mid;
+           } else if (target > upper) {
+               right = mid - 1;
+           } else {
+               left = mid + 1;
+           }
+       }
+   
+       return left;
+   }
 }
 #endif //_DEVICE_FUNCTIONS_CUH_
