@@ -127,8 +127,8 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, V>(NODE_YAW, {0.0f});
     env.newProperty<float, V>(NODE_X, {0.0f});
     env.newProperty<float, V>(NODE_Z, {0.0f});
-    env.newProperty<int, V>(NODE_LENGTH, {0});
-    env.newProperty<int, V>(NODE_WIDTH, {0});
+    env.newProperty<float, V>(NODE_LENGTH, {0.0f});
+    env.newProperty<float, V>(NODE_WIDTH, {0.0f});
     
     env.newProperty<float, 4>(EXTERN_RANGES, {0.0f}); // Eventually modify to handle different entrances
 

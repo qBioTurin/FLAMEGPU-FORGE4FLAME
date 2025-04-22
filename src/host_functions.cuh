@@ -23,7 +23,7 @@ namespace host_functions {
     /** 
      * Generate a random number using the given RNG, distribution and parameters for host.
     */
-    float cuda_host_rng(HostAPI* FLAMEGPU, unsigned short distribution_id, int type, int a, int b, bool flow_time) {
+    float cuda_host_rng(HostAPI* FLAMEGPU, unsigned short distribution_id, int type, float a, float b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? normal_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]): uniform_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]);
 
         if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
@@ -279,13 +279,13 @@ namespace host_functions {
 
             int new_agent_state = SUSCEPTIBLE;
             
-            float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
-            float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
+            float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
+            float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
             unsigned short vaccination_end_of_immunization_days = 0;
             if(random < (float) env_vaccination_fraction[0][agent_type] && random_efficacy < (float) env_vaccination_efficacy[0][agent_type]){
                 new_agent_state = RECOVERED;
 #ifdef REINFECTION
-                vaccination_end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][agent_type], (int) env_vaccination_end_of_immunization_distr_firstparam[0][agent_type], (int) env_vaccination_end_of_immunization_distr_secondparam[0][agent_type], false)));
+                vaccination_end_of_immunization_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][agent_type], (float) env_vaccination_end_of_immunization_distr_firstparam[0][agent_type], (float) env_vaccination_end_of_immunization_distr_secondparam[0][agent_type], false)));
 #endif
             }
 
@@ -293,9 +293,9 @@ namespace host_functions {
             unsigned short fatality_days = 0;
             if(new_agent_state == SUSCEPTIBLE && find(selectedIndices.begin(), selectedIndices.end(), contacts_id) != selectedIndices.end()){
                 new_agent_state = INFECTED;
-                infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 2), false)));
+                infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 0), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 1), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 2), false)));
 #ifdef FATALITY
-                fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 0), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 1), FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 2), false)));
+                fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 0), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 1), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 2), false)));
 #endif
             }
 
@@ -306,7 +306,7 @@ namespace host_functions {
             new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
             new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
             new_pedestrian.setVariable<int>(AGENT_TYPE, agent_type);
-            new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[0][agent_type]) ? (int) env_mask_type[0][agent_type]: NO_MASK);
+            new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][agent_type]) ? (int) env_mask_type[0][agent_type]: NO_MASK);
             new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
             new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
             new_pedestrian.setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
@@ -314,10 +314,10 @@ namespace host_functions {
 
             int swab_steps = -1;
             if((int) env_swab_distr[0][agent_type] != NO_SWAB)
-                swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[0][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[0][agent_type], true));
+                swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][agent_type], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[0][agent_type]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[0][agent_type]), true));
             new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
-            const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (int) env_flow_distr_firstparam[agent_type][weekday_agent][0], (int) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
+            const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (float) env_flow_distr_firstparam[agent_type][weekday_agent][0], (float) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
             stay_matrix[contacts_id][0] = initial_stay;
 
             intermediate_target_x[contacts_id][0] = x;
@@ -535,7 +535,7 @@ namespace host_functions {
             for(int i = NUMBER_OF_AGENTS_TYPES_WITHOUT_A_RATE; i < NUMBER_OF_AGENTS_TYPES; i++){
                 unsigned short slot = 0;
                 while((int) env_rate_distr[i][week_day][slot] != -1){
-                    unsigned short random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (int) env_rate_distr_firstparam[i][week_day][slot], (int) env_rate_distr_secondparam[i][week_day][slot], true);
+                    unsigned short random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
 
                     for(int j = 0; j < random_agent; j++){
                         int new_agent_state = SUSCEPTIBLE;
@@ -546,13 +546,13 @@ namespace host_functions {
                         float y = YEXTERN;
                         float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 2), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 3), false);
 
-                        float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
-                        float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false);
+                        float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
+                        float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
                         unsigned short vaccination_end_of_immunization_days = 0;
                         if(random < (float) env_vaccination_fraction[day-1][i] && random_efficacy < (float) env_vaccination_efficacy[day-1][i]){
                             new_agent_state = RECOVERED;
 #ifdef REINFECTION
-                            vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[day-1][i], (int) env_vaccination_end_of_immunization_distr_firstparam[day-1][i], (int) env_vaccination_end_of_immunization_distr_secondparam[day-1][i], true);
+                            vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[day-1][i], (float) env_vaccination_end_of_immunization_distr_firstparam[day-1][i], (float) env_vaccination_end_of_immunization_distr_secondparam[day-1][i], true);
 #endif
                         }
 
@@ -566,7 +566,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
                         new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
-                        new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0, 1, false) < (float) env_mask_fraction[day-1][i]) ? (int) env_mask_type[day-1][i]: NO_MASK);
+                        new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[day-1][i]) ? (int) env_mask_type[day-1][i]: NO_MASK);
                         new_pedestrian.setVariable<int>(AGENT_TYPE, i);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                         new_pedestrian.setVariable<unsigned short>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
@@ -576,11 +576,11 @@ namespace host_functions {
 
                         int swab_steps = -1;
                         if((int) env_swab_distr[day-1][i] != NO_SWAB)
-                            swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[day-1][i], STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[day-1][i], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[day-1][i], true));
+                            swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[day-1][i], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[day-1][i]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[day-1][i]), true));
 
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
-                        const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (int) env_hours_schedule[i][week_day][2 * slot], (int) env_hours_schedule[i][week_day][2 * slot + 1], true);
+                        const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (float) env_hours_schedule[i][week_day][2 * slot], (float) env_hours_schedule[i][week_day][2 * slot + 1], true);
                         stay_matrix[contacts_id][0] = initial_stay;
 
                         intermediate_target_x[contacts_id][0] = x;
