@@ -525,7 +525,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								a, b = parse_distribution(f.loc["Time"], f.loc["Dist"])
 								env_flow[agent_type_idx][i][flow_index] = MapEncoding.to_value(ft.upper())
 								env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
-								if f.loc["AgentLinked"] != "":
+								if not f.loc["AgentLinked"] in ["", "."]:
 									env_flow_agentlinked[agent_type_idx][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
 								env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
 								env_flow_distr_firstparam[agent_type_idx][i][flow_index] = int(a) * steps_in_a_minute
@@ -562,7 +562,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							a, b = parse_distribution(f.loc["Time"], f.loc["Dist"])
 							env_flow[agent_type_idx][i][flow_index] = MapEncoding.to_value(ft.upper())
 							env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
-							if f.loc["AgentLinked"] != "":
+							if not f.loc["AgentLinked"] in ["", "."]:
 								env_flow_agentlinked[agent_type_idx][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
 							env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
 							env_flow_distr_firstparam[agent_type_idx][i][flow_index] = int(a) * steps_in_a_minute
