@@ -198,12 +198,13 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         env_events_cdf[0] = 1.0f;
         env_events_mapping[0] = 0;
 
+        int step = (FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY;
+
         unsigned int num_events = 1;
         unsigned int i = 1;
         while((int) env_events[agent_type][i] != -1){
             int start_time = (int) env_events_starttime[agent_type][i];
             int end_time = (int) env_events_endtime[agent_type][i];
-            int step = FLAMEGPU->getStepCounter() % STEPS_IN_A_DAY;
 
             if(start_time <= step && end_time >= step){
                 env_events_mapping[num_events] = i;
@@ -220,7 +221,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         while((int) env_events[agent_type][i] != -1){
             int start_time = (int) env_events_starttime[agent_type][i];
             int end_time = (int) env_events_endtime[agent_type][i];
-            int step = FLAMEGPU->getStepCounter() % STEPS_IN_A_DAY;
 
             if(start_time <= step && end_time >= step){
                 if(num_events_decr == num_events){
