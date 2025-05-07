@@ -189,9 +189,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         auto env_events_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
         auto env_events_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
         auto env_events_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
-        
-        // while((int) env_events[agent_type][num_events] != -1)
-        //     num_events++;
 
         float env_events_cdf[EVENT_LENGTH + 1];
         int env_events_mapping[EVENT_LENGTH + 1];
@@ -214,7 +211,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             i++;
         }
 
-        i = 0;
+        i = 1;
         env_events_cdf[num_events] = 0.0f;
         env_events_mapping[num_events] = 0;
         unsigned int num_events_decr = num_events;
