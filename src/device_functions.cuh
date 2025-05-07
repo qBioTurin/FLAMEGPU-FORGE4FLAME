@@ -1151,7 +1151,7 @@ namespace device_functions {
     */
    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const float target, const float *env_events_cdf, const short num_events) { 
        int left = 0;
-       int right = num_events - 2;
+       int right = num_events - 1;
    
        if (target > env_events_cdf[1])
            return left;
