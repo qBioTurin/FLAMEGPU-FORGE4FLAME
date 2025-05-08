@@ -203,8 +203,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             int start_time = (int) env_events_starttime[agent_type][i];
             int end_time = (int) env_events_endtime[agent_type][i];
 
-            if(start_time <= step && end_time >= step){
+            if(start_time <= step && step <= end_time){
                 env_events_mapping[num_events] = i;
+                printf("6,%d, id: %d step: %d mapping: %f\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), contacts_id, step, env_events_mapping[num_events]);
                 num_events++;
             }
 
@@ -213,14 +214,11 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
         env_events_cdf[num_events] = 0.0f;
         env_events_mapping[num_events] = 0;
-        unsigned int num_events_decr = num_events;
         for(int j = num_events; j > 0; j--){
-            if(j == num_events){
+            if(j == num_events)
                 env_events_cdf[j-1] = (float) env_events_probability[env_events_mapping[j]];
-            }
-            else{
+            else
                 env_events_cdf[j-1] = env_events_cdf[j] + (float) env_events_probability[env_events_mapping[j]];
-            }
             printf("6,%d,step: %d cdf: %f\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), step, env_events_cdf[j-1]);
         }
 
