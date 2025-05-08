@@ -84,4 +84,4 @@ awk 'NR > 1 {
     } 
 }' resources/G.txt > results/$EXPERIMENT_DIR/rooms_mapping.txt
 
-cp resources/$EXPERIMENT_DIR/* results/$EXPERIMENT_DIR
+cp resources/f4f/$EXPERIMENT_DIR/* results/$EXPERIMENT_DIR
