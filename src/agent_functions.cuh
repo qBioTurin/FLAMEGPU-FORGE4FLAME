@@ -211,29 +211,27 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             i++;
         }
 
-        i = 1;
         env_events_cdf[num_events] = 0.0f;
         env_events_mapping[num_events] = 0;
         unsigned int num_events_decr = num_events;
-        while((int) env_events[agent_type][i] != -1){
-            int start_time = (int) env_events_starttime[agent_type][i];
-            int end_time = (int) env_events_endtime[agent_type][i];
-
-            if(start_time <= step && end_time >= step){
-                if(num_events_decr == num_events){
-                    env_events_cdf[num_events_decr-1] = env_events_probability[i];
-                }
-                else{
-                    env_events_cdf[num_events_decr-1] = env_events_cdf[num_events_decr] + env_events_probability[i];
-                }
-
-                num_events_decr--;
+        for(j = num_events; j > 0; j--){
+            if(j == num_events){
+                env_events_cdf[j-1] = env_events_probability[env_events_mapping[j]];
             }
-
-            i++;
+            else{
+                env_events_cdf[j-1] = env_events_cdf[j] + env_events_probability[env_events_mapping[j]];
+            }
         }
 
         unsigned short event = env_events_mapping[findLeftmostIndex(FLAMEGPU, random, env_events_cdf, num_events)];
+
+        printf("[TEMPORARY_DEBUG], step: %d cdf: ", step);
+        for(int j = 0; j < num_events; j++){
+            printf("%f ", env_events_cdf[j]);
+        }
+        printf("\n");
+
+        printf("[TEMPORARY_DEBUG], step: %d event: %d\n", step, event);
 
         if(event){
             short event_node = -1;
