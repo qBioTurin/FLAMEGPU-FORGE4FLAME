@@ -216,20 +216,14 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         unsigned int num_events_decr = num_events;
         for(int j = num_events; j > 0; j--){
             if(j == num_events){
-                env_events_cdf[j-1] = env_events_probability[env_events_mapping[j]];
+                env_events_cdf[j-1] = (float) env_events_probability[env_events_mapping[j]];
             }
             else{
-                env_events_cdf[j-1] = env_events_cdf[j] + env_events_probability[env_events_mapping[j]];
+                env_events_cdf[j-1] = env_events_cdf[j] + (float) env_events_probability[env_events_mapping[j]];
             }
         }
 
         unsigned short event = env_events_mapping[findLeftmostIndex(FLAMEGPU, random, env_events_cdf, num_events)];
-
-        printf("6,step: %d cdf: ", step);
-        for(int j = 0; j < num_events; j++){
-            printf("%f ", env_events_cdf[j]);
-        }
-        printf("\n");
 
         printf("6,step: %d event: %d\n", step, event);
 
