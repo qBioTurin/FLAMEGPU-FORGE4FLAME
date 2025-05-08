@@ -225,7 +225,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
         unsigned short event = env_events_mapping[findLeftmostIndex(FLAMEGPU, random, env_events_cdf, num_events)];
 
-        printf("6,step: %d event: %d\n", step, event);
+        printf("6,%d,step: %d event: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), step, event);
 
         if(event){
             short event_node = -1;
