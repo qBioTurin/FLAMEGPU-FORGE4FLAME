@@ -94,8 +94,6 @@ for input_file in *.csv; do
             expected["CONTACTS_MATRIX"] = 6
             expected["AEROSOL"] = 5
             expected["INFO"] = 4
-            expected["DEBUG"] = 2
-            expected["TEMPORARY_DEBUG"] = 2
         }
         {
             col1 = $1
