@@ -214,7 +214,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         env_events_cdf[num_events] = 0.0f;
         env_events_mapping[num_events] = 0;
         unsigned int num_events_decr = num_events;
-        for(j = num_events; j > 0; j--){
+        for(int j = num_events; j > 0; j--){
             if(j == num_events){
                 env_events_cdf[j-1] = env_events_probability[env_events_mapping[j]];
             }
