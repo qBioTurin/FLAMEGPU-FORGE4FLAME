@@ -220,8 +220,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         }
         env_events_cdf[0] = 1.0f;
 
-        printf("6,%d,id: %d step: %d leftmostindex: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), contacts_id, step, findLeftmostIndex(FLAMEGPU, random, env_events_cdf, num_events));
-        unsigned short event = env_events_mapping[findLeftmostIndex(FLAMEGPU, random, env_events_cdf, num_events)];
+        printf("6,%d,id: %d step: %d leftmostindex: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), contacts_id, step, findLeftmostIndex(random, env_events_cdf, num_events));
+        unsigned short event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
         printf("6,%d,id: %d step: %d event: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), contacts_id, step, event);
 
         if(event){
