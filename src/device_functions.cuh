@@ -1150,18 +1150,24 @@ namespace device_functions {
      * Find the correct occurred event.
     */
    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) { 
-    int left = 0;
-    int right = num_events - 1;
-    
-    while (left < right) {
-        int mid = left + (right - left) / 2;
-        if (env_events_cdf[mid] >= target) {
-            right = mid;
-        } else {
-            left = mid + 1;
+       int left = 0;
+       int right = num_events - 1;
+   
+       if (target > env_events_cdf[1])
+           return left;
+   
+       if (target <= env_events_cdf[right])
+           return right;
+   
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if (env_events_cdf[mid] >= target) {
+                right = mid;
+            } else {
+                left = mid + 1;
+            }
         }
-    }
-    return left;
+        return left;
    }
 }
 #endif //_DEVICE_FUNCTIONS_CUH_
