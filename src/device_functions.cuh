@@ -1154,7 +1154,7 @@ namespace device_functions {
        int right = num_events - 1;
    
        if (target > env_events_cdf[1])
-           return 1;
+           return left;
    
        if (target <= env_events_cdf[right])
            return right;
