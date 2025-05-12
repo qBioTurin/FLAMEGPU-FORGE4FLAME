@@ -190,9 +190,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         auto env_events_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
         auto env_events_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
 
-        float env_events_cdf[EVENT_LENGTH + 1];
-        int env_events_mapping[EVENT_LENGTH + 1];
-        env_events_mapping[0] = 0;
+        float env_events_cdf[EVENT_LENGTH + 1] = {0.0f};
+        int env_events_mapping[EVENT_LENGTH + 1] = {0};
 
         int step = (FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY;
 
@@ -210,19 +209,15 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             i++;
         }
 
-        env_events_cdf[num_events] = 0.0f;
-        env_events_mapping[num_events] = 0;
         for(int j = num_events; j > 1; j--){
             if(j == num_events)
-                env_events_cdf[j-1] = (float) env_events_probability[agent_type][env_events_mapping[j]];
+                env_events_cdf[j-1] = (float) env_events_probability[agent_type][env_events_mapping[j-1]];
             else
-                env_events_cdf[j-1] = env_events_cdf[j] + (float) env_events_probability[agent_type][env_events_mapping[j]];
+                env_events_cdf[j-1] = env_events_cdf[j] + (float) env_events_probability[agent_type][env_events_mapping[j-1]];
         }
         env_events_cdf[0] = 1.0f;
 
-        printf("6,%d,id: %d step: %d leftmostindex: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), contacts_id, step, findLeftmostIndex(random, env_events_cdf, num_events));
-        unsigned short event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
-        printf("6,%d,id: %d step: %d event: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), contacts_id, step, event);
+	unsigned short event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
 
         if(event){
             short event_node = -1;
