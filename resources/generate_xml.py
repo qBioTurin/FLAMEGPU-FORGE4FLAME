@@ -1556,7 +1556,7 @@ def main():
 
 	init_week_day = WHOLEmodel["starting"][0]["day"]
 	start_step_time = int(WHOLEmodel["starting"][0]["time"].split(":")[0]) * steps_in_a_hour + int(WHOLEmodel["starting"][0]["time"].split(":")[1]) * steps_in_a_minute
-	start_step_time = 1 if start_step_time == 0 else start_step_time
+	#start_step_time = 1 if start_step_time == 0 else start_step_time
 
 	days = int(WHOLEmodel["starting"][0]["simulation_days"])
 

@@ -269,10 +269,22 @@ namespace host_functions {
             float y = YEXTERN;
             float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 2), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 3), false);
 
+            unsigned short entry_time_index = 0;
             unsigned short empty_days = 0;
             unsigned short weekday_agent = week_day;
+            
+            bool schedule_found = false;
+            while((int) env_flow[agent_type][weekday_agent][entry_time_index] != -1 && !schedule_found){
+                if((int) env_hours_schedule[agent_type][weekday_agent][entry_time_index] < START_STEP_TIME)
+                    entry_time_index++;
+                else
+                    schedule_found = true;
+            }
 
-            while((int) env_flow[agent_type][weekday_agent][0] == -1){
+            if(!schedule_found)
+                entry_time_index = 0;
+
+            while((int) env_flow[agent_type][weekday_agent][entry_time_index] == -1){
                 empty_days++;
                 weekday_agent = (weekday_agent + 1) % DAYS_IN_A_WEEK;
             }
@@ -317,7 +329,7 @@ namespace host_functions {
                 swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][agent_type], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[0][agent_type]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[0][agent_type]), true));
             new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
-            const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][0] > 0 ? ((int) env_hours_schedule[agent_type][weekday_agent][0] - START_STEP_TIME): 1) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][0], (float) env_flow_distr_firstparam[agent_type][weekday_agent][0], (float) env_flow_distr_secondparam[agent_type][weekday_agent][0], true);
+            const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][weekday_agent][entry_time_index]) - START_STEP_TIME + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (int) env_flow_distr[agent_type][weekday_agent][entry_time_index], (float) env_flow_distr_firstparam[agent_type][weekday_agent][entry_time_index], (float) env_flow_distr_secondparam[agent_type][weekday_agent][entry_time_index], true);
             stay_matrix[contacts_id][0] = initial_stay;
 
             intermediate_target_x[contacts_id][0] = x;
