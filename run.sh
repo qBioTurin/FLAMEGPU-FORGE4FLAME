@@ -86,4 +86,4 @@ else
   ./build/bin/Release/FLAMEGPUABM -i resources/configuration_file.xml $EXPERIMENT_DIR
 fi
 
-bash postprocessing.sh -expdir $EXPERIMENT_DIR
+#bash postprocessing.sh -expdir $EXPERIMENT_DIR

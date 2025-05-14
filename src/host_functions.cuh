@@ -482,7 +482,7 @@ namespace host_functions {
             counters_file << endl;
             counters_file.close();
 
-            #ifdef DEBUG
+            //#ifdef DEBUG
 
             auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
             auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
@@ -500,7 +500,7 @@ namespace host_functions {
             }
             printf("\n");
             
-            #endif
+            //#endif
 
 
          }
