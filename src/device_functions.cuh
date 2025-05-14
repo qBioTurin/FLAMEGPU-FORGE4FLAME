@@ -368,8 +368,8 @@ namespace device_functions {
                 //if no other alternave is avaiable or it's explicit, skip
                 if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
                     if(start_node != extern_node && start_node_type != WAITINGROOM) {
-                        --global_resources_counter[start_node]; 
-                        --specific_resources_counter[agent_type][start_node];
+                        ++global_resources_counter[start_node]; 
+                        ++specific_resources_counter[agent_type][start_node];
                     }
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
