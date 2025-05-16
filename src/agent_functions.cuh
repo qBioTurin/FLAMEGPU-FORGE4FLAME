@@ -282,23 +282,21 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             }
 
            // if the initial room is not avaiable because the resources are over, explore the alternatives:
-            if(!available){
-
+            if(!available && alternative_resources_type_rand[agent_type][event_node] != -1){
                 //search another room of the same type and area
                 if(alternative_resources_area_rand[agent_type][event_node] == area_room_event && alternative_resources_type_rand[agent_type][event_node] == type_room_event){
 
                     event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, previous_separation, type_room_event, area_room_event, &available);
                 }
                 //search another room of the alternative
-                else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != env_events_area ){
+                else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != env_events_area){
                     
                     event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, 0, alternative_resources_type_rand[agent_type][event_node], alternative_resources_area_rand[agent_type][event_node], &available);
                 }
             }
 
            // if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
-            if(available && alternative_resources_type_rand[agent_type][event_node] != -1){
-
+            if(available){
                 a_star(FLAMEGPU, start_node, event_node, solution_start_event);
                 a_star(FLAMEGPU, event_node, final_node, solution_event_target);
 
@@ -309,7 +307,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                     final_stay = (unsigned int) stay_matrix[contacts_id][target_index] - event_time_random;
                 }
                 else{
-                    event_time_random = (unsigned int) stay_matrix[contacts_id][target_index];
+                    event_time_random = (unsigned int) stay_matrix[contacts_id][target_index] > 0 ? (unsigned int) stay_matrix[contacts_id][target_index] : 1;
                     final_stay = 1;
                 }
 
@@ -404,6 +402,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             }
             
             const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node);
+
+            // Gestione OSS iniziale
 
             a_star(FLAMEGPU, start_node, final_node, solution);
 
