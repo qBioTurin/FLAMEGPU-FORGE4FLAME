@@ -9,9 +9,21 @@ using namespace host_functions;
 
 // Define model's agents pedestrian functions
 void define_pedestrian_functions(AgentDescription& pedestrian){
+    AgentFunctionDescription beingSupported_fn = pedestrian.newFunction("beingSupported", beingSupported);
+    beingSupported_fn.setFunctionCondition(initCondition);
+    beingSupported_fn.setMessageOutput("link_message");
+    beingSupported_fn.setMessageOutputOptional(true);
+    
     AgentFunctionDescription CUDAInitContagionScreeningEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAInitContagionScreeningEventsAndMovePedestrian", CUDAInitContagionScreeningEventsAndMovePedestrian);
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageInput("room_location");
+    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutput("link_message");
+    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutputOptional(true);
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setAllowAgentDeath(true);
+
+    AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
+    handleSupportRequest_fn.setFunctionCondition(initCondition);
+    handleSupportRequest_fn.setMessageInput("link_message");
+    handleSupportRequest_fn.setMessageOutputOptional(true);
     
 #ifndef CHECKPOINT
     AgentFunctionDescription outputPedestrianLocation_fn = pedestrian.newFunction("outputPedestrianLocation", outputPedestrianLocation);
@@ -25,15 +37,12 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription updateQuantaInhaledAndContacts_fn = pedestrian.newFunction("updateQuantaInhaledAndContacts", updateQuantaInhaledAndContacts);
     updateQuantaInhaledAndContacts_fn.setFunctionCondition(initCondition);
     updateQuantaInhaledAndContacts_fn.setMessageInput("location");
-
-    //ciò va nel checkpoint?
+#endif
     AgentFunctionDescription waitingInWaitingRoom_fn = pedestrian.newFunction("waitingInWaitingRoom", waitingInWaitingRoom);
+    handleSupportRequest_fn.setMessageInput(initCondition);
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
     waitingInWaitingRoom_fn.setMessageOutput("waiting_room_message");
     waitingInWaitingRoom_fn.setMessageOutputOptional(true);
-
-
-#endif
 }
 
 // Define model's agents room functions
@@ -47,7 +56,6 @@ void define_room_functions(AgentDescription& room, string room_type){
         updateQuantaConcentration_fn.setFunctionCondition(initAndNotFillingroomCondition);
         updateQuantaConcentration_fn.setMessageInput("aerosol_counting");
 #endif
-        //again ciò va nel checkpoint?
         AgentFunctionDescription handlingQueueinWaitingRoom_fn = room.newFunction("handlingQueueinWaitingRoom", handlingQueueinWaitingRoom);
         handlingQueueinWaitingRoom_fn.setMessageInput("waiting_room_message");
         handlingQueueinWaitingRoom_fn.setMessageOutput("queue_message");
@@ -234,6 +242,7 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
 
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
     env.newMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
@@ -267,6 +276,15 @@ void define_pedestrian_messages(ModelDescription& model){
     queue_message.setBounds(0, TOTAL_AGENTS_ESTIMATION);
     queue_message.setPersistent(true);
 
+    // Message for agent links
+    MessageBucket::Description link_message = model.newMessage<MessageBucket>("link_message");
+    link_message.newVariable<short>(CONTACTS_ID);
+    link_message.newVariable<int>(REQUEST_ID);
+    link_message.newVariable<float>(X);
+    link_message.newVariable<float>(Y);
+    link_message.newVariable<float>(Z);
+    link_message.newVariable<int>(SUPPORT_TIME);
+    link_message.setBounds(0, NUMBER_OF_AGENTS_TYPES + TOTAL_AGENTS_ESTIMATION);
 }
 
 // Define model's agents room messages
@@ -288,8 +306,6 @@ void define_room_messages(ModelDescription& model){
     waiting_room_message.newVariable<int>(AGENT_TYPE);
     waiting_room_message.setPersistent(true);
     waiting_room_message.setBounds(0, V); 
-
-
 }
 
 // Define model's agents pedestrian
@@ -332,10 +348,14 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned short>(WEEK_DAY_FLOW);
     pedestrian.newVariable<unsigned char>(IN_AN_EVENT);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
-    pedestrian.newVariable<int>(WAITING_ROOM_TIME, 0);
-    pedestrian.newVariable<int>(WAITING_ROOM_FLAG, 0);
-    pedestrian.newVariable<int>(ENTRY_EXIT_FLAG, 0);
+    pedestrian.newVariable<int>(WAITING_ROOM_TIME);
+    pedestrian.newVariable<int>(WAITING_ROOM_FLAG);
+    pedestrian.newVariable<int>(ENTRY_EXIT_FLAG);
     pedestrian.newVariable<short>(NODE_WAITING_FOR, -1);
+    pedestrian.newVariable<unsigned short>(EXITED_FROM_ENVIRONMENT);
+    pedestrian.newVariable<short>(REQUESTED_SUPPORT, -1);
+    pedestrian.newVariable<unsigned short>(CURRENTLY_SUPPORTED);
+    pedestrian.newVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT);
 
     define_pedestrian_functions(pedestrian);
 }
@@ -377,10 +397,22 @@ void define_layers(ModelDescription& model){
     // Layer 1
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
+        layer.addAgentFunction(beingSupported_fn);
     }
 
     // Layer 2
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
+    }
+
+    // Layer 3
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(handleSupportRequest_fn);
+    }
+
+    // Layer 4
     {
         LayerDescription layer = model.newLayer();
 #ifndef CHECKPOINT
@@ -389,29 +421,29 @@ void define_layers(ModelDescription& model){
         layer.addAgentFunction("room", "outputRoomLocation");
     }
 
-#ifndef CHECKPOINT
-    // Layer 3
+    // Layer 5
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(outputPedestrianLocation);
+#ifndef CHECKPOINT
         layer.addAgentFunction("room", "updateQuantaConcentration");
+#endif
     }
     
-    // Layer 4
-
+    // Layer 6
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(waitingInWaitingRoom);
     }
 
-    // Layer 5
-
+    // Layer 7
     {
         LayerDescription layer = model.newLayer();
+#ifndef CHECKPOINT
         layer.addAgentFunction(updateQuantaInhaledAndContacts);
+#endif
         layer.addAgentFunction("room", "handlingQueueinWaitingRoom");
     }
-#endif
 
     //Define each host functions
     model.addInitFunction(initFunction);
