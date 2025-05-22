@@ -617,16 +617,14 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         if(total_requests >= request_id){
             auto messages = FLAMEGPU->message_in(agent_type);
             auto interested_message = messages.begin();
-            auto i = messages.begin();
 
-            while(i != messages.end()){
-                const int message_request_id = (*i).getVariable<int>(REQUEST_ID);
+            while(interested_message != messages.end()){
+                const int message_request_id = (*interested_message).getVariable<int>(REQUEST_ID);
 
                 if(message_request_id != request_id){
-                    i++;
+                    interested_message++;
                 }
                 else{
-                    interested_message = *i;
                     break;
                 }
             }
