@@ -170,20 +170,20 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			dimension_z = width - 1
 		elif door == "left":
 			yaw = math.pi / 2
-			x_offset = width + 1
+			x_offset = np.floor(width) + 1
 			z_offset = 0
 			dimension_x = width - 1
 			dimension_z = length - 1
 		elif door == "top":
 			yaw = math.pi
-			x_offset = length + 1
-			z_offset = width + 1
+			x_offset = np.floor(length) + 1
+			z_offset = np.floor(width) + 1
 			dimension_x = length - 1
 			dimension_z = width - 1
 		elif door == "right":
 			yaw = 3 * math.pi / 2
 			x_offset = 0
-			z_offset = length + 1
+			z_offset = np.floor(length) + 1
 			dimension_x = width - 1
 			dimension_z = length - 1
 		else:
