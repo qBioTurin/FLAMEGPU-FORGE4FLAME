@@ -616,7 +616,8 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
 
         if(total_requests >= request_id){
             auto messages = FLAMEGPU->message_in(agent_type);
-            auto interested_message, i = messages.begin();
+            auto interested_message = messages.begin();
+            auto i = messages.begin();
 
             while(i != messages.end()){
                 const int message_request_id = (*i).getVariable<int>(REQUEST_ID);
@@ -625,7 +626,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
                     i++;
                 }
                 else{
-                    interested_message = message;
+                    interested_message = i;
                     break;
                 }
             }
@@ -634,14 +635,14 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
 
             const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
             const short start_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
-            const short target_node = coord2index[(unsigned short)(interested_message.getVariable<float>(Y)/YOFFSET)][(unsigned short)interested_message.getVariable<float>(Z)][(unsigned short)interested_message.getVariable<float>(X)];
+            const short target_node = coord2index[(unsigned short)((*interested_message).getVariable<float>(Y)/YOFFSET)][(unsigned short)(*interested_message).getVariable<float>(Z)][(unsigned short)(*interested_message).getVariable<float>(X)];
             const short final_node = start_node;
 
             unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
             short solution_start_support[SOLUTION_LENGTH] = {-1};
             short solution_support_final[SOLUTION_LENGTH] = {-1};
             int support_stay = 1;
-            int final_stay = (unsigned int) stay_matrix[contacts_id][target_index] - interested_message.getVariable<int>(SUPPORT_TIME);
+            int final_stay = (unsigned int) stay_matrix[contacts_id][target_index] - (*interested_message).getVariable<int>(SUPPORT_TIME);
 
             final_stay = final_stay > 0 ? final_stay: 1;
 
@@ -667,9 +668,9 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         auto messages = FLAMEGPU->message_in(agent_type);
         auto interested_message = messages.begin();
 
-        FLAMEGPU->setVariable<float>(X, interested_message.getVariable<float>(X));
-        FLAMEGPU->setVariable<float>(Y, interested_message.getVariable<float>(Y));
-        FLAMEGPU->setVariable<float>(Z, interested_message.getVariable<float>(Z));
+        FLAMEGPU->setVariable<float>(X, (*interested_message).getVariable<float>(X));
+        FLAMEGPU->setVariable<float>(Y, (*interested_message).getVariable<float>(Y));
+        FLAMEGPU->setVariable<float>(Z, (*interested_message).getVariable<float>(Z));
 
         if(message.getvariable<short>(REQUESTED_SUPPORT) == -2){
             FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, 0);
@@ -685,7 +686,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         auto messages = FLAMEGPU->message_in(agent_type);
         auto interested_message = messages.begin();
 
-        FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) interested_message.getVariable<short>(CONTACTS_ID));
+        FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
     }
 
     return ALIVE;
