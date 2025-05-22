@@ -17,7 +17,8 @@ namespace device_functions {
     /** 
      * Generate a random number using the given RNG, distribution and parameters for pedestrians.
     */
-    FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
         
         if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
