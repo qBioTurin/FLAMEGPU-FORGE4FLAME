@@ -670,7 +670,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         FLAMEGPU->setVariable<float>(Y, (*interested_message).getVariable<float>(Y));
         FLAMEGPU->setVariable<float>(Z, (*interested_message).getVariable<float>(Z));
 
-        if((*interested_message).getvariable<short>(REQUESTED_SUPPORT) == -2){
+        if((short) (*interested_message).getVariable<short>(REQUESTED_SUPPORT) == -2){
             FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, 0);
         }
 
