@@ -23,6 +23,7 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
     handleSupportRequest_fn.setFunctionCondition(initCondition);
     handleSupportRequest_fn.setMessageInput("link_message");
+    handleSupportRequest_fn.setMessageOutput("link_message");
     handleSupportRequest_fn.setMessageOutputOptional(true);
     
 #ifndef CHECKPOINT
@@ -39,7 +40,7 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     updateQuantaInhaledAndContacts_fn.setMessageInput("location");
 #endif
     AgentFunctionDescription waitingInWaitingRoom_fn = pedestrian.newFunction("waitingInWaitingRoom", waitingInWaitingRoom);
-    handleSupportRequest_fn.setMessageInput(initCondition);
+    waitingInWaitingRoom_fn.setFunctionCondition(initCondition);
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
     waitingInWaitingRoom_fn.setMessageOutput("waiting_room_message");
     waitingInWaitingRoom_fn.setMessageOutputOptional(true);
@@ -397,7 +398,7 @@ void define_layers(ModelDescription& model){
     // Layer 1
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(beingSupported_fn);
+        layer.addAgentFunction(beingSupported);
     }
 
     // Layer 2
@@ -409,7 +410,7 @@ void define_layers(ModelDescription& model){
     // Layer 3
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(handleSupportRequest_fn);
+        layer.addAgentFunction(handleSupportRequest);
     }
 
     // Layer 4

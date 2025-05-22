@@ -594,7 +594,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
     Support an other agent, if necessary.
 */
-FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
+FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
 #ifdef DEBUG
     printf("5,%d,%d,Beginning handleSupportRequest for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
 #endif
@@ -616,13 +616,13 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
 
         if(total_requests >= request_id){
             auto messages = FLAMEGPU->message_in(agent_type);
-            auto interested_message = messages.begin();
+            auto interested_message, i = messages.begin();
 
-            for(const auto& message: messages) {
-                int message_request_id = message.getVariable<int>(REQUEST_ID);
+            while(i != messages.end()){
+                const int message_request_id = (*i).getVariable<int>(REQUEST_ID);
 
                 if(message_request_id != request_id){
-                    continue;
+                    i++;
                 }
                 else{
                     interested_message = message;
@@ -665,12 +665,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
     // Support agent is supporting (update its position based on the received message)
     if(!on_the_way_to_support && requested_support == -1 && currently_supported){
         auto messages = FLAMEGPU->message_in(agent_type);
-            auto interested_message = messages.begin();
-
-        for(const auto& message: messages) {
-            interested_message = message;
-            break;
-        }
+        auto interested_message = messages.begin();
 
         FLAMEGPU->setVariable<float>(X, interested_message.getVariable<float>(X));
         FLAMEGPU->setVariable<float>(Y, interested_message.getVariable<float>(Y));
@@ -687,13 +682,8 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
     // The agent which requested support is waiting for the support agent
     if(!currently_supported && requested_support && !on_the_way_to_support){
         // The agent received the start message from the support agent
-        auto messages = FLAMEGPU->message_in(NUMBER_OF_AGENTS_TYPES + contacts_id);
-            auto interested_message = messages.begin();
-
-        for(const auto& message: messages) {
-            interested_message = message;
-            break;
-        }
+        auto messages = FLAMEGPU->message_in(agent_type);
+        auto interested_message = messages.begin();
 
         FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) interested_message.getVariable<short>(CONTACTS_ID));
     }
