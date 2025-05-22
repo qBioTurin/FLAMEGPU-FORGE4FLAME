@@ -23,7 +23,7 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
     handleSupportRequest_fn.setFunctionCondition(initCondition);
     handleSupportRequest_fn.setMessageInput("link_message");
-    handleSupportRequest_fn.setMessageOutput("link_message");
+    handleSupportRequest_fn.setMessageOutput("aerosol_counting");
     handleSupportRequest_fn.setMessageOutputOptional(true);
     
 #ifndef CHECKPOINT

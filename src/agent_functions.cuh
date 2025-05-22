@@ -30,7 +30,7 @@ FLAMEGPU_AGENT_FUNCTION_CONDITION(initCondition) {
 */
 FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
 #ifdef DEBUG
-    printf("5,%d,%d,Beginning handleSupportRequest for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
+    printf("5,%d,%d,Beginning beingSupported for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
 #endif
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
@@ -57,7 +57,7 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
 
     return ALIVE;
 #ifdef DEBUG
-    printf("5,%d,%d,Ending handleSupportRequest for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
+    printf("5,%d,%d,Ending beingSupported for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
 #endif
 }
 
