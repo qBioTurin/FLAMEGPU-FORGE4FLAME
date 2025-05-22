@@ -498,12 +498,12 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             if(agentlinked != -1){
                 FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
 
-                auto support_requests = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
+                auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
-                int request_id = ++support_requests[agentlinked][0];
+                unsigned int request_id = ++support_requests[agentlinked][0];
 
                 FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, contacts_id);
-                FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, request_id);
+                FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
                 FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
                 FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
                 FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
@@ -610,9 +610,9 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
 
     // Check if there is at least one support request
     if(!currently_supported && !on_the_way_to_support && requested_support == -1 && !in_an_event){
-        auto support_requests = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
-        int total_requests = support_requests[agent_type][0];
-        int request_id = ++support_requests[agent_type][1];
+        auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
+        unsigned int total_requests = support_requests[agent_type][0];
+        unsigned int request_id = ++support_requests[agent_type][1];
 
         if(total_requests >= request_id){
             auto messages = FLAMEGPU->message_in(agent_type);
@@ -621,7 +621,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             while(interested_message != messages.end()){
                 const int message_request_id = (*interested_message).getVariable<int>(REQUEST_ID);
 
-                if(message_request_id != request_id){
+                if(message_request_id != (int) request_id){
                     interested_message++;
                 }
                 else{
