@@ -626,7 +626,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
                     i++;
                 }
                 else{
-                    interested_message = i;
+                    interested_message = *i;
                     break;
                 }
             }
@@ -654,7 +654,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             update_targets(FLAMEGPU, solution_start_support, &target_index, false, support_stay);
             update_targets(FLAMEGPU, solution_support_final, &target_index, false, final_stay);
             
-            FLAMEGPU->setVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT, message.getVariable<short>(CONTACTS_ID));
+            FLAMEGPU->setVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT, (*interested_message).getVariable<short>(CONTACTS_ID));
         }
         else{
             --support_requests[agent_type][1];
@@ -672,7 +672,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         FLAMEGPU->setVariable<float>(Y, (*interested_message).getVariable<float>(Y));
         FLAMEGPU->setVariable<float>(Z, (*interested_message).getVariable<float>(Z));
 
-        if(message.getvariable<short>(REQUESTED_SUPPORT) == -2){
+        if((*interested_message).getvariable<short>(REQUESTED_SUPPORT) == -2){
             FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, 0);
         }
 
