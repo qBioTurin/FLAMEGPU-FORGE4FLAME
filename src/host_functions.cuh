@@ -33,8 +33,6 @@ namespace host_functions {
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
-        //printf("[RANDOM_HOST],%d,%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), distribution_id, 0, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
-
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
     }
 
@@ -441,7 +439,6 @@ namespace host_functions {
 
         if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
             unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY) + 1;
-            //printf("DAY preso giusto? %d\n", day);
             unsigned short week_day = (FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY) + 1) % DAYS_IN_A_WEEK;
             
 
@@ -481,28 +478,6 @@ namespace host_functions {
 
             counters_file << endl;
             counters_file.close();
-
-            //#ifdef DEBUG
-
-            auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
-            auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
-            printf("[DEBUG],%d,%d,GLOBAL_RESOURCES_COUNTER: ", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
-            for(int i = 0; i < V; i++){
-                printf("%d,", (unsigned int) global_resources_counter[i]);
-            }
-            printf("\n");
-            printf("[DEBUG],%d,%d,SPECIFIC_RESOURCES_COUNTER: ", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
-            for(int i = 0; i < NUMBER_OF_AGENTS_TYPES; i++){
-                for(int j = 0; j < V; j++){
-                    printf("%d, ", (unsigned int) specific_resources_counter[i][j]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-            
-            //#endif
-
-
          }
 
 #ifdef DEBUG
