@@ -191,7 +191,7 @@ namespace device_functions {
     /** 
      * Take the next destination inside the determined flow of the agent.
     */
-    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int *stay, const short start_node, const bool identified = false, const unsigned short severity = MINOR){  
+    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int *stay, const short start_node, bool *available = false, const bool identified = false, const unsigned short severity = MINOR){  
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -262,7 +262,6 @@ namespace device_functions {
             int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (j-1), false));
             int random_iterator = random;
             int lenght_rooms = j;
-            bool available = false;
             unsigned int get_global_resource;
             unsigned int get_specific_resource;
 
@@ -315,23 +314,23 @@ namespace device_functions {
                 if(get_specific_resource <= specific_resources[agent_type][final_target]){
 
                     get_global_resource = ++global_resources_counter[final_target];
-                   if(get_global_resource <= global_resources[final_target]){
-                     available = true;
-                   }
-                   else {
-                    get_global_resource = --global_resources_counter[final_target]; 
-                   } 
+                    if(get_global_resource <= global_resources[final_target]){
+                      *available = true;
+                    }
+                    else {
+                     get_global_resource = --global_resources_counter[final_target]; 
+                    } 
                 } 
 
                 //if the initial room is not avaiable because the resources are over, explore the alternatives:
-                if(!available){
+                if(!*available){
                     get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
                     //search another room of the same type and area
                     if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
 
                         random = (random + 1) % lenght_rooms;
-                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, &available);
+                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, available);
                     }
                     //search another room of the alternative
                     else if(alternative_resources_area_det[agent_type][final_target] != area || alternative_resources_type_det[agent_type][final_target] != flow){
@@ -356,12 +355,12 @@ namespace device_functions {
                         }
 
                         int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (j-1), false));
-                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, &available);
+                        final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, available);
                     }
                 }
 
                 //if no other alternave is avaiable or it's explicit, skip
-                if(!available || alternative_resources_type_det[agent_type][final_target] == -1){
+                if(!*available || alternative_resources_type_det[agent_type][final_target] == -1){
                     if(start_node != extern_node && start_node_type != WAITINGROOM) {
                         ++global_resources_counter[start_node]; 
                         ++specific_resources_counter[agent_type][start_node];
@@ -664,7 +663,7 @@ namespace device_functions {
                 --specific_resources_counter[agent_type][start_node];
             }
 
-            const short quarantine_node = take_new_destination_flow(FLAMEGPU, &stay, start_node, identified_bool, severity);
+            const short quarantine_node = take_new_destination_flow(FLAMEGPU, &stay, start_node, NULL, identified_bool, severity);
 
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 

@@ -488,14 +488,15 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                 --specific_resources_counter[agent_type][start_node];
             }
             
-            const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node);
+            bool available = false;
+            const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node, &available);
 
             // Handle agent links with an other agent
             auto env_flow_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
 
             // Handle new support, if necessary
             int agentlinked = (int) env_flow_agentlinked[agent_type][week_day_flow][flow_index + 1];
-            if(agentlinked != -1){
+            if(agentlinked != -1 && available){
                 FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
 
                 auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
