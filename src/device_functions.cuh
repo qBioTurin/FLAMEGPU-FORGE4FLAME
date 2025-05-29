@@ -191,7 +191,7 @@ namespace device_functions {
     /** 
      * Take the next destination inside the determined flow of the agent.
     */
-    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int *stay, const short start_node, bool *available = false, const bool identified = false, const unsigned short severity = MINOR){  
+    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int *stay, const short start_node, bool *available, const bool identified = false, const unsigned short severity = MINOR){  
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
