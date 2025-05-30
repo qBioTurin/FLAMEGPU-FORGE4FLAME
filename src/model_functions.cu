@@ -355,8 +355,8 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<short>(NODE_WAITING_FOR, -1);
     pedestrian.newVariable<unsigned short>(EXITED_FROM_ENVIRONMENT);
     pedestrian.newVariable<short>(REQUESTED_SUPPORT, -1);
-    pedestrian.newVariable<unsigned short>(CURRENTLY_SUPPORTED);
-    pedestrian.newVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT);
+    pedestrian.newVariable<short>(CURRENTLY_SUPPORTED, -1);
+    pedestrian.newVariable<short>(ON_THE_WAY_TO_SUPPORT, -1);
 
     define_pedestrian_functions(pedestrian);
 }
