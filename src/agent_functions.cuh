@@ -668,7 +668,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             FLAMEGPU->setVariable<float>(Z, (*interested_message).getVariable<float>(Z));
 
             if((short) (*interested_message).getVariable<short>(REQUESTED_SUPPORT) == -2){
-                FLAMEGPU->setVariable<unsigned>(CURRENTLY_SUPPORTED, -1);
+                FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
             }
         }
 
@@ -682,7 +682,9 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         auto messages = FLAMEGPU->message_in(NUMBER_OF_AGENTS_TYPES + contacts_id);
         auto interested_message = messages.begin();
 
-        FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
+        if(interested_message != messages.end()){
+            FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
+        }
     }
 
     return ALIVE;
