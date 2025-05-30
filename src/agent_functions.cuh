@@ -223,7 +223,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         // Send a message to it after reaching it
         if((unsigned int) stay_matrix[contacts_id][next_index]){
             FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, on_the_way_to_support);
-            FLAMEGPU->setVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT, -1);
+            FLAMEGPU->setVariable<short>(ON_THE_WAY_TO_SUPPORT, -1);
 
             // Send message
             FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
@@ -668,7 +668,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             FLAMEGPU->setVariable<float>(Z, (*interested_message).getVariable<float>(Z));
 
             if((short) (*interested_message).getVariable<short>(REQUESTED_SUPPORT) == -2){
-                FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, -1);
+                FLAMEGPU->setVariable<unsigned>(CURRENTLY_SUPPORTED, -1);
             }
         }
 
