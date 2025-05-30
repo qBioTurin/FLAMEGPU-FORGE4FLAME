@@ -226,14 +226,14 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             FLAMEGPU->setVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT, 0);
 
             // Send message
-            FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, contacts_id);
+            FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -1);
             FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
             FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
             FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
             FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, -1);
 
-            FLAMEGPU->message_out.setKey(NUMBER_OF_AGENTS_TYPES + on_the_way_to_support);
+            FLAMEGPU->message_out.setKey(on_the_way_to_support);
 
             return ALIVE;
         }
@@ -682,7 +682,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         auto messages = FLAMEGPU->message_in(NUMBER_OF_AGENTS_TYPES + contacts_id);
         auto interested_message = messages.begin();
 
-        FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, NUMBER_OF_AGENTS_TYPES + (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
+        FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
     }
 
     return ALIVE;
