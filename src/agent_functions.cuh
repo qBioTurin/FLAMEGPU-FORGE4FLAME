@@ -664,6 +664,8 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             FLAMEGPU->setVariable<float>(Y, (*interested_message).getVariable<float>(Y));
             FLAMEGPU->setVariable<float>(Z, (*interested_message).getVariable<float>(Z));
 
+            printf("0,%d,%d,%d,%d,%f,%f,%f,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, (*interested_message).getVariable<float>(X), (*interested_message).getVariable<float>(Y), (*interested_message).getVariable<float>(Z), FLAMEGPU->getVariable<int>(DISEASE_STATE));
+
             if((*interested_message).getVariable<short>(REQUEST_ID) == -2){
                 FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
             }
