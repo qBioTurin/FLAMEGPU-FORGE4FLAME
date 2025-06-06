@@ -22,57 +22,6 @@ FLAMEGPU_AGENT_FUNCTION_CONDITION(initCondition) {
 
 
 /** 
-    beingSupported
-
-    Condition: initCondition
-
-    Being supported by an agent.
-*/
-FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
-#ifdef DEBUG
-    printf("5,%d,%d,Beginning beingSupported for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
-#endif
-    auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
-
-    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
-    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
-    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
-
-    unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
-    unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
-    unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
-    float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
-
-    if(currently_supported != -1 && requested_support != -1 && on_the_way_to_support == -1){
-        // Send message with updated position to the support agent.
-        FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
-        FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
-        FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
-        FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
-        FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, -1);
-
-        if(stay == 1 && next_index == target_index){
-            FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -2);
-
-            //  The previous support, if exists, is finished
-            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, -1);
-            FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
-        }
-        else
-            FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -1);
-
-        FLAMEGPU->message_out.setKey(currently_supported);
-    }
-
-    return ALIVE;
-#ifdef DEBUG
-    printf("5,%d,%d,Ending beingSupported for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
-#endif
-}
-
-
-/** 
     CUDAInitContagionScreeningEventsAndMovePedestrian
 
     Condition: -
@@ -579,6 +528,58 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 #endif
 
     return ALIVE;
+}
+
+
+/** 
+    beingSupported
+
+    Condition: initCondition
+
+    Being supported by an agent.
+*/
+FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
+#ifdef DEBUG
+    printf("5,%d,%d,Beginning beingSupported for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
+#endif
+    auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+
+    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
+    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
+    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
+    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+
+    unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
+    unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
+    unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
+    float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
+
+    if(currently_supported != -1 && requested_support != -1 && on_the_way_to_support == -1){
+        // Send message with updated position to the support agent.
+        FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
+        FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
+        FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
+        FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
+        FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, -1);
+
+        if(stay == 1 && next_index == target_index){
+            FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -2);
+
+            //  The previous support, if exists, is finished
+            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, -1);
+            FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
+        }
+        else{
+            FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -1);
+        }
+
+        FLAMEGPU->message_out.setKey(currently_supported);
+    }
+
+    return ALIVE;
+#ifdef DEBUG
+    printf("5,%d,%d,Ending beingSupported for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
+#endif
 }
 
 

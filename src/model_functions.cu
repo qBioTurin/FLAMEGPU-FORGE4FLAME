@@ -398,13 +398,13 @@ void define_layers(ModelDescription& model){
     // Layer 1
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(beingSupported);
+        layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
     }
 
     // Layer 2
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
+        layer.addAgentFunction(beingSupported);
     }
 
     // Layer 3
