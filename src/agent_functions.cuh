@@ -660,14 +660,17 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
         auto messages = FLAMEGPU->message_in(NUMBER_OF_AGENTS_TYPES + contacts_id);
         auto interested_message = messages.begin();
 
+        const float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
+
         if(interested_message != messages.end()){
             FLAMEGPU->setVariable<float>(X, (*interested_message).getVariable<float>(X));
             FLAMEGPU->setVariable<float>(Y, (*interested_message).getVariable<float>(Y));
             FLAMEGPU->setVariable<float>(Z, (*interested_message).getVariable<float>(Z));
 
-            printf("0,%d,%d,%d,%d,%f,%f,%f,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, (*interested_message).getVariable<float>(X), (*interested_message).getVariable<float>(Y), (*interested_message).getVariable<float>(Z), FLAMEGPU->getVariable<int>(DISEASE_STATE));
+            if(agent_pos[0] != (*interested_message).getVariable<float>(X) || agent_pos[1] != (*interested_message).getVariable<float>(Y) || agent_pos[2] != (*interested_message).getVariable<float>(X))
+                printf("0,%d,%d,%d,%d,%f,%f,%f,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, (*interested_message).getVariable<float>(X), (*interested_message).getVariable<float>(Y), (*interested_message).getVariable<float>(Z), FLAMEGPU->getVariable<int>(DISEASE_STATE));
 
-            if((*interested_message).getVariable<short>(REQUEST_ID) == -2){
+            if((*interested_message).getVariable<int>(REQUEST_ID) == -2){
                 FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
             }
         }
