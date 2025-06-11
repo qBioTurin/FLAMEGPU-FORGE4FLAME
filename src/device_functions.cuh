@@ -132,18 +132,27 @@ namespace device_functions {
 
             // Try getting the resources of the room
             if(event_node != -1){
-                int get_global_resource = ++global_resources_counter[event_node];
+                bool event_resources = false;
                 int get_specific_resource = ++specific_resources_counter[agent_type][event_node];
 
-                if(get_global_resource > global_resources[event_node] || get_specific_resource > specific_resources[agent_type][event_node]){
-                    --global_resources_counter[event_node];
+                if(get_specific_resource <= specific_resources[agent_type][event_node]){
+
+                    int get_global_resource = ++global_resources_counter[event_node];
+
+                    if(get_global_resource <= global_resources[event_node]){
+                        *available = true;
+                        event_resources = true;
+                    }
+                    else {
+                        --global_resources_counter[event_node];
+                    }
+                }
+
+                if(!event_resources){
                     --specific_resources_counter[agent_type][event_node];
                     previous_separation = min_separation;
-
                 }
-                else {
-                    *available = true;
-                }
+            }
             }
         }
         while(!available && event_node != -1);  
@@ -172,7 +181,6 @@ namespace device_functions {
         auto messages = FLAMEGPU->message_in(flow);
 
         do {
-
             auto list_front = messages.begin();
 
             for(int i = 0; i < ward_indeces[random_iterator]; i++) list_front++;
@@ -180,16 +188,25 @@ namespace device_functions {
             final_target = (*list_front).getVariable<short>(GRAPH_NODE);
         
             // Try getting the resources of the room
-            int get_global_resource = ++global_resources_counter[final_target];
             int get_specific_resource = ++specific_resources_counter[agent_type][final_target];
+            bool room_resources = false;
 
-            if(get_global_resource > global_resources[final_target] || get_specific_resource > specific_resources[agent_type][final_target]){
-                --global_resources_counter[final_target];
+            if(get_specific_resource <= specific_resources[agent_type][final_target]){
+
+                int get_global_resource = ++global_resources_counter[final_target];
+
+                if(get_global_resource <= global_resources[final_target]){
+                    *available = true;
+                    room_resources = true;
+                }
+                else{
+                    --global_resources_counter[final_target];
+                }
+            }
+            
+            if(!room_resources) {
                 --specific_resources_counter[agent_type][final_target];
                 random_iterator = (random_iterator + 1) % lenght_rooms;
-            }
-            else {
-                *available = true;
             }
         }
         while(!available && random_iterator != random);  
@@ -320,16 +337,21 @@ namespace device_functions {
             else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM){
                 
                 // Try getting the resources of the room
-                get_global_resource = ++global_resources_counter[final_target];
                 get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
-                if(get_global_resource <= global_resources[final_target] && get_specific_resource <= specific_resources[agent_type][final_target]){
-                   available = true; 
+                if(get_specific_resource <= specific_resources[agent_type][final_target]){
+
+                    get_global_resource = ++global_resources_counter[final_target];
+                   if(get_global_resource <= global_resources[final_target]){
+                     available = true;
+                   }
+                   else {
+                    get_global_resource = --global_resources_counter[final_target]; 
+                   } 
                 } 
 
                 //if the initial room is not avaiable because the resources are over, explore the alternatives:
                 if(!available){
-                    get_global_resource = --global_resources_counter[final_target]; 
                     get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
                     //search another room of the same type and area

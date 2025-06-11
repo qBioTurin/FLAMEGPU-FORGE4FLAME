@@ -235,19 +235,26 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
             //try getting inside the event room
             if(event_node != -1){
-                get_global_resource = ++global_resources_counter[event_node];
                 get_specific_resource = ++specific_resources_counter[agent_type][event_node];
-                unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, event_distr_firstparam, event_distr_secondparam, true);
                 
-                if(get_global_resource <= global_resources[event_node] && get_specific_resource <= specific_resources[agent_type][event_node]){
-                    available = true;
-                } 
+                if(get_specific_resource <= specific_resources[agent_type][event_node]){
+
+                    get_global_resource = ++global_resources_counter[event_node];
+
+                    if(get_global_resource <= global_resources[event_node]){
+                        available = true;
+                    }
+                    else {
+                        get_global_resource = --global_resources_counter[event_node];
+                        get_specific_resource = --specific_resources_counter[agent_type][event_node];
+                    }
+                }
+                else {
+                    get_specific_resource = --specific_resources_counter[agent_type][event_node];
+                }
 
                 //if the initial room is not avaiable because the resources are over, explore the alternatives:
-                if(!available){
-                    get_global_resource = --global_resources_counter[event_node];
-                    get_specific_resource = --specific_resources_counter[agent_type][event_node];
-
+                if(!available && alternative_resources_type_rand[agent_type][event_node] != -1){
                     //search another room of the same type and area
                     if(alternative_resources_area_rand[agent_type][event_node] == area_room_event && alternative_resources_type_rand[agent_type][event_node] == type_room_event){
 
@@ -834,29 +841,35 @@ FLAMEGPU_AGENT_FUNCTION(handlingQueueinWaitingRoom, MessageBucket, MessageBucket
         for(const auto& message: FLAMEGPU->message_in(node)){
 
             int agent_type = message.getVariable<int>(AGENT_TYPE);
-            unsigned int get_global_resource = ++global_resources_counter[node];
             unsigned int get_specific_resource = ++specific_resources_counter[agent_type][node];
 
-            if(get_global_resource <= global_resources[node] && get_specific_resource <= specific_resources[agent_type][node]){
+            if(get_specific_resource <= specific_resources[agent_type][node]){
 
-                int max_time_waiting = INT_MIN;
-                short contacts_id = -1;
+                unsigned int get_global_resource = ++global_resources_counter[node];
 
-                for(const auto& message: FLAMEGPU->message_in(node)){
-                    
-                    if(message.getVariable<int>(WAITING_ROOM_TIME) > max_time_waiting && message.getVariable<int>(AGENT_TYPE) == agent_type){
-                      max_time_waiting = message.getVariable<int>(WAITING_ROOM_TIME);  
-                      contacts_id = message.getVariable<short>(CONTACTS_ID);
-                    } 
+                if(get_global_resource <= global_resources[node]){
+
+                    int max_time_waiting = INT_MIN;
+                    short contacts_id = -1;
+
+                    for(const auto& message: FLAMEGPU->message_in(node)){
+                        
+                        if(message.getVariable<int>(WAITING_ROOM_TIME) > max_time_waiting && message.getVariable<int>(AGENT_TYPE) == agent_type){
+                            max_time_waiting = message.getVariable<int>(WAITING_ROOM_TIME);  
+                            contacts_id = message.getVariable<short>(CONTACTS_ID);
+                        } 
+                    }
+                    FLAMEGPU->message_out.setVariable<short>(GRAPH_NODE, node);
+                    FLAMEGPU->message_out.setKey(contacts_id); 
+                    break;
                 }
-
-                FLAMEGPU->message_out.setVariable<short>(GRAPH_NODE, node);
-                FLAMEGPU->message_out.setKey(contacts_id); 
-
-                break;
+                else {
+                    get_global_resource = --global_resources_counter[node];
+                    get_specific_resource = --specific_resources_counter[agent_type][node];
+                }
+           
             }
             else {
-                get_global_resource = --global_resources_counter[node];
                 get_specific_resource = --specific_resources_counter[agent_type][node];
             }
         }
