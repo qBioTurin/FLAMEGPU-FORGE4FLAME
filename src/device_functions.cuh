@@ -153,7 +153,6 @@ namespace device_functions {
                     previous_separation = min_separation;
                 }
             }
-            }
         }
         while(!available && event_node != -1);  
 
