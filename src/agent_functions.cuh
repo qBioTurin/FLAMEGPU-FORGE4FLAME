@@ -299,7 +299,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
 
     // Handle the agent exited from the environment
-    if(FLAMEGPU->getVariable<unsigned char>(INIT) && coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]] == extern_node && next_index == target_index && ((int) env_flow[agent_type][week_day_flow][flow_index] == -1 || ((flow_index - 1) > 0 && (int) env_flow[agent_type][week_day_flow][flow_index - 1] == SPAWNROOM) || room_for_quarantine_index == extern_node || FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))){        
+    if(FLAMEGPU->getVariable<unsigned char>(INIT) && coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]] == extern_node && next_index == target_index && ((int) env_flow[agent_type][week_day_flow][flow_index] == -1 || ((int) env_flow[agent_type][week_day_flow][flow_index] == SPAWNROOM) || room_for_quarantine_index == extern_node || FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))){        
         printf("0,%d,%d,%d,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), (int) agent_pos[0], (int) INVISIBLE_AGENT_Y, (int) agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
 
         if(agent_with_a_rate && (int) env_flow[agent_type][week_day_flow][flow_index] == -1){
@@ -318,7 +318,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
         agent_pos[1] = INVISIBLE_AGENT_Y;
 
-        if(!agent_with_a_rate && ((int) env_flow[agent_type][week_day_flow][flow_index] == -1 || ((flow_index - 1) > 0 && (int) env_flow[agent_type][week_day_flow][flow_index - 1] == SPAWNROOM)) && !FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))
+        if(!agent_with_a_rate && ((int) env_flow[agent_type][week_day_flow][flow_index] == -1 || ((int) env_flow[agent_type][week_day_flow][flow_index] == SPAWNROOM)) && !FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))
             update_flow(FLAMEGPU, false);
 
         FLAMEGPU->setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 0);
