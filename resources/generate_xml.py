@@ -361,10 +361,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		perc_inf_df = pd.DataFrame(data={'day': range(1, days+1), "percentage_infected": np.zeros(days)})
 		if len(outside_contagion) > 0:
-			if len(outside_contagion) < days:
-				print("ERROR: The dataframe outputted by the macro model must have at least " + str(days) + " rows. At the moment it has " + str(len(perc_inf_df)) + " rows.")
-				sys.exit(-1)
-
 			perc_inf_df = outside_contagion.iloc[:days, :]
 
 		mask_types = {"No mask": 0, "Surgical mask": 1, "FFP2 mask": 2}
@@ -501,11 +497,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 						entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
 						entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
 
-						if flow_index == 0:
-							if weekday == init_week_day and start_step_time > entry_exit_time_weekday.loc[0, "EntryTime"]:
-								print("ERROR: The start step time (" + start_step_time + ") is greater than the entrance time of agent '" + agent + "' (" + eetw.loc["EntryTime"] + ").")
-								sys.exit(-1)
-
 						for j, eetw in entry_exit_time_weekday.iterrows():
 
 							flow_type = pd.DataFrame([df for _, df in deterministic_flow.iterrows() if df.loc["FlowID"] == eetw.loc["FlowID"]])
@@ -545,11 +536,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							env_birth_rates_distr_secondparam[agent_type_idx][i][j] = int(b)
 
 							total_agents_estimation = total_agents_estimation + distribution_average(eetw.loc["RateDist"], int(a), int(b)) * 2
-
-							if flow_index == 0:
-								if weekday == init_week_day and start_step_time > entry_exit_time_weekday.loc[0, "EntryTime"]:
-									print("ERROR: The start step time (" + start_step_time + ") is greater than the entrance time of agent '" + agent + "' (" + entry_exit_time_weekday.loc[0, "EntryTime"] + ").")
-									sys.exit(-1)
 									
 						for k, f in deterministic_flow.iterrows():
 							ft, fa = f.loc["Room"].strip().split("-")
