@@ -353,7 +353,6 @@ namespace device_functions {
 
                 //if the initial room is not avaiable because the resources are over, explore the alternatives:
                 if(!available){
-                    printf("entro qui che già non trovo per l'agente %d e l'id %d",FLAMEGPU->getVariable<short>(CONTACTS_ID), final_target);
                     get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
                     //search another room of the same type and area
@@ -395,8 +394,6 @@ namespace device_functions {
                         ++global_resources_counter[start_node]; 
                         ++specific_resources_counter[agent_type][start_node];
                     }
-                    printf("quanto è avaiable %d\n", (int)available);
-                    printf("quanto entro nello skip con id %d e final target %d?\n", FLAMEGPU->getVariable<short>(CONTACTS_ID), final_target);
                     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
                     const float final_target_vec[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
                     final_target = coord2index[(unsigned short)(final_target_vec[1]/YOFFSET)][(unsigned short)final_target_vec[2]][(unsigned short)final_target_vec[0]];
