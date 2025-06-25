@@ -475,6 +475,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		alternative_resources_area_rand = np.full((total_number_of_agents_types, len(vlist)), -2, dtype=int)
 
 		days_of_a_week = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
+		agentlinked_types = {"Accompaniment": 0, "Accompaniment + stay": 1}
 
 		agent_names = {}
 		with open("agents_file.xml", "w") as agent_file:
@@ -528,7 +529,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
 								if not f.loc["AgentLinked"] in ["", "."]:
 									env_flow_agentlinked[agent_type_idx][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
-									env_flow_agentlinked_type[agent_type_idx][i][flow_index] = int(f.loc["AgentLinkedType"])
+									env_flow_agentlinked_type[agent_type_idx][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
 								env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
 								env_flow_distr_firstparam[agent_type_idx][i][flow_index] = int(a) * steps_in_a_minute
 								env_flow_distr_secondparam[agent_type_idx][i][flow_index] = int(b) * steps_in_a_minute
@@ -566,7 +567,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
 							if not f.loc["AgentLinked"] in ["", "."]:
 								env_flow_agentlinked[agent_type_idx][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
-								env_flow_agentlinked_type[agent_type_idx][i][flow_index] = int(f.loc["AgentLinkedType"])
+								env_flow_agentlinked_type[agent_type_idx][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
 							env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
 							env_flow_distr_firstparam[agent_type_idx][i][flow_index] = int(a) * steps_in_a_minute
 							env_flow_distr_secondparam[agent_type_idx][i][flow_index] = int(b) * steps_in_a_minute
@@ -591,7 +592,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 						env_events_endtime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute
 						if rf["AgentLinked"] != "":
 							env_events_agentlinked[agent_type_idx][e] = agent_names[rf["AgentLinked"]]["ID"]
-							env_events_agentlinked_type[agent_type_idx][e] = rf["AgentLinkedType"]
+							env_events_agentlinked_type[agent_type_idx][e] = agentlinked_types[rf["AgentLinkedType"]]
 						env_events_distr[agent_type_idx][e] = distributions[rf["Dist"]]
 						env_events_distr_firstparam[agent_type_idx][e] = int(a) * steps_in_a_minute
 						env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
