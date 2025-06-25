@@ -1352,14 +1352,14 @@ to setup-vaccinated-agents
     [
       foreach classroom-name
         [
-          c-name -> ask n-of (floor (students-per-classroom * fraction-of-vaccinated-students)) students with [ classroom = c-name ]
+          c-name -> ask n-of (round (students-per-classroom * fraction-of-vaccinated-students)) students with [ classroom = c-name ]
                       [ do-the-vaccine ]
         ]
     ]
 
   if vaccinated-teachers?
     [
-      ask n-of (floor (num-teachers * fraction-of-vaccinated-teachers)) teachers
+      ask n-of (round (num-teachers * fraction-of-vaccinated-teachers)) teachers
         [ do-the-vaccine ]
     ]
 
@@ -1371,7 +1371,7 @@ to setup-vaccinated-agents
 
   if vaccinated-janitors?
     [
-      ask n-of (floor (num-janitors * fraction-of-vaccinated-janitors)) janitors
+      ask n-of (round (num-janitors * fraction-of-vaccinated-janitors)) janitors
         [ do-the-vaccine ]
     ]
 end
@@ -2597,9 +2597,6 @@ to put-classroom-in-quarantine [c-name quarantine-ext-1? quarantine-ext-2?]
       update-put-in-quarantine-variables
 
       set remain-quarantine-days num-of-quarantine-days
-
-      while [remain-incubation-days >= remain-quarantine-days]
-        [ set remain-incubation-days floor (remain-incubation-days / 2) ]
     ]
 
   set classrooms-in-quarantine lput c-name classrooms-in-quarantine
@@ -2613,9 +2610,6 @@ to put-agent-in-quarantine [quarantine-ext-1? quarantine-ext-2?]
   update-put-in-quarantine-variables
 
   set remain-quarantine-days num-of-quarantine-days
-
-  while [remain-incubation-days >= remain-quarantine-days]
-    [ set remain-incubation-days floor (remain-incubation-days / 2) ]
 end
 
 to update-put-in-quarantine-variables
