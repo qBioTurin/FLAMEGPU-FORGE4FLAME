@@ -127,7 +127,7 @@ namespace device_functions {
                 }
             }
         }
-        while(!available && event_node != -1);  
+        while(!*available && event_node != -1);  
 
         return event_node;
      }
@@ -182,7 +182,7 @@ namespace device_functions {
                 random_iterator = (random_iterator + 1) % lenght_rooms;
             }
         }
-        while(!available && random_iterator != random);  
+        while(!*available && random_iterator != random);  
 
         return final_target;
      }
