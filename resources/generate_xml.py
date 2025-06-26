@@ -452,7 +452,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		for row in rooms_whatif["Ventilation"]:
 			(type, area) = (types_IDs[row[0].split("-")[0]]["ID"], areas[row[0].split("-")[1]]["ID"])
 			
-			env_ventilation[:, area, type] = row[1:]
+			env_ventilation[:, area, type] = [int(r) / 3600 for r in row[1:]]
 
 		total_number_of_agents = 0
 		number_of_agents_by_type = np.zeros(total_number_of_agents_types+1, dtype=int)
