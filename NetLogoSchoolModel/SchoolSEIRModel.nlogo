@@ -1351,16 +1351,26 @@ to setup-vaccinated-agents
   if vaccinated-students?
     [
       foreach classroom-name
-        [
-          c-name -> ask n-of (round (students-per-classroom * fraction-of-vaccinated-students)) students with [ classroom = c-name ]
-                      [ do-the-vaccine ]
-        ]
+	[
+  	   c-name -> ask students with [classroom = c-name]
+	    [
+	      let random-vaccination random-float 1
+	
+	      if random-vaccination < fraction-of-vaccinated-students
+	        [ do-the-vaccine ]
+	    ]
+	]
     ]
 
   if vaccinated-teachers?
     [
-      ask n-of (round (num-teachers * fraction-of-vaccinated-teachers)) teachers
-        [ do-the-vaccine ]
+      ask teachers
+        [
+	  let random-vaccination random-float 1
+	
+	  if random-vaccination < fraction-of-vaccinated-teachers
+	    [ do-the-vaccine ]
+	]
     ]
 
   if vaccinated-principals?
@@ -1371,8 +1381,13 @@ to setup-vaccinated-agents
 
   if vaccinated-janitors?
     [
-      ask n-of (round (num-janitors * fraction-of-vaccinated-janitors)) janitors
-        [ do-the-vaccine ]
+      ask janitors
+        [
+	  let random-vaccination random-float 1
+	
+	  if random-vaccination < fraction-of-vaccinated-janitors
+	    [ do-the-vaccine ]
+	]
     ]
 end
 
