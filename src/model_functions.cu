@@ -286,6 +286,9 @@ void define_pedestrian_messages(ModelDescription& model){
     link_message.newVariable<float>(X);
     link_message.newVariable<float>(Y);
     link_message.newVariable<float>(Z);
+    link_message.newVariable<float>(FINAL_X);
+    link_message.newVariable<float>(FINAL_Y);
+    link_message.newVariable<float>(FINAL_Z);
     link_message.newVariable<int>(SUPPORT_TIME);
     link_message.setBounds(0, NUMBER_OF_AGENTS_TYPES + TOTAL_AGENTS_ESTIMATION);
 }

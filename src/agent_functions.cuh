@@ -371,6 +371,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                             FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
                             FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
                             FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
+                            FLAMEGPU->message_out.setVariable<float>(FINAL_X, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, event_node));
+                            FLAMEGPU->message_out.setVariable<float>(FINAL_Y, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, event_node));
+                            FLAMEGPU->message_out.setVariable<float>(FINAL_Z, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, event_node));
                             FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: event_time_random);
 
                             FLAMEGPU->message_out.setKey(agentlinked);
@@ -488,6 +491,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                 FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
                 FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
                 FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
+                FLAMEGPU->message_out.setVariable<float>(FINAL_X, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, final_node));
+                FLAMEGPU->message_out.setVariable<float>(FINAL_Y, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, final_node));
+                FLAMEGPU->message_out.setVariable<float>(FINAL_Z, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, final_node));
                 FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: flow_stay);
 
                 FLAMEGPU->message_out.setKey(agentlinked);
@@ -602,9 +608,6 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
         FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
         FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
 
-        // The support continues
-        FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -1);
-
         if((next_index == target_index || in_an_event) && ((stay == 1 && requested_type == ACCOMPANIMENT_AND_STAY) || requested_type == ACCOMPANIMENT_ONLY)){
             // The support is finished
             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -2);
@@ -613,14 +616,19 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
             FLAMEGPU->setVariable<short>(REQUESTED_TYPE, -1);
             FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
         }
+        else{
+            // The support continues
+            FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -1);
+        }
 
         // Event with support during the supported determined flow
         if(support_time_event){
             FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, support_time_event);
             FLAMEGPU->setVariable<short>(SUPPORT_TIME_EVENT, -1);
         }
-        else
+        else{
             FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, -1);
+        }
 
         FLAMEGPU->message_out.setKey(currently_supported);
     }
@@ -679,10 +687,12 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
             const short start_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
             const short target_node = coord2index[(unsigned short)((*interested_message).getVariable<float>(Y)/YOFFSET)][(unsigned short)(*interested_message).getVariable<float>(Z)][(unsigned short)(*interested_message).getVariable<float>(X)];
+            const short support_node = coord2index[(unsigned short)((*interested_message).getVariable<float>(FINAL_Y)/YOFFSET)][(unsigned short)(*interested_message).getVariable<float>(FINAL_Z)][(unsigned short)(*interested_message).getVariable<float>(FINAL_X)];
             const short final_node = start_node;
 
             short solution_start_support[SOLUTION_LENGTH] = {-1};
             short solution_support_final[SOLUTION_LENGTH] = {-1};
+
             int support_stay = 1;
             int final_stay = (unsigned int) stay_matrix[contacts_id][target_index] - (*interested_message).getVariable<int>(SUPPORT_TIME);
 
@@ -691,7 +701,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             stay_matrix[contacts_id][target_index].exchange(0);
 
             a_star(FLAMEGPU, start_node, target_node, solution_start_support);
-            a_star(FLAMEGPU, target_node, final_node, solution_support_final);
+            a_star(FLAMEGPU, support_node, final_node, solution_support_final);
 
             update_targets(FLAMEGPU, solution_start_support, &target_index, false, support_stay);
             update_targets(FLAMEGPU, solution_support_final, &target_index, false, final_stay);
