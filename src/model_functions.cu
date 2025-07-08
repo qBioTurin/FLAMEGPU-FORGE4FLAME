@@ -159,6 +159,7 @@ void define_environment(ModelDescription& model){
     env.newProperty<float>(VIRUS_VARIANT_FACTOR, 0.0f);
     env.newProperty<float>(DECAY_RATE, 0.0f);
     env.newProperty<float>(GRAVITATIONAL_SETTLING_RATE, 0.0f);
+    env.newProperty<float>(STERILISATION, 0.0f);
     env.newProperty<float>(INHALATION_RATE_PURE, 0.0f);
     env.newProperty<float>(RISK_CONST, 0.0f);
 
@@ -388,13 +389,10 @@ void define_room(ModelDescription& model){
             room.newVariable<int>(AREA, -1);
             room.newVariable<int>(TYPE, -1);
             room.newVariable<int>(COLOR_ID, 0);
-            if(room_type != FILLINGROOM_AGENT_STRING){
-                room.newVariable<float>(VOLUME, 0.0f);
-                room.newVariable<float>(ROOM_QUANTA_CONCENTRATION, 0.0f);
-                room.newVariable<unsigned short>(X_CENTER, 0);
-                room.newVariable<unsigned short>(Y_CENTER, 0);
-                room.newVariable<unsigned short>(Z_CENTER, 0);
-            }
+            room.newVariable<float>(VOLUME, 0.0f);
+            room.newVariable<unsigned short>(X_CENTER, 0);
+            room.newVariable<unsigned short>(Y_CENTER, 0);
+            room.newVariable<unsigned short>(Z_CENTER, 0);
 
             define_room_functions(room, room_type);
         }

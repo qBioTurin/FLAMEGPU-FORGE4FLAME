@@ -355,7 +355,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                     auto env_events_agentlinked_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
 
                     int agentlinked = (int) env_events_agentlinked[agent_type][event];
-                    short agentlinked_type = (short) env_events_agentlinked_type[agent_type][event];
+                    int agentlinked_type = (int) env_events_agentlinked_type[agent_type][event];
                     // Handle new support, if necessary
                     if(agentlinked != -1){
                         if(requested_support == -1){
@@ -477,7 +477,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
             // Handle new support, if necessary
             int agentlinked = (int) env_flow_agentlinked[agent_type][week_day_flow][flow_index + 1];
-            short agentlinked_type = (short) env_flow_agentlinked_type[agent_type][week_day_flow][flow_index + 1];
+            int agentlinked_type = (int) env_flow_agentlinked_type[agent_type][week_day_flow][flow_index + 1];
             if(agentlinked != -1 && available){
                 FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
                 FLAMEGPU->setVariable<short>(REQUESTED_TYPE, agentlinked_type);
@@ -875,7 +875,6 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     printf("5,%d,%d,Beginning updateQuantaConcentration for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getID());
 #endif
     unsigned short room_pos[3] = {FLAMEGPU->getVariable<unsigned short>(X_CENTER), FLAMEGPU->getVariable<unsigned short>(Y_CENTER), FLAMEGPU->getVariable<unsigned short>(Z_CENTER)};
-    float room_quanta_concentration = FLAMEGPU->getVariable<float>(ROOM_QUANTA_CONCENTRATION);
 
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     auto rooms_quanta_concentration = FLAMEGPU->environment.getMacroProperty<float, V>(ROOMS_QUANTA_CONCENTRATION);
@@ -893,6 +892,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     const float virus_variant_factor = FLAMEGPU->environment.getProperty<float>(VIRUS_VARIANT_FACTOR);
     const float gravitational_settling_rate = FLAMEGPU->environment.getProperty<float>(GRAVITATIONAL_SETTLING_RATE);
     const float decay_rate = FLAMEGPU->environment.getProperty<float>(DECAY_RATE);
+    const float sterilisation = FLAMEGPU->environment.getProperty<float>(STERILISATION);
 
     float total_n_r = 0.0f;
     for(const auto& message: FLAMEGPU->message_in(node)) {
@@ -906,11 +906,10 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
         }
     }
 
-    float total_first_order_lost_rate = ventilation + gravitational_settling_rate + decay_rate;
+    float total_first_order_lost_rate = ventilation + gravitational_settling_rate + decay_rate + sterilisation;
     float new_concentration = ((total_n_r / volume) / total_first_order_lost_rate) + (((float) rooms_quanta_concentration[node]) - ((total_n_r / volume) / total_first_order_lost_rate)) * exp(-(total_first_order_lost_rate * STEP));
 
     rooms_quanta_concentration[node].exchange(new_concentration);
-    FLAMEGPU->setVariable<float>(ROOM_QUANTA_CONCENTRATION, new_concentration);
 
     if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_HOUR)){
         if(!compare_float((float) new_concentration, 0.0f, 1e-10f))

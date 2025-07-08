@@ -366,7 +366,6 @@ namespace host_functions {
             int color_id = xagent.child("color_id").text().as_int();
             int type = xagent.child("type").text().as_int();
             float volume = xagent.child("volume").text().as_float();
-            float room_quanta_concentration = xagent.child("room_quanta_concentration").text().as_float();
             unsigned short x_center = (unsigned short) xagent.child("x_center").text().as_int();
             unsigned short y_center = (unsigned short) xagent.child("y_center").text().as_int();
             unsigned short z_center = (unsigned short) xagent.child("z_center").text().as_int();
@@ -388,7 +387,6 @@ namespace host_functions {
 
             if(name != FILLINGROOM_AGENT_STRING){
                 new_room.setVariable<float>(VOLUME, volume);
-                new_room.setVariable<float>(ROOM_QUANTA_CONCENTRATION, room_quanta_concentration);
                 new_room.setVariable<unsigned short>(X_CENTER, x_center);
                 new_room.setVariable<unsigned short>(Y_CENTER, y_center);
                 new_room.setVariable<unsigned short>(Z_CENTER, z_center);
