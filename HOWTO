@@ -4,7 +4,6 @@
 
 Possible parameters:
     -expdir or --experiment_dir:    directory with the scenario to simulate (default: .)
-    -prun   or --parallel_run:      number of run to execute in parallel on GPUs (default: 10)
     -ob     or --only_build:        build the model without execute it (default: OFF; possible values: ON, OFF)
     -c      or --clean:             clean files and directories (default: OFF; possible values: ON, OFF)
 

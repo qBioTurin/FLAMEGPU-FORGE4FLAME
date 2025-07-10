@@ -147,7 +147,7 @@ namespace device_functions {
         
         int random_iterator = random;
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
-        short final_target = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
+        unsigned short final_target = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
         //resources
         auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
@@ -155,9 +155,9 @@ namespace device_functions {
         auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
         
         auto messages = FLAMEGPU->message_in(flow);
+        bool room_resources = false;
 
         do {
-
             auto list_front = messages.begin();
 
             for(int i = 0; i < ward_indeces[random_iterator]; i++) list_front++;
@@ -334,7 +334,7 @@ namespace device_functions {
                     //search another room of the same type and area
                     if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
 
-                        random = (random + 1) % lenght_rooms;
+                        //random = (random + 1) % lenght_rooms;
                         final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, &available);
                     }
                     //search another room of the alternative

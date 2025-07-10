@@ -352,7 +352,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
         agent_pos[1] = INVISIBLE_AGENT_Y;
 
-        if(!agent_with_a_rate && ((int) env_flow[agent_type][week_day_flow][flow_index] == -1 || ((flow_index - 1) > 0 && (int) env_flow[agent_type][week_day_flow][flow_index - 1] == SPAWNROOM)) && !FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))
+        if(!agent_with_a_rate && ((int) env_flow[agent_type][week_day_flow][flow_index] == -1 || ((int) env_flow[agent_type][week_day_flow][flow_index] == SPAWNROOM)) && !FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))
             update_flow(FLAMEGPU, false);
 
         FLAMEGPU->setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 0);
