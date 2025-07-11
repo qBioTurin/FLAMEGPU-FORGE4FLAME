@@ -198,6 +198,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			yaw = 0
 			x_offset = 0
 			z_offset = 0
+			x_position = x
+			z_position = z
 
 		if type != "Spawnroom":
 			room_file.write("\t<xagent>\n")
