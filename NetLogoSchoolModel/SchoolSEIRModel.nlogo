@@ -2545,7 +2545,7 @@ to accumulate-contact-with-infected
 
       ;ask (turtles-on neighbors) with [ not hidden? and susceptible? and room-name = [room-name] of myself ]
       ;ask (turtles in-radius ((contact-space-length-in-meters / 2) / one-patch-in-meters)) with [ not hidden? and susceptible? and room-name = [room-name] of myself ]
-      ask turtles with [not hidden? and susceptible? and room-name = [room-name] of myself and distance myself <= (contact-space-length-in-meters / 2)]
+      ask turtles with [not hidden? and susceptible? and room-name = [room-name] of myself and distance myself < (contact-space-length-in-meters / 2)]
       [
         let contact-value matrix:get contact-timein-ticks-with-infected-matrix who who-infected
         matrix:set contact-timein-ticks-with-infected-matrix who who-infected (contact-value + 1)
