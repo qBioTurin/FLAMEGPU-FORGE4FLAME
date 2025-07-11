@@ -357,14 +357,11 @@ void define_room(ModelDescription& model){
             room.newVariable<int>(AREA, -1);
             room.newVariable<int>(TYPE, -1);
             room.newVariable<int>(COLOR_ID, 0);
-            if(room_type != FILLINGROOM_AGENT_STRING){
-                room.newVariable<float>(VOLUME, 0.0f);
-                room.newVariable<float>(ROOM_QUANTA_CONCENTRATION, 0.0f);
-                room.newVariable<unsigned short>(X_CENTER, 0);
-                room.newVariable<unsigned short>(Y_CENTER, 0);
-                room.newVariable<unsigned short>(Z_CENTER, 0);
-            }
-
+            room.newVariable<float>(VOLUME, 0.0f);
+            room.newVariable<unsigned short>(X_CENTER, 0);
+            room.newVariable<unsigned short>(Y_CENTER, 0);
+            room.newVariable<unsigned short>(Z_CENTER, 0);
+            
             define_room_functions(room, room_type);
         }
     }

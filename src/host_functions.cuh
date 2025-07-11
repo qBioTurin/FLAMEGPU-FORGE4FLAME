@@ -33,8 +33,6 @@ namespace host_functions {
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
-        //printf("[RANDOM_HOST],%d,%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), distribution_id, 0, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
-
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
     }
 
@@ -364,7 +362,6 @@ namespace host_functions {
             int color_id = xagent.child("color_id").text().as_int();
             int type = xagent.child("type").text().as_int();
             float volume = xagent.child("volume").text().as_float();
-            float room_quanta_concentration = xagent.child("room_quanta_concentration").text().as_float();
             unsigned short x_center = (unsigned short) xagent.child("x_center").text().as_int();
             unsigned short y_center = (unsigned short) xagent.child("y_center").text().as_int();
             unsigned short z_center = (unsigned short) xagent.child("z_center").text().as_int();
@@ -383,14 +380,10 @@ namespace host_functions {
             new_room.setVariable<int>(AREA, area);
             new_room.setVariable<int>(COLOR_ID, color_id);
             new_room.setVariable<int>(TYPE, type);
-
-            if(name != FILLINGROOM_AGENT_STRING){
-                new_room.setVariable<float>(VOLUME, volume);
-                new_room.setVariable<float>(ROOM_QUANTA_CONCENTRATION, room_quanta_concentration);
-                new_room.setVariable<unsigned short>(X_CENTER, x_center);
-                new_room.setVariable<unsigned short>(Y_CENTER, y_center);
-                new_room.setVariable<unsigned short>(Z_CENTER, z_center);
-            }
+            new_room.setVariable<float>(VOLUME, volume);
+            new_room.setVariable<unsigned short>(X_CENTER, x_center);
+            new_room.setVariable<unsigned short>(Y_CENTER, y_center);
+            new_room.setVariable<unsigned short>(Z_CENTER, z_center);
         }
 
         string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";

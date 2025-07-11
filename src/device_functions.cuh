@@ -27,8 +27,6 @@ namespace device_functions {
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
-        // printf("[RANDOM_AGENT],%d,%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), distribution_id, id, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
-
         auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
         cuda_rng_offsets_pedestrian[FLAMEGPU->getVariable<short>(CONTACTS_ID)]++;
 
@@ -47,8 +45,6 @@ namespace device_functions {
             }while(compare_float((double) random, 1.0f, 1e-10f));
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
-
-        // printf("[RANDOM_ROOM],%d,%d,%d,%d,%d,%d,%f,%s\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), distribution_id, id, type, a, b, (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random, flow_time ? "true" : "false");
 
         auto cuda_rng_offsets_room = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_ROOMS>(CUDA_RNG_OFFSETS_ROOM);
         cuda_rng_offsets_room[FLAMEGPU->getID()]++;
@@ -144,11 +140,10 @@ namespace device_functions {
      * Find a room of free resources 
     */
     FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {  
-        
         int random_iterator = random;
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         unsigned short final_target = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
-        //resources
+        
         auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
         auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
@@ -828,8 +823,6 @@ namespace device_functions {
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
         auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
-
-        // printf("[QUARANTINE],%d,%d,%d,%d,%d,1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<unsigned short>(QUARANTINE) ? 1: 0, FLAMEGPU->getVariable<unsigned short>(SEVERITY));
 
         FLAMEGPU->setVariable<unsigned short>(SEVERITY, MINOR);
         FLAMEGPU->setVariable<int>(SWAB_STEPS, -1);
