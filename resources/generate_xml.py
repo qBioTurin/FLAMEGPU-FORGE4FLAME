@@ -166,37 +166,47 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			yaw = 0
 			x_offset = 0
 			z_offset = 0
+			x_position = x
+			z_position = z
 			dimension_x = length - 1
 			dimension_z = width - 1
 		elif door == "left":
 			yaw = math.pi / 2
 			x_offset = np.floor(width) + 1
 			z_offset = 0
+			x_position = x - (np.ceil(width) - width)
+			z_position = z
 			dimension_x = width - 1
 			dimension_z = length - 1
 		elif door == "top":
 			yaw = math.pi
 			x_offset = np.floor(length) + 1
 			z_offset = np.floor(width) + 1
+			x_position = x - (np.ceil(length) - length)
+			z_position = z - (np.ceil(width) - width)
 			dimension_x = length - 1
 			dimension_z = width - 1
 		elif door == "right":
 			yaw = 3 * math.pi / 2
 			x_offset = 0
 			z_offset = np.floor(length) + 1
+			x_position = x
+			z_position = z - (np.ceil(length) - length)
 			dimension_x = width - 1
 			dimension_z = length - 1
 		else:
 			yaw = 0
 			x_offset = 0
 			z_offset = 0
+			x_position = x
+			z_position = z
 
 		if type != "Spawnroom":
 			room_file.write("\t<xagent>\n")
 			room_file.write("\t\t<name>" + ("room" if type != "Fillingroom" else "fillingroom") + "</name>\n")
-			room_file.write("\t\t<x>" + str(x + x_offset) + "</x>\n")
+			room_file.write("\t\t<x>" + str(x_position + x_offset) + "</x>\n")
 			room_file.write("\t\t<y>" + str(y) + "</y>\n")
-			room_file.write("\t\t<z>" + str(z + z_offset) + "</z>\n")
+			room_file.write("\t\t<z>" + str(z_position + z_offset) + "</z>\n")
 			room_file.write("\t\t<length_obj>" + str(rooms[room_name]["length"]) + "</length_obj>\n")
 			room_file.write("\t\t<width_obj>" + str(rooms[room_name]["width"]) + "</width_obj>\n")
 			room_file.write("\t\t<height_obj>" + str(rooms[room_name]["height"]) + "</height_obj>\n")
