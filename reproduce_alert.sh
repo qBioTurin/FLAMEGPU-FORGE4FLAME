@@ -23,13 +23,5 @@ python barplot.py -experiment_dirs AlarmNoCountermeasures AlarmSurgical20 AlarmS
                   -experiment_labels Baseline Surgical-20% Surgical-40% Surgical-80% FFP2-20% FFP2-40% FFP2-80% \
                   -day_x 30 \
                   -baseline_experiment AlarmNoCountermeasures
-python barplot.py -experiment_dirs AlarmNoCountermeasures AlarmSurgical20 AlarmSurgical40 AlarmSurgical80 AlarmFFP220 AlarmFFP240 AlarmFFP280 \
-                  -experiment_labels Baseline Surgical-20% Surgical-40% Surgical-80% FFP2-20% FFP2-40% FFP2-80% \
-                  -day_x 60 \
-                  -baseline_experiment AlarmNoCountermeasures
-python barplot.py -experiment_dirs AlarmNoCountermeasures AlarmSurgical20 AlarmSurgical40 AlarmSurgical80 AlarmFFP220 AlarmFFP240 AlarmFFP280 \
-                  -experiment_labels Baseline Surgical-20% Surgical-40% Surgical-80% FFP2-20% FFP2-40% FFP2-80% \
-                  -day_x 90 \
-                  -baseline_experiment AlarmNoCountermeasures
 cd ..
 deactivate
