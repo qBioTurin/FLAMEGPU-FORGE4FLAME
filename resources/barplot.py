@@ -98,7 +98,8 @@ def plot_percentage_difference_at_day_x(
             fill="Mask Type"
         ) +
         theme(legend_position="bottom", legend_title=element_text(weight="bold", size=16), legend_text=element_text(size=14), legend_key_size=20, axis_text=element_text(size=12), axis_title=element_text(size=14, weight="bold")) +
-        scale_fill_manual(values=custom_colors) # Add custom color scale
+        scale_fill_manual(values=custom_colors) +
+        ylim(-100, 0)
     )
 
     # Save the plot

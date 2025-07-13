@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from plotnine import ggplot, aes, geom_line, labs, scale_color_manual, theme_bw, facet_wrap, theme, element_text
+from plotnine import *
 
 def plot_seir_states_with_average(base_dirs, scenario_names, custom_order, filename='evolution.csv', output_dir='plots', output_file='seir_states_together.png'):
     # Define colors for scenarios
