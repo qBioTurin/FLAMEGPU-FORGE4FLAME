@@ -170,12 +170,6 @@ Infectious Disease Spread. Available at SSRN: http://dx.doi.org/10.2139/ssrn.519
 # References
 - [1] Marco Aldinucci et al. “HPC4AI: an AI-on-demand federated platform endeavour”. In: Proceedings of the 15th ACM International Conference on Computing Frontiers. 2018, pp. 279–286.
 
-<p align="center">
-  <a href="https://qbio.di.unito.it/">
-    <img src="./inst/Shiny/www/Logo_QBio.png" alt="QBio Logo" width="200">
-  </a>
-</p>
-
 ## COPYRIGHT AND LICENSE
 Copyright _Daniele Baccega, Irene Terrone, Peter Heywood, Robert Chisholm, Paul Richmond, Sandro Gepiro Contaldo, Lorenzo Bosio, Simone Pernice, Marco Beccuti_
 
