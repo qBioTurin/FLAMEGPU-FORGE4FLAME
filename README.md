@@ -155,6 +155,9 @@ cd FLAMEGPU-FORGE4FLAME
 ./reproduce_alert.sh
 ```
 
+# Diclaimer:
+F4F developers have no liability for any use of F4F functions, including without limitation, any loss of data, incorrect results, or any costs, liabilities, or damages that result from the use of F4F. 
+
 # How to cite
 
 ```
@@ -166,3 +169,10 @@ Infectious Disease Spread. Available at SSRN: http://dx.doi.org/10.2139/ssrn.519
 
 # References
 - [1] Marco Aldinucci et al. “HPC4AI: an AI-on-demand federated platform endeavour”. In: Proceedings of the 15th ACM International Conference on Computing Frontiers. 2018, pp. 279–286.
+
+## COPYRIGHT AND LICENSE
+Copyright _Daniele Baccega, Irene Terrone, Peter Heywood, Robert Chisholm, Paul Richmond, Sandro Gepiro Contaldo, Lorenzo Bosio, Simone Pernice, Marco Beccuti_
+
+![CC BY-NC-SA 3.0](http://ccl.northwestern.edu/images/creativecommons/byncsa.png)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 License. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
