@@ -42,7 +42,7 @@ scenario_colors <- c("Baseline"       = "#559e83",  # No Countermeasures (green)
                      "FFP2 80%"       = "#b56576")  # FFP2 80% (pink)
 
 # Create the line plot using ggplot2
-png("outside_contagion.png", units = "in", width = 10, height = 5, res = 150)
+png("outside_contagion.png", units = "in", width = 10, height = 6, res = 150)
 p <- ggplot(all_data, aes(x = day, y = percentage_infected, color = Scenario)) +
   theme_bw() +
   geom_line() +
@@ -50,6 +50,14 @@ p <- ggplot(all_data, aes(x = day, y = percentage_infected, color = Scenario)) +
   labs(title = "",
        x = "Day",
        y = "Percentage Infected") +
-  theme(legend.position = "bottom", legend.key = element_rect(color = "lightgrey", fill = "white"))
+  theme(
+    legend.position = "bottom",
+    legend.key = element_rect(color = "lightgrey", fill = "white"),
+    legend.title = element_text(face = "bold", size = 16),
+    legend.text = element_text(size = 14),
+    legend.key.size = unit(20, "pt"),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  )
 print(p)
 dev.off()

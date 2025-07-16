@@ -23,13 +23,20 @@ fi
 
 # Default values for input parameters
 EXPERIMENT_DIR="None"
+RESULTS_DIR="results"
 ONLY_BUILD="OFF"
 CLEAN="OFF"
+SUBSTITUTE_DIR="OFF"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -expdir|--experiment_dir)
       EXPERIMENT_DIR="$2"
+      shift
+      shift
+      ;;
+    -resdir|--results_dir)
+      RESULTS_DIR="$2"
       shift
       shift
       ;;
@@ -40,6 +47,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -c|--clean)
       CLEAN="$2"
+      shift
+      shift
+      ;;
+    -subdir|--substitute_dir)
+      SUBSTITUTE_DIR="$2"
       shift
       shift
       ;;
@@ -76,7 +88,7 @@ DIR_PATH="results/$EXPERIMENT_DIR"
 
 if [ -d "$DIR_PATH" ]; then
     read -p "The directory '$DIR_PATH' already exists. Do you want to replace it? (y/n): " response
-    if [[ "$response" == "y" ]]; then
+    if [ "$response" == "y" ] || [ $SUBSTITUTE_DIR == "ON" ]; then
         rm -rf "$DIR_PATH"  # Remove the directory and its contents
         mkdir -p "$DIR_PATH"  # Recreate the directory
         echo "The directory '$DIR_PATH' has been replaced."
@@ -105,6 +117,17 @@ fi
 
 # Generate the configuration file to give in input to the ABM model
 WHOLE_OUTPUT="$(bash generate_configuration.sh -e ON -expdir $EXPERIMENT_DIR 2>&1)"
+
+# Count the number of words in WHOLE_OUTPUT
+WORD_COUNT=$(echo "$WHOLE_OUTPUT" | wc -w)
+
+# Check if exactly two values are present
+if [ "$WORD_COUNT" -ne 2 ]; then
+    echo "Error: Expected 2 values in WHOLE_OUTPUT, but got $WORD_COUNT."
+    echo "Output: $WHOLE_OUTPUT"
+    exit 1
+fi
+
 SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 PARALLEL_RUN="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f2)"
 
@@ -121,6 +144,12 @@ fi
 
 if [ -f /.dockerenv ]; then
   cp -r results flamegpu2_results
+  chmod -R 777 flamegpu2_results/results
+else
+  if [ "$RESULTS_DIR" != "results" ]; then
+    cp -r results $RESULTS_DIR
+    chmod -R 777 $RESULTS_DIR/results
+  fi
 fi
 
 deactivate

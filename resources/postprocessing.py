@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from plotnine import ggplot, aes, geom_line, labs, scale_color_manual, theme_bw, facet_wrap, theme, element_text
+from plotnine import *
 
 def plot_seir_states_with_average(base_dirs, scenario_names, custom_order, filename='evolution.csv', output_dir='plots', output_file='seir_states_together.png'):
     # Define colors for scenarios
@@ -54,19 +54,20 @@ def plot_seir_states_with_average(base_dirs, scenario_names, custom_order, filen
     melted_data['State'] = pd.Categorical(melted_data['State'], categories=state_order, ordered=True)
 
     melted_data = melted_data.groupby("Scenario", group_keys=False).apply(lambda x: x.iloc[:-1])
+    infected_data = melted_data[melted_data['State'] == 'Infected']
 
     # Create the plot with facet_wrap
-    plot = (ggplot(melted_data, aes(x='Day', y='Population', color='Scenario')) +
+    plot = (ggplot(infected_data, aes(x='Day', y='Population', color='Scenario')) +
             geom_line(size=1, alpha=0.8) +
             scale_color_manual(values=color_map) +
-            facet_wrap('~State', ncol=2, scales='free_y') +  # Facet by state (S, E, I, R)
+            #facet_wrap('~State', ncol=2, scales='free_y') +  # Facet by state (S, E, I, R)
             theme_bw() +
-            labs(x='Day', y='Population', color='Scenario') +
-            theme(strip_text_x=element_text(size=16), legend_position="bottom", legend_title=element_text(weight="bold", size=16), legend_text=element_text(size=14), legend_key_size=30, axis_text=element_text(size=12), axis_title=element_text(size=14, weight="bold")))
+            labs(x='Day', y='School Population', color='Scenario') +
+	    theme(legend_position="bottom", legend_title=element_text(weight="bold", size=16), legend_text=element_text(size=14), legend_key_size=20, axis_text=element_text(size=12), axis_title=element_text(size=14, weight="bold")))
 
     # Save the plot
     output_path = os.path.join(output_dir, output_file)
-    plot.save(output_path, width=16, height=10, dpi=300)
+    plot.save(output_path, width=10, height=6, dpi=300)
     print(f"Faceted plot saved at {output_path}")
 
 if __name__ == '__main__':

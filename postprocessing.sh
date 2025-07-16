@@ -85,7 +85,8 @@ for input_file in *.csv; do
             mapping[2] = "CONTACTS_MATRIX"
             mapping[3] = "AEROSOL"
             mapping[4] = "INFO"
-            mapping[5] = "DEBUG"   # This example does not enforce a column count for DEBUG
+            mapping[5] = "DEBUG"
+            mapping[6] = "TEMPORARY_DEBUG"
 
             # Define the expected number of columns for each category
             expected["AGENT_POSITION_AND_STATUS"] = 9
@@ -100,7 +101,7 @@ for input_file in *.csv; do
 
             # Only process if col1 maps to a known category
             if (!(col1 in mapping)) {
-                print "Unexpected value in col1: " col1 ". Skipping..."
+                print "Unexpected value in col: " col1 ". Skipping..."
                 next
             }
             category = mapping[col1]
