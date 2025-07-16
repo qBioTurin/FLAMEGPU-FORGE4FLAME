@@ -155,5 +155,14 @@ cd FLAMEGPU-FORGE4FLAME
 ./reproduce_alert.sh
 ```
 
+# How to cite
+
+```
+Baccega, Daniele and Terrone, Irene and Heywood, Peter and Chisholm, Robert and Richmond, P.
+and Contaldo, Sandro Gepiro and Bosio, Lorenzo and Pernice, Simone and Beccuti, Marco,
+Forge4flame: An Intuitive Dashboard for Designing Gpu Agent-Based Models to Simulate
+Infectious Disease Spread. Available at SSRN: http://dx.doi.org/10.2139/ssrn.5194584
+```
+
 # References
 - [1] Marco Aldinucci et al. “HPC4AI: an AI-on-demand federated platform endeavour”. In: Proceedings of the 15th ACM International Conference on Computing Frontiers. 2018, pp. 279–286.
