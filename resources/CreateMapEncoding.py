@@ -21,10 +21,10 @@ def CreateMapEncoding(dirname_experiment):
 		mapencoding_file.write("import enum\n\n")
 		mapencoding_file.write("class MapEncoding(enum.Enum):\n")
 
-		mapencoding_file.write("\tWALL = 0\n")
-		mapencoding_file.write("\tWALKABLE = 1\n")
+		mapencoding_file.write("\tCORRIDOR = 0\n")
+		mapencoding_file.write("\tINSIDEROOM = 1\n")
 		mapencoding_file.write("\tDOOR = 2\n")
-		mapencoding_file.write("\tCORRIDOR = 3\n")
+		mapencoding_file.write("\tCPOINT = 3\n")
 		mapencoding_file.write("\tNORMAL = 4\n")
 		mapencoding_file.write("\tSTAIR = 5\n")
 		mapencoding_file.write("\tSPAWNROOM = 6\n")
@@ -39,7 +39,7 @@ def CreateMapEncoding(dirname_experiment):
 
 		mapencoding_file.write("\t@classmethod\n\tdef to_str(cls, evalue):\n")
 		mapencoding_file.write("\t\tif evalue is cls.DOOR:\n\t\t\treturn \"DOOR\"\n")
-		mapencoding_file.write("\t\telif evalue is cls.CORRIDOR:\n\t\t\treturn \"CPOINT\"\n")
+		mapencoding_file.write("\t\telif evalue is cls.CPOINT:\n\t\t\treturn \"CPOINT\"\n")
 
 		for type, data in types_IDs.items():
 			mapencoding_file.write("\t\telif evalue is cls." + type.upper() + ":\n\t\t\treturn \"" + type.upper() + "\"\n")
@@ -49,7 +49,7 @@ def CreateMapEncoding(dirname_experiment):
 
 		mapencoding_file.write("\t@classmethod\n\tdef to_code(cls, estr):\n")
 		mapencoding_file.write("\t\tif estr == \"DOOR\":\n\t\t\treturn cls.DOOR\n")
-		mapencoding_file.write("\t\telif estr == \"CORRIDOR\":\n\t\t\treturn cls.CPOINT\n")
+		mapencoding_file.write("\t\telif estr == \"CPOINT\":\n\t\t\treturn cls.CPOINT\n")
 
 		for type, data in types_IDs.items():
 			mapencoding_file.write("\t\telif estr == \"" + type.upper() + "\":\n\t\t\treturn cls." + type.upper() + "\n")
@@ -59,7 +59,7 @@ def CreateMapEncoding(dirname_experiment):
 
 		mapencoding_file.write("\t@classmethod\n\tdef to_value(cls, estr):\n")
 		mapencoding_file.write("\t\tif estr == \"DOOR\":\n\t\t\treturn cls.DOOR.value\n")
-		mapencoding_file.write("\t\telif estr == \"CORRIDOR\":\n\t\t\treturn cls.CPOINT.value\n")
+		mapencoding_file.write("\t\telif estr == \"CPOINT\":\n\t\t\treturn cls.CPOINT.value\n")
 
 		for type, data in types_IDs.items():
 			mapencoding_file.write("\t\telif estr == \"" + type.upper() + "\":\n\t\t\treturn cls." + type.upper() + ".value\n")

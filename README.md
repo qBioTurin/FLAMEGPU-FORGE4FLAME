@@ -1,10 +1,8 @@
 # How to download
 ## FLAMEGPU2 
-
 To install FLAME GPU 2 dependencies, refer to the official documentation [here](https://github.com/FLAMEGPU/FLAMEGPU2).
 
 ## Docker
-
 Users can download the Docker images for FLAME GPU 2 to avoid any potential dependency-related issues. In this context, the user must have Docker installed on their
 computer. For more information, refer to [this document](https://docs.docker.com/engine/installation/).
 
@@ -36,7 +34,7 @@ To run FLAME GPU 2 simulations on an HPC system, the user must install Slurm on 
 However, on HPC4AI [1] (more information [here](https://hpc4ai.unito.it/documentation/)), FLAME GPU 2 can also be executed using Docker, thanks to a tool that addresses privacy concerns.
 
 # How to Run
-## Run without docker
+## Without docker
 To run FLAME GPU 2 without using Docker, run the following Bash command:
 
 ```
@@ -70,23 +68,33 @@ To run FLAME GPU 2 without using Docker, run the following Bash command:
 
 In particular, `NameOfTheModel` must be the name of the desired model and must correspond to a directory within `FLAMEGPU-FORGE4FLAME/resources/f4f` that contains both a JSON file and an RDs file. Results will be saved in `FLAMEGPU-FORGE4FLAME/results/NameOfTheModel`.
 
-## Run with docker
+## With docker
 To run FLAME GPU 2 using Docker, run the following Bash commands:
 
 ```
 # Executing a single run without using the FLAMEGPU2 3D visualization :
 
-docker run --user $UID:$UID --rm --gpus all --runtime nvidia -v AbsolutePathToTheDirectoryWithTheModel:/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/resources/f4f/CustomModel -v $(pwd):/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/flamegpu2_results qbioturin/flamegpu2/usr/bin/bash -c "/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/abm.sh -expdir CustomModel"
+docker run --user $UID:$UID --rm --gpus all --runtime nvidia -v /Absolute/Path/To/The/Directory/With/The/Model/NameOfTheModel:/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/resources/f4f/NameOfTheModel -v $(pwd):/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/flamegpu2_results qbioturin/flamegpu2/usr/bin/bash -c "/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/abm.sh -expdir NameOfTheModel"
 
 ######################## ##### ##### ##### ##### ##### ###### ######
 # Executing n runs without using the FLAMEGPU2 3D visualization :
 
-docker run --user $UID:$UID --rm --gpus all --runtime nvidia -v AbsolutePathToTheDirectoryWithTheModel:/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/resources/f4f/CustomModel -v $(pwd):/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/flamegpu2_results
-qbioturin/flamegpu2/usr/bin/bash -c "/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/abm_ensemble.sh -expdir CustomModel"
+docker run --user $UID:$UID --rm --gpus all --runtime nvidia -v /Absolute/Path/To/The/Directory/With/The/Model/NameOfTheModel:/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/resources/f4f/NameOfTheModel -v $(pwd):/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/flamegpu2_results
+qbioturin/flamegpu2/usr/bin/bash -c "/home/docker/flamegpu2/FLAMEGPU-FORGE4FLAME/abm_ensemble.sh -expdir NameOfTheModel"
 ```
 
-In particular, `AbsolutePathToTheDirectoryWithTheModel` represents the absolute path to the local directory that contains the model to run (the JSON and the RDs files). These files will be saved in a
-directory named `CustomModel` inside the Docker (in `FLAMEGPU-FORGE4FLAME/resources/f4f`). Results will be saved in a directory named `results/CustomModel` within the current directory.
+In particular, `/Absolute/Path/To/The/Directory/With/The/Model/NameOfTheModel` represents the absolute path to the local directory that contains the model to run (the JSON and the RDs files). These files will be saved in a
+directory named `NameOfTheModel` inside the Docker (in `FLAMEGPU-FORGE4FLAME/resources/f4f`). Results will be saved in a directory named `results/NameOfTheModel` within the current directory. The user must replace the directory name containing the model with `NameOfTheModel`.
+
+## Docker Compose
+To use the Docker Compose, the user must download the YAML file [here](https://github.com/qBioTurin/FORGE4FLAME/blob/main/inst/Compose/docker-compose.yml). To start both F4F and FLAME GPU 2 containers, navigate to the directory containing the YAML file and run the following Bash command (if running on a server, ensure that port 3839 is exposed and accessible via http://<server-hostname>:3839; if running locally, access to http://localhost:3839):
+```
+docker compose up -d --build
+```
+To run a FLAME GPU 2 simulation using Docker Compose, the user must use the Run page of F4F. Results will be saved in a directory named `results/NameOfTheModel` within the current directory, where \texttt{NameOfTheModel} is the name selected by the user when clicking on the *Run* button in the **Run** page. To stop the containers, run the following Bash command:
+```
+docker compose down
+```
 
 ## Slurm
 To execute FLAME GPU 2 simulations on HPC systems using Slurm, assuming the necessary drivers are installed, the repository is cloned, and one or more reservations have been made on the HPC system, a Bash script like the one below can be used (this script, named `run_on_slurm.sh`, is included in the repository):
@@ -147,5 +155,24 @@ cd FLAMEGPU-FORGE4FLAME
 ./reproduce_alert.sh
 ```
 
+# Diclaimer:
+F4F developers have no liability for any use of F4F functions, including without limitation, any loss of data, incorrect results, or any costs, liabilities, or damages that result from the use of F4F. 
+
+# How to cite
+
+```
+Baccega, Daniele and Terrone, Irene and Heywood, Peter and Chisholm, Robert and Richmond, P.
+and Contaldo, Sandro Gepiro and Bosio, Lorenzo and Pernice, Simone and Beccuti, Marco,
+Forge4flame: An Intuitive Dashboard for Designing Gpu Agent-Based Models to Simulate
+Infectious Disease Spread. Available at SSRN: http://dx.doi.org/10.2139/ssrn.5194584
+```
+
 # References
 - [1] Marco Aldinucci et al. “HPC4AI: an AI-on-demand federated platform endeavour”. In: Proceedings of the 15th ACM International Conference on Computing Frontiers. 2018, pp. 279–286.
+
+## COPYRIGHT AND LICENSE
+Copyright _Daniele Baccega, Irene Terrone, Peter Heywood, Robert Chisholm, Paul Richmond, Sandro Gepiro Contaldo, Lorenzo Bosio, Simone Pernice, Marco Beccuti_
+
+![CC BY-NC-SA 3.0](http://ccl.northwestern.edu/images/creativecommons/byncsa.png)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 License. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.

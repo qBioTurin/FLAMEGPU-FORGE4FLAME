@@ -2543,12 +2543,26 @@ to accumulate-contact-with-infected
     [
       let who-infected who
 
-      ask turtles with [not hidden? and susceptible? and room-name = [room-name] of myself and distance myself < (contact-space-length-in-meters / 2)]
+      ask turtles with [not hidden? and susceptible? and room-name = [room-name] of myself and compute-separation myself < (contact-space-length-in-meters / 2)]
       [
         let contact-value matrix:get contact-timein-ticks-with-infected-matrix who who-infected
         matrix:set contact-timein-ticks-with-infected-matrix who who-infected (contact-value + 1)
       ]
     ]
+end
+
+to-report compute-separation [near-agent]
+  let x1 precision xcor 5
+  let y1 precision ycor 5
+  let x2 precision [xcor] of near-agent 5
+  let y2 precision [ycor] of near-agent 5
+
+  let x_diff x2 - x1
+  let y_diff y2 - y1
+
+  let separation sqrt (x_diff * x_diff + y_diff * y_diff)
+
+  report precision separation 5
 end
 
 to infect-with-contact
@@ -3633,26 +3647,26 @@ to print-day-results
       file-open word (word (word results-dir-name "/result") seedRun) ".txt"
 
       if day = 0
-        [ file-print (word "day\tseedRun\tsusceptible\texposed\tinfected\tremoved\t"
-                      "susceptible-in-quarantine\texposed-in-quarantine\tinfected-in-quarantine\tremoved-in-quarantine\t"
-                      "susceptible-in-quarantine-external-1\texposed-in-quarantine-external-1\tinfected-in-quarantine-external-1\tremoved-in-quarantine-external-1\t"
-                      "susceptible-in-quarantine-external-2\texposed-in-quarantine-external-2\tinfected-in-quarantine-external-2\tremoved-in-quarantine-external-2\t"
-                      "num-of-screened-agents\tnum-of-screened-agents-external-1\tnum-of-screened-agents-external-2\t"
-                      "num-of-positive-agents\tnum-of-positive-agents-external-1\tnum-of-positive-agents-external-2\t"
-                      "num-vaccinated\tnum-immunized\tnum-immunized-in-quarantine\tnum-immunized-in-quarantine-external-1\tnum-immunized-in-quarantine-external-2\t"
-                      "num-infected-outside\tclassroom-in-quarantine\tnum-of-classroom-in-quarantine\tclassroom-with-at-least-one-infected") ]
+        [ file-print (word "day	seedRun	susceptible	exposed	infected	removed	"
+                      "susceptible-in-quarantine	exposed-in-quarantine	infected-in-quarantine	removed-in-quarantine	"
+                      "susceptible-in-quarantine-external-1	exposed-in-quarantine-external-1	infected-in-quarantine-external-1	removed-in-quarantine-external-1	"
+                      "susceptible-in-quarantine-external-2	exposed-in-quarantine-external-2	infected-in-quarantine-external-2	removed-in-quarantine-external-2	"
+                      "num-of-screened-agents	num-of-screened-agents-external-1	num-of-screened-agents-external-2	"
+                      "num-of-positive-agents	num-of-positive-agents-external-1	num-of-positive-agents-external-2	"
+                      "num-vaccinated	num-immunized	num-immunized-in-quarantine	num-immunized-in-quarantine-external-1	num-immunized-in-quarantine-external-2	"
+                      "num-infected-outside	classroom-in-quarantine	num-of-classroom-in-quarantine	classroom-with-at-least-one-infected") ]
       let classroom-with-at-least-one-infected count patches with [ entrance? and member? room-name classroom-name and count students with [ infected? and classroom = [room-name] of myself ] > 0 ]
 
-      file-type day file-type "\t" file-type seedRun file-type "\t" file-type num-susceptible file-type "\t" file-type num-exposed file-type "\t" file-type num-infected file-type "\t" file-type num-removed file-type "\t"
-      file-type num-susceptible-in-quarantine file-type "\t" file-type num-exposed-in-quarantine file-type "\t" file-type num-infected-in-quarantine file-type "\t" file-type num-removed-in-quarantine file-type "\t"
-      file-type num-susceptible-in-quarantine-external-1 file-type "\t" file-type num-exposed-in-quarantine-external-1 file-type "\t"
-      file-type num-infected-in-quarantine-external-1 file-type "\t" file-type num-removed-in-quarantine-external-1 file-type "\t"
-      file-type num-susceptible-in-quarantine-external-2 file-type "\t" file-type num-exposed-in-quarantine-external-2 file-type "\t"
-      file-type num-infected-in-quarantine-external-2 file-type "\t" file-type num-removed-in-quarantine-external-2 file-type "\t"
-      file-type num-of-screened-agents file-type "\t" file-type num-of-screened-agents-external-1 file-type "\t" file-type num-of-screened-agents-external-2 file-type "\t"
-      file-type num-of-positive-agents file-type "\t" file-type num-of-positive-agents-external-1 file-type "\t" file-type num-of-positive-agents-external-2 file-type "\t"
-      file-type num-vaccinated file-type "\t" file-type num-immunized file-type "\t" file-type num-immunized-in-quarantine file-type "\t" file-type num-immunized-in-quarantine-external-1 file-type "\t" file-type num-immunized-in-quarantine-external-2 file-type "\t"
-      file-type num-infected-outside file-type "\t" file-type classrooms-in-quarantine file-type "\t" file-type length classrooms-in-quarantine file-type "\t" file-print classroom-with-at-least-one-infected
+      file-type day file-type "	" file-type seedRun file-type "	" file-type num-susceptible file-type "	" file-type num-exposed file-type "	" file-type num-infected file-type "	" file-type num-removed file-type "	"
+      file-type num-susceptible-in-quarantine file-type "	" file-type num-exposed-in-quarantine file-type "	" file-type num-infected-in-quarantine file-type "	" file-type num-removed-in-quarantine file-type "	"
+      file-type num-susceptible-in-quarantine-external-1 file-type "	" file-type num-exposed-in-quarantine-external-1 file-type "	"
+      file-type num-infected-in-quarantine-external-1 file-type "	" file-type num-removed-in-quarantine-external-1 file-type "	"
+      file-type num-susceptible-in-quarantine-external-2 file-type "	" file-type num-exposed-in-quarantine-external-2 file-type "	"
+      file-type num-infected-in-quarantine-external-2 file-type "	" file-type num-removed-in-quarantine-external-2 file-type "	"
+      file-type num-of-screened-agents file-type "	" file-type num-of-screened-agents-external-1 file-type "	" file-type num-of-screened-agents-external-2 file-type "	"
+      file-type num-of-positive-agents file-type "	" file-type num-of-positive-agents-external-1 file-type "	" file-type num-of-positive-agents-external-2 file-type "	"
+      file-type num-vaccinated file-type "	" file-type num-immunized file-type "	" file-type num-immunized-in-quarantine file-type "	" file-type num-immunized-in-quarantine-external-1 file-type "	" file-type num-immunized-in-quarantine-external-2 file-type "	"
+      file-type num-infected-outside file-type "	" file-type classrooms-in-quarantine file-type "	" file-type length classrooms-in-quarantine file-type "	" file-print classroom-with-at-least-one-infected
 
       file-close
     ]
@@ -5063,6 +5077,165 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+	<experiment name="Countermeasures" repetitions="1" runMetricsEveryStep="false" >
+		<setup>setup</setup>
+		<go>go</go>
+		<final>print-day-results</final>
+		<exitCondition>stop-condition</exitCondition>
+		<steppedValueSet variable="run#" first="1" step="1" last="1000" />
+		<enumeratedValueSet variable="students-per-classroom" >
+			<value value="20"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="num-floors" >
+			<value value="3"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="num-classrooms-per-floor" >
+			<value value="4"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="init-infected" >
+			<value value="0"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="init-infected-type" >
+			<value value="&quot;students&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="mean-incubation-duration-in-days" >
+			<value value="3"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="mean-infection-duration-in-days" >
+			<value value="7"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="mean-recovery-duration-in-days" >
+			<value value="180"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="num-of-quarantine-days" >
+			<value value="10"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="dad-%" >
+			<value value="0"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="virus-variant" >
+			<value value="&quot;Original&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="prob-go-bathroom" >
+			<value value="0.0008"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="prob-go-blackboard" >
+			<value value="0"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="prob-go-principal" >
+			<value value="0.000014"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="prob-outside-contagion" >
+			<value value="0.001"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="prob-symptomatic" >
+			<value value="0"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="prob-external-screening-1" >
+			<value value="0.0075"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="prob-external-screening-2" >
+			<value value="0.03"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="lesson-duration-in-minutes" >
+			<value value="50"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="days-of-simulation" >
+			<value value="60"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="tick-duration-in-seconds" >
+			<value value="60"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="results-dir-name" >
+			<value value="&quot;ResultsCountermeasures&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="temperature-measurement" >
+			<value value="&quot;no measurement&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="ventilation-type-h-1" >
+			<value value="3"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="mask-type" >
+			<value value="&quot;surgical&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="mask-policy" >
+			<value value="&quot;No policy&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="num-infected-needed-to-wear-mask" >
+			<value value="1"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="fraction-of-population-wearing-mask" >
+			<value value="0.5"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="number-of-days-with-ffp2" >
+			<value value="10"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="vaccinated-teachers?" >
+			<value value="true"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="fraction-of-vaccinated-teachers" >
+			<value value="0.3"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="vaccinated-students?" >
+			<value value="true"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="fraction-of-vaccinated-students" >
+			<value value="0.3"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="vaccinated-janitors?" >
+			<value value="false"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="fraction-of-vaccinated-janitors" >
+			<value value="0"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="vaccinated-principals?" >
+			<value value="false"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="vaccine-efficacy" >
+			<value value="0.5"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="num-infected-needed-to-quarantine-whole-classroom" >
+			<value value="5"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="number-of-after-days-special-swab" >
+			<value value="5"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="quarantine-policy" >
+			<value value="&quot;January/February 2022 (Piedmont)&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="screening-policy" >
+			<value value="&quot;no screening&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="first-day-of-week" >
+			<value value="&quot;monday&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="second-day-of-week" >
+			<value value="&quot;monday&quot;"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="screening-adhesion-%" >
+			<value value="100"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="staggered-admissions?" >
+			<value value="false"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="spaced-desks?" >
+			<value value="true"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="outside-contagion?" >
+			<value value="true"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="interval-in-front-of-classroom?" >
+			<value value="false"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="external-screening?" >
+			<value value="true"/>
+		</enumeratedValueSet>
+		<enumeratedValueSet variable="reinfection?" >
+			<value value="false"/>
+		</enumeratedValueSet>
+	</experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default

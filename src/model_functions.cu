@@ -8,9 +8,10 @@ using namespace flamegpu;
 using namespace host_functions;
 
 // Define model's agents pedestrian functions
-void define_pedestrian_functions(AgentDescription& pedestrian){
+void define_pedestrian_functions(AgentDescription& pedestrian){    
     AgentFunctionDescription CUDAInitContagionScreeningEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAInitContagionScreeningEventsAndMovePedestrian", CUDAInitContagionScreeningEventsAndMovePedestrian);
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageInput("room_location");
+    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutputOptional(true);
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setAllowAgentDeath(true);
     
 #ifndef CHECKPOINT
@@ -25,15 +26,12 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription updateQuantaInhaledAndContacts_fn = pedestrian.newFunction("updateQuantaInhaledAndContacts", updateQuantaInhaledAndContacts);
     updateQuantaInhaledAndContacts_fn.setFunctionCondition(initCondition);
     updateQuantaInhaledAndContacts_fn.setMessageInput("location");
-
-    //ciò va nel checkpoint?
+#endif
     AgentFunctionDescription waitingInWaitingRoom_fn = pedestrian.newFunction("waitingInWaitingRoom", waitingInWaitingRoom);
+    waitingInWaitingRoom_fn.setFunctionCondition(initCondition);
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
     waitingInWaitingRoom_fn.setMessageOutput("waiting_room_message");
     waitingInWaitingRoom_fn.setMessageOutputOptional(true);
-
-
-#endif
 }
 
 // Define model's agents room functions
@@ -47,7 +45,6 @@ void define_room_functions(AgentDescription& room, string room_type){
         updateQuantaConcentration_fn.setFunctionCondition(initAndNotFillingroomCondition);
         updateQuantaConcentration_fn.setMessageInput("aerosol_counting");
 #endif
-        //again ciò va nel checkpoint?
         AgentFunctionDescription handlingQueueinWaitingRoom_fn = room.newFunction("handlingQueueinWaitingRoom", handlingQueueinWaitingRoom);
         handlingQueueinWaitingRoom_fn.setMessageInput("waiting_room_message");
         handlingQueueinWaitingRoom_fn.setMessageOutput("queue_message");
@@ -125,8 +122,10 @@ void define_environment(ModelDescription& model){
     env.newProperty<unsigned short, V>(INDEX2COORDZ, {0});
     env.newProperty<short, V>(NODE_TYPE, {0});
     env.newProperty<float, V>(NODE_YAW, {0.0f});
-    env.newProperty<int, V>(NODE_LENGTH, {0});
-    env.newProperty<int, V>(NODE_WIDTH, {0});
+    env.newProperty<float, V>(NODE_X, {0.0f});
+    env.newProperty<float, V>(NODE_Z, {0.0f});
+    env.newProperty<float, V>(NODE_LENGTH, {0.0f});
+    env.newProperty<float, V>(NODE_WIDTH, {0.0f});
     
     env.newProperty<float, 4>(EXTERN_RANGES, {0.0f}); // Eventually modify to handle different entrances
 
@@ -148,6 +147,7 @@ void define_environment(ModelDescription& model){
     env.newProperty<float>(VIRUS_VARIANT_FACTOR, 0.0f);
     env.newProperty<float>(DECAY_RATE, 0.0f);
     env.newProperty<float>(GRAVITATIONAL_SETTLING_RATE, 0.0f);
+    env.newProperty<float>(STERILISATION, 0.0f);
     env.newProperty<float>(INHALATION_RATE_PURE, 0.0f);
     env.newProperty<float>(RISK_CONST, 0.0f);
 
@@ -167,24 +167,26 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_AREA);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_ACTIVITY_TYPE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_HOURS_SCHEDULE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR_FIRSTPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, SOLUTION_LENGTH>(ENV_BIRTH_RATE_DISTR_SECONDPARAM);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
+    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_ACTIVITY_TYPE);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR_FIRSTPARAM);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR_SECONDPARAM);
     
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_AREA);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_CDF);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_ACTIVITY_TYPE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, SOLUTION_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
+    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
+    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ACTIVITY_TYPE);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
 
     env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_VENTILATION);
     env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
@@ -228,7 +230,6 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
 
-
     env.newMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
@@ -260,7 +261,6 @@ void define_pedestrian_messages(ModelDescription& model){
     queue_message.newVariable<short>(GRAPH_NODE);
     queue_message.setBounds(0, TOTAL_AGENTS_ESTIMATION);
     queue_message.setPersistent(true);
-
 }
 
 // Define model's agents room messages
@@ -282,8 +282,6 @@ void define_room_messages(ModelDescription& model){
     waiting_room_message.newVariable<int>(AGENT_TYPE);
     waiting_room_message.setPersistent(true);
     waiting_room_message.setBounds(0, V); 
-
-
 }
 
 // Define model's agents pedestrian
@@ -326,10 +324,11 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned short>(WEEK_DAY_FLOW);
     pedestrian.newVariable<unsigned char>(IN_AN_EVENT);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
-    pedestrian.newVariable<int>(WAITING_ROOM_TIME, 0);
-    pedestrian.newVariable<int>(WAITING_ROOM_FLAG, 0);
-    pedestrian.newVariable<int>(ENTRY_EXIT_FLAG, 0);
+    pedestrian.newVariable<int>(WAITING_ROOM_TIME);
+    pedestrian.newVariable<int>(WAITING_ROOM_FLAG);
+    pedestrian.newVariable<int>(ENTRY_EXIT_FLAG);
     pedestrian.newVariable<short>(NODE_WAITING_FOR, -1);
+    pedestrian.newVariable<unsigned short>(EXITED_FROM_ENVIRONMENT);
 
     define_pedestrian_functions(pedestrian);
 }
@@ -353,14 +352,11 @@ void define_room(ModelDescription& model){
             room.newVariable<int>(AREA, -1);
             room.newVariable<int>(TYPE, -1);
             room.newVariable<int>(COLOR_ID, 0);
-            if(room_type != FILLINGROOM_AGENT_STRING){
-                room.newVariable<float>(VOLUME, 0.0f);
-                room.newVariable<float>(ROOM_QUANTA_CONCENTRATION, 0.0f);
-                room.newVariable<unsigned short>(X_CENTER, 0);
-                room.newVariable<unsigned short>(Y_CENTER, 0);
-                room.newVariable<unsigned short>(Z_CENTER, 0);
-            }
-
+            room.newVariable<float>(VOLUME, 0.0f);
+            room.newVariable<unsigned short>(X_CENTER, 0);
+            room.newVariable<unsigned short>(Y_CENTER, 0);
+            room.newVariable<unsigned short>(Z_CENTER, 0);
+            
             define_room_functions(room, room_type);
         }
     }
@@ -383,29 +379,29 @@ void define_layers(ModelDescription& model){
         layer.addAgentFunction("room", "outputRoomLocation");
     }
 
-#ifndef CHECKPOINT
     // Layer 3
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(outputPedestrianLocation);
+#ifndef CHECKPOINT
         layer.addAgentFunction("room", "updateQuantaConcentration");
+#endif
     }
     
     // Layer 4
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(waitingInWaitingRoom);
     }
 
     // Layer 5
-
     {
         LayerDescription layer = model.newLayer();
+#ifndef CHECKPOINT
         layer.addAgentFunction(updateQuantaInhaledAndContacts);
+#endif
         layer.addAgentFunction("room", "handlingQueueinWaitingRoom");
     }
-#endif
 
     //Define each host functions
     model.addInitFunction(initFunction);

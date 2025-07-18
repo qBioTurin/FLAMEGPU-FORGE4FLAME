@@ -83,3 +83,5 @@ awk 'NR > 1 {
         print $1, $3+1, $4, $5+1
     } 
 }' resources/G.txt > results/$EXPERIMENT_DIR/rooms_mapping.txt
+
+cp resources/f4f/$EXPERIMENT_DIR/* results/$EXPERIMENT_DIR

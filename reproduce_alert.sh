@@ -1,12 +1,12 @@
 #!/bin/bash
 
-./run_docker_ensemble.sh -expdir AlarmNoCountermeasures
-./run_docker_ensemble.sh -expdir AlarmSurgical20
-./run_docker_ensemble.sh -expdir AlarmSurgical40
-./run_docker_ensemble.sh -expdir AlarmSurgical80
-./run_docker_ensemble.sh -expdir AlarmFFP220
-./run_docker_ensemble.sh -expdir AlarmFFP240
-./run_docker_ensemble.sh -expdir AlarmFFP280
+./run_docker_ensemble.sh AlarmNoCountermeasures
+./run_docker_ensemble.sh AlarmSurgical20
+./run_docker_ensemble.sh AlarmSurgical40
+./run_docker_ensemble.sh AlarmSurgical80
+./run_docker_ensemble.sh AlarmFFP220
+./run_docker_ensemble.sh AlarmFFP240
+./run_docker_ensemble.sh AlarmFFP280
 
 if [ ! -d flamegpu2 ];
 then

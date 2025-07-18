@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from MapEncoding import *
 from itertools import chain
+from collections import Counter
 
 def distribution(type, types, a, b, flow_time):
 	random_number = 0
@@ -97,7 +98,6 @@ def obtain_areas(WHOLEmodel):
 	return areas_dict
 
 def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name, types_IDs):
-
 	roomsINcanvas = WHOLEmodel["roomsINcanvas"]
 
 	color = WHOLEmodel["color"][0]
@@ -110,11 +110,14 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 
 	y = y_offset * floor
 	for room in roomsINcanvas:
-		x = room["x"] - 1
-		z = room["y"] - 1
+		x = room["x"]
+		z = room["y"]
 
 		center_x = room["center_x"] - 1
 		center_z = room["center_y"] - 1
+
+		x_door = room["door_x"] - 1
+		z_door = room["door_y"] - 1
 
 		room_name = room["Name"]
 
@@ -125,8 +128,6 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		type = room["type"]
 		area = room["area"]
 		door = room["door"]
-
-		quanta_concentration = 0
 
 		color_id = np.where(np.array(list(rooms.keys()), dtype=str) == room_name)[0][0]
 		if color == "Area":
@@ -163,72 +164,72 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			yaw = 0
 			x_offset = 0
 			z_offset = 0
-			x_door = center_x
-			z_door = z + width + 1
-			dimension_x = length + 1
-			dimension_z = width + 1
+			x_position = x
+			z_position = z
+			dimension_x = length - 1
+			dimension_z = width - 1
 		elif door == "left":
 			yaw = math.pi / 2
-			x_offset = width + 1
+			x_offset = np.floor(width) + 1
 			z_offset = 0
-			x_door = x
-			z_door = center_z
-			dimension_x = width + 1
-			dimension_z = length + 1
+			x_position = x - (np.ceil(width) - width)
+			z_position = z
+			dimension_x = width - 1
+			dimension_z = length - 1
 		elif door == "top":
 			yaw = math.pi
-			x_offset = length + 1
-			z_offset = width + 1
-			x_door = center_x
-			z_door = z
-			dimension_x = length + 1
-			dimension_z = width + 1
+			x_offset = np.floor(length) + 1
+			z_offset = np.floor(width) + 1
+			x_position = x - (np.ceil(length) - length)
+			z_position = z - (np.ceil(width) - width)
+			dimension_x = length - 1
+			dimension_z = width - 1
 		elif door == "right":
 			yaw = 3 * math.pi / 2
 			x_offset = 0
-			z_offset = length +1
-			x_door = x + width + 1
-			z_door = center_z
-			dimension_x = width + 1
-			dimension_z = length + 1
+			z_offset = np.floor(length) + 1
+			x_position = x
+			z_position = z - (np.ceil(length) - length)
+			dimension_x = width - 1
+			dimension_z = length - 1
 		else:
 			yaw = 0
 			x_offset = 0
 			z_offset = 0
+			x_position = x
+			z_position = z
 
 		if type != "Spawnroom":
 			room_file.write("\t<xagent>\n")
 			room_file.write("\t\t<name>" + ("room" if type != "Fillingroom" else "fillingroom") + "</name>\n")
-			room_file.write("\t\t<x>" + str(x + x_offset + 0.5) + "</x>\n")
+			room_file.write("\t\t<x>" + str(x_position + x_offset) + "</x>\n")
 			room_file.write("\t\t<y>" + str(y) + "</y>\n")
-			room_file.write("\t\t<z>" + str(z + z_offset + 0.5) + "</z>\n")
-			room_file.write("\t\t<length_obj>" + str(rooms[room_name]["length"] + 1) + "</length_obj>\n")
-			room_file.write("\t\t<width_obj>" + str(rooms[room_name]["width"] + 1) + "</width_obj>\n")
+			room_file.write("\t\t<z>" + str(z_position + z_offset) + "</z>\n")
+			room_file.write("\t\t<length_obj>" + str(rooms[room_name]["length"]) + "</length_obj>\n")
+			room_file.write("\t\t<width_obj>" + str(rooms[room_name]["width"]) + "</width_obj>\n")
 			room_file.write("\t\t<height_obj>" + str(rooms[room_name]["height"]) + "</height_obj>\n")
 			room_file.write("\t\t<yaw>" + str(yaw) + "</yaw>\n")
 			room_file.write("\t\t<init_room>0</init_room>\n")
 			room_file.write("\t\t<area>" + str(areas[area]["ID"]) + "</area>\n")
 			room_file.write("\t\t<type>" + str(types_IDs[type]["ID"]) + "</type>\n")			
 			room_file.write("\t\t<color_id>" + str(color_id) + "</color_id>\n")
-			if type != "Fillingroom":
-				room_file.write("\t\t<volume>" + str(length * width * height) + "</volume>\n")
-				room_file.write("\t\t<room_quanta_concentration>" + str(quanta_concentration) + "</room_quanta_concentration>\n")
-				room_file.write("\t\t<x_center>" + str(center_x)  + "</x_center>\n")
-				room_file.write("\t\t<y_center>" + str(y) + "</y_center>\n")
-				room_file.write("\t\t<z_center>" + str(center_z) + "</z_center>\n")
+			room_file.write("\t\t<volume>" + str(length * width * height) + "</volume>\n")
+			room_file.write("\t\t<x_center>" + str(center_x)  + "</x_center>\n")
+			room_file.write("\t\t<y_center>" + str(y) + "</y_center>\n")
+			room_file.write("\t\t<z_center>" + str(center_z) + "</z_center>\n")
 			room_file.write("\t</xagent>\n")
 			
 		if door != "none":
-			local_graph.add_vertex(x_door, y, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
-			local_graph.add_vertex(center_x, y, center_z, [int(x), int(z)], [int(x + dimension_x), int(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe)
+			local_graph.add_vertex(x_door, y, z_door, x_door, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+			local_graph.add_vertex(center_x, y, center_z, x, z, [int(x), int(z)], [math.ceil(x + dimension_x), math.ceil(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe)
 	
 	nodesINcanvas = WHOLEmodel["nodesINcanvas"]
 	nodesINcanvas = [node for node in nodesINcanvas if node["CanvasID"] == floor_name]
 	for node in nodesINcanvas:
-		x = node["x"] - 1
-		z = node["y"] - 1
+		x = node["x"]
+		z = node["y"]
 
-		local_graph.add_vertex(x, y, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CORRIDOR, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+		local_graph.add_vertex(x, y, z, x, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CPOINT, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
 	local_graph.init_edges(np.array(WHOLEmodel["matricesCanvas"][floor_name]))
 
@@ -239,9 +240,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				 env_dims, y_offset, dirname_experiment,
 				 WHOLEmodel, autogenerated_defines, autogenerated_variables_names, days, floors_IDs, types_IDs,
 				 steps_in_a_day, steps_in_a_hour, steps_in_a_minute, init_week_day, start_step_time, num_counters):
-	
-	with open(input_file, "w") as configuration_file:
+	days_in_a_week = 7
 
+	with open(input_file, "w") as configuration_file:
 		graphs = []
 		with open("rooms_file.xml", "w") as room_file:
 			room_file.write("<rooms>\n")
@@ -258,7 +259,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define X_CENTER \"x_center\"\n")
 		autogenerated_variables_names.write("#define Y_CENTER \"y_center\"\n")
 		autogenerated_variables_names.write("#define Z_CENTER \"z_center\"\n")
-		autogenerated_variables_names.write("#define ROOM_QUANTA_CONCENTRATION \"room_quanta_concentration\"\n")
 		autogenerated_variables_names.write("#define INIT_ROOM \"init_room\"\n")
 		autogenerated_variables_names.write("#define AREA \"area\"\n")
 		autogenerated_variables_names.write("#define TYPE \"type\"\n")
@@ -273,7 +273,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			
 		final_graph.save("G.txt")
 
-		sol_length = (final_graph.graph_diameter() + 1) * 2 + 1
+		sol_length = (final_graph.graph_diameter() + 1) * 4
 		autogenerated_defines.write("#define SOLUTION_LENGTH " + str(sol_length) + "\n\n")
 
 		vlist = sorted(chain.from_iterable(final_graph.vertices.values()), key = lambda v: v.id)
@@ -282,6 +282,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		adjmatrix = np.zeros((len(vlist), len(vlist)), dtype=int)
 		node_type = np.full((len(vlist)), -1, dtype=int)
 		node_yaw = np.zeros((len(vlist)), dtype=float)
+		node_x = np.zeros((len(vlist)), dtype=float)
+		node_z = np.zeros((len(vlist)), dtype=float)
 		node_length = np.zeros((len(vlist)), dtype=float)
 		node_width = np.zeros((len(vlist)), dtype=float)
 		rooms_quanta_concentration = np.zeros((len(vlist)), dtype=float)
@@ -308,6 +310,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 			node_type[v.id] = v.type.value
 			node_yaw[v.id] = v.yaw
+			node_x[v.id] = float(v.x)
+			node_z[v.id] = float(v.z)
 			node_length[v.id] = v.length
 			node_width[v.id] = v.width
 
@@ -355,16 +359,12 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			mean_end_of_immunization_days_time = [int(np.round(1 / a)), int(np.round(1 / b)) if b > 0 else 0]
 			mean_end_of_immunization_days_dist = distributions[disease["nu_dist"][0]]
 
-		autogenerated_defines.write("\n\n")
+		autogenerated_defines.write("\n")
 
 		outside_contagion = pd.DataFrame(WHOLEmodel["outside_contagion"])
 
 		perc_inf_df = pd.DataFrame(data={'day': range(1, days+1), "percentage_infected": np.zeros(days)})
 		if len(outside_contagion) > 0:
-			if len(outside_contagion) < days:
-				print("ERROR: The dataframe outputted by the macro model must have at least " + str(days) + " rows. At the moment it has " + str(len(perc_inf_df)) + " rows.")
-				sys.exit(-1)
-
 			perc_inf_df = outside_contagion.iloc[:days, :]
 
 		mask_types = {"No mask": 0, "Surgical mask": 1, "FFP2 mask": 2}
@@ -375,24 +375,49 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		num_rooms_types = len(WHOLEmodel["types"]) + 4
 		num_areas = len(WHOLEmodel["areas"])
 
-		env_flow = np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
-		env_flow_area = np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
-		env_flow_distr = np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
-		env_flow_distr_firstparam = np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
-		env_flow_distr_secondparam = np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
-		env_activity_type = np.full((total_number_of_agents_types, 7, sol_length), 1, dtype=float)
-		env_hours_schedule = np.zeros((total_number_of_agents_types, 7, sol_length), dtype=int)
-		env_birth_rates_distr =  np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
-		env_birth_rates_distr_firstparam =  np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
-		env_birth_rates_distr_secondparam =  np.full((total_number_of_agents_types, 7, sol_length), -1, dtype=int)
+		flow_length = 2
+		hours_schedule_length = 2
+		event_length = 2
+		for agent_name, agent_info in agents.items():
+			deterministic_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
+			flowid_counts = deterministic_flow["FlowID"].value_counts()
+			flow_length = max(flowid_counts.max(), flow_length)
 
-		env_events = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
-		env_events_area = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
-		env_events_cdf = np.zeros((total_number_of_agents_types, sol_length), dtype=float)
-		env_events_activity = np.zeros((total_number_of_agents_types, sol_length), dtype=float)
-		env_events_distr = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
-		env_events_distr_firstparam = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
-		env_events_distr_secondparam = np.full((total_number_of_agents_types, sol_length), -1, dtype=int)
+			entry_exit_time = agent_info["EntryExitTime"]
+			day_counts = Counter(item['Days'] for item in entry_exit_time)
+			max_count = max(day_counts.values()) * 2
+			hours_schedule_length = max(max_count, hours_schedule_length)
+
+			event_length = max(len(agent_info["RandFlow"]), event_length)
+
+		flow_length = flow_length * 2
+		hours_schedule_length = hours_schedule_length * 2
+		event_length = event_length * 2
+
+		autogenerated_defines.write("#define FLOW_LENGTH " + str(flow_length) + "\n\n")
+		autogenerated_defines.write("#define HOURS_SCHEDULE_LENGTH " + str(hours_schedule_length) + "\n\n")
+		autogenerated_defines.write("#define EVENT_LENGTH " + str(event_length) + "\n\n")
+
+		env_flow = np.full((total_number_of_agents_types, days_in_a_week, flow_length), -1, dtype=int)
+		env_flow_area = np.full((total_number_of_agents_types, days_in_a_week, flow_length), -1, dtype=int)
+		env_flow_distr = np.full((total_number_of_agents_types, days_in_a_week, flow_length), -1, dtype=int)
+		env_flow_distr_firstparam = np.full((total_number_of_agents_types, days_in_a_week, flow_length), -1, dtype=int)
+		env_flow_distr_secondparam = np.full((total_number_of_agents_types, days_in_a_week, flow_length), -1, dtype=int)
+		env_activity_type = np.full((total_number_of_agents_types, days_in_a_week, flow_length), 1, dtype=float)
+		env_hours_schedule = np.zeros((total_number_of_agents_types, days_in_a_week, hours_schedule_length), dtype=int)
+		env_birth_rates_distr =  np.full((total_number_of_agents_types, days_in_a_week, hours_schedule_length), -1, dtype=int)
+		env_birth_rates_distr_firstparam =  np.full((total_number_of_agents_types, days_in_a_week, hours_schedule_length), -1, dtype=int)
+		env_birth_rates_distr_secondparam =  np.full((total_number_of_agents_types, days_in_a_week, hours_schedule_length), -1, dtype=int)
+
+		env_events = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
+		env_events_area = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
+		env_events_probability = np.zeros((total_number_of_agents_types, event_length), dtype=float)
+		env_events_activity = np.zeros((total_number_of_agents_types, event_length), dtype=float)
+		env_events_starttime = np.full((total_number_of_agents_types, event_length), 0, dtype=int)
+		env_events_endtime = np.full((total_number_of_agents_types, event_length), steps_in_a_day-1, dtype=int)
+		env_events_distr = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
+		env_events_distr_firstparam = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
+		env_events_distr_secondparam = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
 
 		env_ventilation = np.zeros((days, num_areas, num_rooms_types), dtype=float)
 		env_mask_type = np.full((days, total_number_of_agents_types+1), mask_types["No mask"], dtype=int)
@@ -478,14 +503,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 						entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
 						entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
 
-						if flow_index == 0:
-							if weekday == init_week_day and start_step_time > entry_exit_time_weekday.loc[0, "EntryTime"]:
-								print("ERROR: The start step time (" + start_step_time + ") is greater than the entrance time of agent '" + agent + "' (" + eetw.loc["EntryTime"] + ").")
-								sys.exit(-1)
-
 						for j, eetw in entry_exit_time_weekday.iterrows():
 							flow_type = pd.DataFrame([df for _, df in deterministic_flow.iterrows() if df.loc["FlowID"] == eetw.loc["FlowID"]])
-
 							env_hours_schedule[agent_type_idx][i][2 * j] = eetw.loc["EntryTime"]
 
 							if j > 0:
@@ -497,7 +516,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								ft, fa = f.loc["Room"].strip().split("-")
 
 								a, b = parse_distribution(f.loc["Time"], f.loc["Dist"])
-
 								env_flow[agent_type_idx][i][flow_index] = MapEncoding.to_value(ft.upper())
 								env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
 								env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
@@ -523,17 +541,11 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							env_birth_rates_distr_secondparam[agent_type_idx][i][j] = int(b)
 
 							total_agents_estimation = total_agents_estimation + distribution_average(eetw.loc["RateDist"], int(a), int(b)) * 2
-
-							if flow_index == 0:
-								if weekday == init_week_day and start_step_time > entry_exit_time_weekday.loc[0, "EntryTime"]:
-									print("ERROR: The start step time (" + start_step_time + ") is greater than the entrance time of agent '" + agent + "' (" + entry_exit_time_weekday.loc[0, "EntryTime"] + ").")
-									sys.exit(-1)
 									
 						for k, f in deterministic_flow.iterrows():
 							ft, fa = f.loc["Room"].strip().split("-")
 
 							a, b = parse_distribution(f.loc["Time"], f.loc["Dist"])
-								
 							env_flow[agent_type_idx][i][flow_index] = MapEncoding.to_value(ft.upper())
 							env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
 							env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
@@ -547,28 +559,29 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					for rf in random_flow:
 						if rf["Room"] == "Do nothing":
 								continue
-
+	
 						room = rf["Room"].strip().split("-")
-
+	
 						a, b = parse_distribution(rf["Time"], rf["Dist"])
-
+	
 						env_events[agent_type_idx][e] = MapEncoding.to_value(room[0].upper())
 						env_events_area[agent_type_idx][e] = areas[room[1]]["ID"]
-						if e == len(random_flow):
-							env_events_cdf[agent_type_idx][e] = float(rf["Weight"])
-						else:
-							env_events_cdf[agent_type_idx][e] = float(rf["Weight"]) + env_events_cdf[agent_type_idx][e+1]
+						env_events_probability[agent_type_idx][e] = float(rf["Weight"])
 						env_events_activity[agent_type_idx][e] = rf["Activity"]
+						env_events_starttime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[0].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[0].split(":")[1]) * steps_in_a_minute
+						env_events_endtime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute
 						env_events_distr[agent_type_idx][e] = distributions[rf["Dist"]]
 						env_events_distr_firstparam[agent_type_idx][e] = int(a) * steps_in_a_minute
 						env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
-	
+
 						e = e - 1
 					
 					env_events[agent_type_idx][0] = 0
 					env_events_area[agent_type_idx][0] = -1
-					env_events_activity[agent_type_idx][e] = 1.0
-					env_events_cdf[agent_type_idx][0] = 1.0
+					env_events_activity[agent_type_idx][0] = 1.0
+					env_events_starttime[agent_type_idx][0] = 0
+					env_events_endtime[agent_type_idx][0] = steps_in_a_day - 1
+					env_events_probability[agent_type_idx][0] = 0
 					env_events_distr[agent_type_idx][0] = distributions["Deterministic"]
 					env_events_distr_firstparam[agent_type_idx][0] = 0
 					env_events_distr_secondparam[agent_type_idx][0] = 0
@@ -600,6 +613,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				initial_infected_agents[agent_names[row[0]]["ID"]] = int(row[1])
 			else:
 				initial_infected_agents[total_number_of_agents_types] = int(row[1])
+
+		simulation_week = math.ceil(days / days_in_a_week)
+		total_agents_estimation = total_agents_estimation * simulation_week
 
 		autogenerated_variables_names.write("#define ID \"id\"\n")
 		autogenerated_variables_names.write("#define CUDA_INITIALIZED \"cuda_initialized\"\n")
@@ -646,7 +662,10 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define WAITING_ROOM_TIME \"waiting_room_time\"\n")
 		autogenerated_variables_names.write("#define ENTRY_EXIT_FLAG \"entry_exit_flag\"\n")
 		autogenerated_variables_names.write("#define WAITING_ROOM_FLAG \"waiting_room_flag\"\n")
-		autogenerated_variables_names.write("#define NODE_WAITING_FOR \"node_waiting_for\"\n\n")
+		autogenerated_variables_names.write("#define NODE_WAITING_FOR \"node_waiting_for\"\n")
+		autogenerated_variables_names.write("#define EXITED_FROM_ENVIRONMENT \"exited_from_environment\"\n")
+
+
 		autogenerated_defines.write("#define TOTAL_AGENTS_ESTIMATION " + str(total_agents_estimation) + "\n\n")
 
 		counters = np.zeros(num_counters, dtype=int)
@@ -670,12 +689,12 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					env_swab_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
 					env_swab_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
 				if col == "Quarantine":
-					env_quarantine_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_swab_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_swab_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
-					env_quarantine_swab_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist.Days", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
+					env_quarantine_swab_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][agent_names[agent_name]["ID"]][1:]]
 					env_quarantine_swab_sensitivity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Sensitivity", col][agent_names[agent_name]["ID"]][1:]
 					env_quarantine_swab_specificity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Specificity", col][agent_names[agent_name]["ID"]][1:]
 					env_room_for_quarantine_type[:, agent_names[agent_name]["ID"]] = [types_IDs[room.split("-")[0]]["ID"] for room in agents_whatif.loc["Q.Room", col][agent_names[agent_name]["ID"]][1:]]
@@ -764,146 +783,162 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		with open(macro_environment_dir + "ENV_FLOW.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_FLOW>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_flow[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(flow_length):
+						file.write(str(env_flow[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_FLOW></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_FLOW \"ENV_FLOW\"\n")
 
 		with open(macro_environment_dir + "ENV_FLOW_AREA.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_FLOW_AREA>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_flow_area[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(flow_length):
+						file.write(str(env_flow_area[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_FLOW_AREA></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_FLOW_AREA \"ENV_FLOW_AREA\"\n")
 
 		with open(macro_environment_dir + "ENV_FLOW_DISTR.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_FLOW_DISTR>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_flow_distr[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(flow_length):
+						file.write(str(env_flow_distr[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_FLOW_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_FLOW_DISTR \"ENV_FLOW_DISTR\"\n")
 
 		with open(macro_environment_dir + "ENV_FLOW_DISTR_FIRSTPARAM.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_FLOW_DISTR_FIRSTPARAM>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_flow_distr_firstparam[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(flow_length):
+						file.write(str(env_flow_distr_firstparam[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_FLOW_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_FLOW_DISTR_FIRSTPARAM \"ENV_FLOW_DISTR_FIRSTPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_FLOW_DISTR_SECONDPARAM.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_FLOW_DISTR_SECONDPARAM>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_flow_distr_secondparam[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(flow_length):
+						file.write(str(env_flow_distr_secondparam[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_FLOW_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_FLOW_DISTR_SECONDPARAM \"ENV_FLOW_DISTR_SECONDPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_ACTIVITY_TYPE.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_ACTIVITY_TYPE>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_activity_type[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(flow_length):
+						file.write(str(env_activity_type[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_ACTIVITY_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_ACTIVITY_TYPE \"ENV_ACTIVITY_TYPE\"\n")
 
 		with open(macro_environment_dir + "ENV_HOURS_SCHEDULE.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_HOURS_SCHEDULE>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_hours_schedule[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(hours_schedule_length):
+						file.write(str(env_hours_schedule[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == hours_schedule_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_HOURS_SCHEDULE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_HOURS_SCHEDULE \"ENV_HOURS_SCHEDULE\"\n")
 
 		with open(macro_environment_dir + "ENV_BIRTH_RATE_DISTR.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_BIRTH_RATE_DISTR>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_birth_rates_distr[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(hours_schedule_length):
+						file.write(str(env_birth_rates_distr[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == hours_schedule_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_BIRTH_RATE_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_BIRTH_RATE_DISTR \"ENV_BIRTH_RATE_DISTR\"\n")
 
 		with open(macro_environment_dir + "ENV_BIRTH_RATE_DISTR_FIRSTPARAM.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_BIRTH_RATE_DISTR_FIRSTPARAM>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_birth_rates_distr_firstparam[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(hours_schedule_length):
+						file.write(str(env_birth_rates_distr_firstparam[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == hours_schedule_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_BIRTH_RATE_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_BIRTH_RATE_DISTR_FIRSTPARAM \"ENV_BIRTH_RATE_DISTR_FIRSTPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_BIRTH_RATE_DISTR_SECONDPARAM.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_BIRTH_RATE_DISTR_SECONDPARAM>")
 			for k in range(total_number_of_agents_types):
-				for i in range(7):
-					for j in range(sol_length):
-						file.write(str(env_birth_rates_distr_secondparam[k][i][j]) + ("" if((i == 6) and (j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for i in range(days_in_a_week):
+					for j in range(hours_schedule_length):
+						file.write(str(env_birth_rates_distr_secondparam[k][i][j]) + ("" if((i == days_in_a_week - 1) and (j == hours_schedule_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_BIRTH_RATE_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_BIRTH_RATE_DISTR_SECONDPARAM \"ENV_BIRTH_RATE_DISTR_SECONDPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_EVENTS.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_EVENTS>")
 			for k in range(total_number_of_agents_types):
-				for j in range(sol_length):
-					file.write(str(env_events[k][j]) + ("" if((j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for j in range(event_length):
+					file.write(str(env_events[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_EVENTS></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS \"ENV_EVENTS\"\n")
 
 		with open(macro_environment_dir + "ENV_EVENTS_AREA.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_EVENTS_AREA>")
 			for k in range(total_number_of_agents_types):
-				for j in range(sol_length):
-					file.write(str(env_events_area[k][j]) + ("" if((j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for j in range(event_length):
+					file.write(str(env_events_area[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_EVENTS_AREA></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS_AREA \"ENV_EVENTS_AREA\"\n")
 
 		with open(macro_environment_dir + "ENV_EVENTS_ACTIVITY_TYPE.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_EVENTS_ACTIVITY_TYPE>")
 			for k in range(total_number_of_agents_types):
-				for j in range(sol_length):
-					file.write(str(env_events_activity[k][j]) + ("" if((j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for j in range(event_length):
+					file.write(str(env_events_activity[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_EVENTS_ACTIVITY_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS_ACTIVITY_TYPE \"ENV_EVENTS_ACTIVITY_TYPE\"\n")
 
-		with open(macro_environment_dir + "ENV_EVENTS_CDF.xml", "w") as file:
-			file.write("<states><macro_environment><ENV_EVENTS_CDF>")
+		with open(macro_environment_dir + "ENV_EVENTS_PROBABILITY.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_EVENTS_PROBABILITY>")
 			for k in range(total_number_of_agents_types):
-				for j in range(sol_length):
-					file.write(str(env_events_cdf[k][j]) + ("" if((j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
-			file.write("</ENV_EVENTS_CDF></macro_environment></states>\n")
-		autogenerated_variables_names.write("#define ENV_EVENTS_CDF \"ENV_EVENTS_CDF\"\n")
+				for j in range(event_length):
+					file.write(str(env_events_probability[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+			file.write("</ENV_EVENTS_PROBABILITY></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_EVENTS_PROBABILITY \"ENV_EVENTS_PROBABILITY\"\n")
+
+		with open(macro_environment_dir + "ENV_EVENTS_STARTTIME.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_EVENTS_STARTTIME>")
+			for k in range(total_number_of_agents_types):
+				for j in range(event_length):
+					file.write(str(env_events_starttime[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+			file.write("</ENV_EVENTS_STARTTIME></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_EVENTS_STARTTIME \"ENV_EVENTS_STARTTIME\"\n")
+
+		with open(macro_environment_dir + "ENV_EVENTS_ENDTIME.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_EVENTS_ENDTIME>")
+			for k in range(total_number_of_agents_types):
+				for j in range(event_length):
+					file.write(str(env_events_endtime[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+			file.write("</ENV_EVENTS_ENDTIME></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_EVENTS_ENDTIME \"ENV_EVENTS_ENDTIME\"\n")
 
 		with open(macro_environment_dir + "ENV_EVENTS_DISTR.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_EVENTS_DISTR>")
 			for k in range(total_number_of_agents_types):
-				for j in range(sol_length):
-					file.write(str(env_events_distr[k][j]) + ("" if((j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for j in range(event_length):
+					file.write(str(env_events_distr[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_EVENTS_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS_DISTR \"ENV_EVENTS_DISTR\"\n")
 
 		with open(macro_environment_dir + "ENV_EVENTS_DISTR_FIRSTPARAM.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_EVENTS_DISTR_FIRSTPARAM>")
 			for k in range(total_number_of_agents_types):
-				for j in range(sol_length):
-					file.write(str(env_events_distr_firstparam[k][j]) + ("" if((j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for j in range(event_length):
+					file.write(str(env_events_distr_firstparam[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_EVENTS_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS_DISTR_FIRSTPARAM \"ENV_EVENTS_DISTR_FIRSTPARAM\"\n")
 
 		with open(macro_environment_dir + "ENV_EVENTS_DISTR_SECONDPARAM.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_EVENTS_DISTR_SECONDPARAM>")
 			for k in range(total_number_of_agents_types):
-				for j in range(sol_length):
-					file.write(str(env_events_distr_secondparam[k][j]) + ("" if((j == sol_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+				for j in range(event_length):
+					file.write(str(env_events_distr_secondparam[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_EVENTS_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS_DISTR_SECONDPARAM \"ENV_EVENTS_DISTR_SECONDPARAM\"\n")
 
@@ -1209,6 +1244,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		virus_variant_factor = float(WHOLEmodel["virus_variant"][0])
 		decay_rate = 0.636 / 3600
 		gravitational_settling_rate = 0.39 / 3600
+		sterilisation = 0 / 3600
 		exhalation_efficacy_no_surgical_ffp2_masks = [0, 0.59, 0.9]
 		inhalation_efficacy_no_surgical_ffp2_masks = [0, 0.59, 0.9]
 		inhalation_rate_pure = 0.521
@@ -1235,6 +1271,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				configuration_file.write("\t\t\t\t\"INDEX2COORDZ\": [" + ','.join(map(str, index2coord[2])) + "],\n")
 				configuration_file.write("\t\t\t\t\"NODE_TYPE\": [" + ','.join(map(str, node_type)) + "],\n")
 				configuration_file.write("\t\t\t\t\"NODE_YAW\": [" + ','.join(map(str, node_yaw)) + "],\n")
+				configuration_file.write("\t\t\t\t\"NODE_X\": [" + ','.join(map(str, node_x)) + "],\n")
+				configuration_file.write("\t\t\t\t\"NODE_Z\": [" + ','.join(map(str, node_z)) + "],\n")
 				configuration_file.write("\t\t\t\t\"NODE_LENGTH\": [" + ','.join(map(str, node_length)) + "],\n")
 				configuration_file.write("\t\t\t\t\"NODE_WIDTH\": [" + ','.join(map(str, node_width)) + "],\n")
 				configuration_file.write("\t\t\t\t\"EXTERN_RANGES\": [" + ','.join(map(str, starting_x_range)) + "," + ','.join(map(str, starting_z_range)) + "],\n")
@@ -1255,6 +1293,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				configuration_file.write("\t\t\t\t\"VIRUS_VARIANT_FACTOR\": " + str(virus_variant_factor) + ",\n")
 				configuration_file.write("\t\t\t\t\"DECAY_RATE\": " + str(decay_rate) + ",\n")
 				configuration_file.write("\t\t\t\t\"GRAVITATIONAL_SETTLING_RATE\": " + str(gravitational_settling_rate) + ",\n")
+				configuration_file.write("\t\t\t\t\"STERILISATION\": " + str(sterilisation) + ",\n")
 				configuration_file.write("\t\t\t\t\"INHALATION_RATE_PURE\": " + str(inhalation_rate_pure) + ",\n")
 				configuration_file.write("\t\t\t\t\"RISK_CONST\": " + str(risk_const) + ",\n")
 				configuration_file.write("\t\t\t\t\"PERC_INF\": [" + ','.join(map(str, perc_inf_df.loc[:, "percentage_infected"])) + "],\n")
@@ -1285,6 +1324,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			configuration_file.write("\t\t<INDEX2COORDZ>" + ','.join(map(str, index2coord[2])) + "</INDEX2COORDZ>\n")
 			configuration_file.write("\t\t<NODE_TYPE>" + ','.join(map(str, node_type)) + "</NODE_TYPE>\n")
 			configuration_file.write("\t\t<NODE_YAW>" + ','.join(map(str, node_yaw)) + "</NODE_YAW>\n")
+			configuration_file.write("\t\t<NODE_X>" + ','.join(map(str, node_x)) + "</NODE_X>\n")
+			configuration_file.write("\t\t<NODE_Z>" + ','.join(map(str, node_z)) + "</NODE_Z>\n")
 			configuration_file.write("\t\t<NODE_LENGTH>" + ','.join(map(str, node_length)) + "</NODE_LENGTH>\n")
 			configuration_file.write("\t\t<NODE_WIDTH>" + ','.join(map(str, node_width)) + "</NODE_WIDTH>\n")
 			configuration_file.write("\t\t<EXTERN_RANGES>" + ','.join(map(str, starting_x_range)) + "," + ','.join(map(str, starting_z_range)) + "</EXTERN_RANGES>\n")
@@ -1305,6 +1346,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			configuration_file.write("\t\t<VIRUS_VARIANT_FACTOR>" + str(virus_variant_factor) + "</VIRUS_VARIANT_FACTOR>\n")
 			configuration_file.write("\t\t<DECAY_RATE>" + str(decay_rate) + "</DECAY_RATE>\n")
 			configuration_file.write("\t\t<GRAVITATIONAL_SETTLING_RATE>" + str(gravitational_settling_rate) + "</GRAVITATIONAL_SETTLING_RATE>\n")
+			configuration_file.write("\t\t<STERILISATION>" + str(sterilisation) + "</STERILISATION>\n")
 			configuration_file.write("\t\t<INHALATION_RATE_PURE>" + str(inhalation_rate_pure) + "</INHALATION_RATE_PURE>\n")
 			configuration_file.write("\t\t<RISK_CONST>" + str(risk_const) + "</RISK_CONST>\n")
 			configuration_file.write("\t\t<PERC_INF>" + ','.join(map(str, perc_inf_df.loc[:, "percentage_infected"])) + "</PERC_INF>\n")
@@ -1320,6 +1362,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define INDEX2COORDZ \"INDEX2COORDZ\"\n")
 		autogenerated_variables_names.write("#define NODE_TYPE \"NODE_TYPE\"\n")
 		autogenerated_variables_names.write("#define NODE_YAW \"NODE_YAW\"\n")
+		autogenerated_variables_names.write("#define NODE_X \"NODE_X\"\n")
+		autogenerated_variables_names.write("#define NODE_Z \"NODE_Z\"\n")
 		autogenerated_variables_names.write("#define NODE_LENGTH \"NODE_LENGTH\"\n")
 		autogenerated_variables_names.write("#define NODE_WIDTH \"NODE_WIDTH\"\n")
 		autogenerated_variables_names.write("#define EXTERN_RANGES \"EXTERN_RANGES\"\n")
@@ -1340,11 +1384,14 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define VIRUS_VARIANT_FACTOR \"VIRUS_VARIANT_FACTOR\"\n")
 		autogenerated_variables_names.write("#define DECAY_RATE \"DECAY_RATE\"\n")
 		autogenerated_variables_names.write("#define GRAVITATIONAL_SETTLING_RATE \"GRAVITATIONAL_SETTLING_RATE\"\n")
+		autogenerated_variables_names.write("#define STERILISATION \"STERILISATION\"\n")
 		autogenerated_variables_names.write("#define INHALATION_RATE_PURE \"INHALATION_RATE_PURE\"\n")
 		autogenerated_variables_names.write("#define RISK_CONST \"RISK_CONST\"\n")
 		autogenerated_variables_names.write("#define PERC_INF \"PERC_INF\"\n")
 		autogenerated_variables_names.write("#define VIRUS_SEVERITY \"VIRUS_SEVERITY\"\n")
-		autogenerated_variables_names.write("#define RUN_IDX \"RUN_IDX\"\n")
+		autogenerated_variables_names.write("#define RUN_IDX \"RUN_IDX\"\n\n")
+
+		autogenerated_variables_names.write("#define GRAPH_NODE \"graph_node\"\n")
 
 		if ensemble == "ON":
 			autogenerated_defines.write("#define ENSEMBLE\n\n")
@@ -1366,12 +1413,12 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		autogenerated_defines.write("\n")
 
-		autogenerated_defines.write("#define WALL 0\n")
-		autogenerated_defines.write("#define WALKABLE 1\n")
+		autogenerated_defines.write("#define CORRIDOR 0\n")
+		autogenerated_defines.write("#define INSIDEROOM 1\n")
 		autogenerated_defines.write("#define DOOR 2\n")
-		autogenerated_defines.write("#define CORRIDOR 3\n")
+		autogenerated_defines.write("#define CPOINT 3\n")
 		for me in MapEncoding:
-			if me not in [MapEncoding.WALL, MapEncoding.WALKABLE, MapEncoding.DOOR, MapEncoding.CORRIDOR]:
+			if me not in [MapEncoding.CORRIDOR, MapEncoding.INSIDEROOM, MapEncoding.DOOR, MapEncoding.CPOINT]:
 				autogenerated_defines.write("#define " + MapEncoding.to_str(me) + " " + str(me.value) + "\n")
 		
 		autogenerated_defines.write("\n")
@@ -1412,6 +1459,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		autogenerated_defines.write("#define STAYING_IN_WAITING_ROOM 0\n")
 		autogenerated_defines.write("#define EXITING_FROM_WAITING_ROOM 1\n\n")
+
+		autogenerated_defines.write("#define ACCOMPANIMENT_ONLY 0\n")
+		autogenerated_defines.write("#define ACCOMPANIMENT_AND_STAY 1\n\n")
 
 		autogenerated_defines.write("#define NUM_COUNTERS " + str(num_counters) + "\n")
 		autogenerated_defines.write("#define COUNTERS_CREATED_AGENTS_WITH_RATE 0\n")
@@ -1481,7 +1531,7 @@ def main():
 
 	init_week_day = WHOLEmodel["starting"][0]["day"]
 	start_step_time = int(WHOLEmodel["starting"][0]["time"].split(":")[0]) * steps_in_a_hour + int(WHOLEmodel["starting"][0]["time"].split(":")[1]) * steps_in_a_minute
-	start_step_time = 1 if start_step_time == 0 else start_step_time
+	#start_step_time = 1 if start_step_time == 0 else start_step_time
 
 	days = int(WHOLEmodel["starting"][0]["simulation_days"])
 
