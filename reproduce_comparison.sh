@@ -3,10 +3,10 @@
 sudo apt install r-base
 
 # Comparison between NetLogo and FLAME GPU 2 (ITC test, 1000 runs)
- cd NetLogoSchoolModel
+cd NetLogoSchoolModel
  ./run.sh Configurations/F4FComparison/NoCountermeasures.conf 16
  ./run.sh Configurations/F4FComparison/Countermeasures.conf 16
- cd ..
+cd ..
 
 ./run_docker_ensemble.sh SchoolComparisonNoCountermeasures
 ./run_docker_ensemble.sh SchoolComparisonCountermeasures
