@@ -2543,27 +2543,12 @@ to accumulate-contact-with-infected
     [
       let who-infected who
 
-      ;ask turtles with [not hidden? and susceptible? and room-name = [room-name] of myself and compute-separation myself < (contact-space-length-in-meters / 2)]
       ask turtles with [not hidden? and susceptible? and room-name = [room-name] of myself and distance myself < (contact-space-length-in-meters / 2)]
       [
         let contact-value matrix:get contact-timein-ticks-with-infected-matrix who who-infected
         matrix:set contact-timein-ticks-with-infected-matrix who who-infected (contact-value + 1)
       ]
     ]
-end
-
-to-report compute-separation [near-agent]
-  let x1 precision xcor 5
-  let y1 precision ycor 5
-  let x2 precision [xcor] of near-agent 5
-  let y2 precision [ycor] of near-agent 5
-
-  let x_diff x2 - x1
-  let y_diff y2 - y1
-
-  let separation sqrt (x_diff * x_diff + y_diff * y_diff)
-
-  report precision separation 5
 end
 
 to infect-with-contact
