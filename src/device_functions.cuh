@@ -76,6 +76,9 @@ namespace device_functions {
     */
     FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {  
         
+        #ifdef DEBUG
+        printf("5,%d,%d,Beginning of findFreeRoomForEventOfTypeAndAre for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        #endif
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         short event_node = -1;
         float min_separation = numeric_limits<float>::max();
@@ -89,18 +92,19 @@ namespace device_functions {
         do {
             // Searching the nearest room related to the event
             //to add the area
-            for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
 
+            event_node = -1;
+            for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
 
                 const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
                 int area_room = message.getVariable<int>(AREA);
-
 
                 float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
                 if(separation < min_separation && separation > previous_separation && area_room_event == area_room){
                     min_separation = separation;                    
                     event_node = message.getVariable<short>(GRAPH_NODE);
                 }
+                
             }
 
             // Try getting the resources of the room
@@ -129,7 +133,13 @@ namespace device_functions {
         }
         while(!*available && event_node != -1);  
 
+        #ifdef DEBUG
+        printf("5,%d,%d,Ending of findFreeRoomForEventOfTypeAndAre for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        #endif
+
         return event_node;
+
+  
      }
 
 
@@ -140,6 +150,11 @@ namespace device_functions {
      * Find a room of free resources 
     */
     FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {  
+        
+        #ifdef DEBUG
+        printf("5,%d,%d,Beginning of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        #endif
+        
         int random_iterator = random;
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         unsigned short final_target = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
@@ -184,6 +199,10 @@ namespace device_functions {
         while(!*available && random_iterator != random);  
 
         return final_target;
+
+        #ifdef DEBUG
+        printf("5,%d,%d,Ending of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        #endif
      }
 
 
