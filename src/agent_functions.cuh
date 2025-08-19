@@ -225,6 +225,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         unsigned short event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
 
         if(event){
+
             short event_node = -1;
             float min_separation = numeric_limits<float>::max();
             float previous_separation = 0;
@@ -264,7 +265,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
             // waitingroom for now suspended; if in the future, see the code in take new destination to handle the sending in the
             // nearest waiting room
-
             //try getting inside the event room
             if(event_node != -1){
                 get_specific_resource = ++specific_resources_counter[agent_type][event_node];
