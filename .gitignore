@@ -13,4 +13,3 @@ resources/MapEncoding.py
 resources/__pycache__/
 .vscode/
 src/.vscode/
-!NetLogoSchoolModel/Utils/*
