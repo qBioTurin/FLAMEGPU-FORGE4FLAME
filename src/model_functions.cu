@@ -8,11 +8,23 @@ using namespace flamegpu;
 using namespace host_functions;
 
 // Define model's agents pedestrian functions
-void define_pedestrian_functions(AgentDescription& pedestrian){    
+void define_pedestrian_functions(AgentDescription& pedestrian){
+    AgentFunctionDescription beingSupported_fn = pedestrian.newFunction("beingSupported", beingSupported);
+    beingSupported_fn.setFunctionCondition(initCondition);
+    beingSupported_fn.setMessageOutput("link_message");
+    beingSupported_fn.setMessageOutputOptional(true);
+
     AgentFunctionDescription CUDAInitContagionScreeningEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAInitContagionScreeningEventsAndMovePedestrian", CUDAInitContagionScreeningEventsAndMovePedestrian);
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageInput("room_location");
+    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutput("link_message");
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutputOptional(true);
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setAllowAgentDeath(true);
+
+    AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
+    handleSupportRequest_fn.setFunctionCondition(initCondition);
+    handleSupportRequest_fn.setMessageInput("link_message");
+    handleSupportRequest_fn.setMessageOutput("aerosol_counting");
+    handleSupportRequest_fn.setMessageOutputOptional(true);
     
 #ifndef CHECKPOINT
     AgentFunctionDescription outputPedestrianLocation_fn = pedestrian.newFunction("outputPedestrianLocation", outputPedestrianLocation);
@@ -169,6 +181,8 @@ void define_environment(ModelDescription& model){
 
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TYPE);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
@@ -183,6 +197,8 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
     env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ACTIVITY_TYPE);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
@@ -230,6 +246,8 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
 
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
+
     env.newMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
@@ -261,6 +279,19 @@ void define_pedestrian_messages(ModelDescription& model){
     queue_message.newVariable<short>(GRAPH_NODE);
     queue_message.setBounds(0, TOTAL_AGENTS_ESTIMATION);
     queue_message.setPersistent(true);
+
+    // Message for agent links
+    MessageBucket::Description link_message = model.newMessage<MessageBucket>("link_message");
+    link_message.newVariable<short>(CONTACTS_ID);
+    link_message.newVariable<int>(REQUEST_ID);
+    link_message.newVariable<float>(X);
+    link_message.newVariable<float>(Y);
+    link_message.newVariable<float>(Z);
+    link_message.newVariable<float>(FINAL_X);
+    link_message.newVariable<float>(FINAL_Y);
+    link_message.newVariable<float>(FINAL_Z);
+    link_message.newVariable<int>(SUPPORT_TIME);
+    link_message.setBounds(0, NUMBER_OF_AGENTS_TYPES + TOTAL_AGENTS_ESTIMATION);
 }
 
 // Define model's agents room messages
@@ -329,6 +360,12 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<int>(ENTRY_EXIT_FLAG);
     pedestrian.newVariable<short>(NODE_WAITING_FOR, -1);
     pedestrian.newVariable<unsigned short>(EXITED_FROM_ENVIRONMENT);
+    pedestrian.newVariable<short>(REQUESTED_SUPPORT, -1);
+    pedestrian.newVariable<short>(REQUESTED_TYPE, -1);
+    pedestrian.newVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, -1);
+    pedestrian.newVariable<short>(SUPPORT_TIME_EVENT, -1);
+    pedestrian.newVariable<short>(CURRENTLY_SUPPORTED, -1);
+    pedestrian.newVariable<short>(ON_THE_WAY_TO_SUPPORT, -1);
 
     define_pedestrian_functions(pedestrian);
 }
@@ -373,13 +410,25 @@ void define_layers(ModelDescription& model){
     // Layer 2
     {
         LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(beingSupported);
+    }
+
+    // Layer 3
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(handleSupportRequest);
+    }
+
+    // Layer 4
+    {
+        LayerDescription layer = model.newLayer();
 #ifndef CHECKPOINT
         layer.addAgentFunction(outputPedestrianLocationAerosol);
 #endif
         layer.addAgentFunction("room", "outputRoomLocation");
     }
 
-    // Layer 3
+    // Layer 5
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(outputPedestrianLocation);
@@ -388,13 +437,13 @@ void define_layers(ModelDescription& model){
 #endif
     }
     
-    // Layer 4
+    // Layer 6
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(waitingInWaitingRoom);
     }
 
-    // Layer 5
+    // Layer 7
     {
         LayerDescription layer = model.newLayer();
 #ifndef CHECKPOINT

@@ -109,6 +109,8 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ADJMATRIX, string("resources/macro_environment/") + ADJMATRIX + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW, string("resources/macro_environment/") + ENV_FLOW + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AREA, string("resources/macro_environment/") + ENV_FLOW_AREA + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AGENTLINKED, string("resources/macro_environment/") + ENV_FLOW_AGENTLINKED + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AGENTLINKED_TYPE, string("resources/macro_environment/") + ENV_FLOW_AGENTLINKED_TYPE + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_DISTR, string("resources/macro_environment/") + ENV_FLOW_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_FLOW_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_FLOW_DISTR_SECONDPARAM + ".xml");
@@ -122,6 +124,8 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_PROBABILITY, string("resources/macro_environment/") + ENV_EVENTS_PROBABILITY + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_STARTTIME, string("resources/macro_environment/") + ENV_EVENTS_STARTTIME + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_ENDTIME, string("resources/macro_environment/") + ENV_EVENTS_ENDTIME + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED, string("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED_TYPE, string("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED_TYPE + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_ACTIVITY_TYPE, string("resources/macro_environment/") + ENV_EVENTS_ACTIVITY_TYPE + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_DISTR, string("resources/macro_environment/") + ENV_EVENTS_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_EVENTS_DISTR_FIRSTPARAM + ".xml");

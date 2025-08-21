@@ -17,7 +17,7 @@ namespace device_functions {
     /** 
      * Generate a random number using the given RNG, distribution and parameters for pedestrians.
     */
-    FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
+    FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
         
         if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
@@ -36,7 +36,7 @@ namespace device_functions {
     /** 
      * Generate a random number using the given RNG, distribution and parameters for rooms.
     */
-    FLAMEGPU_DEVICE_FUNCTION float cuda_room_rng(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, int b, bool flow_time) {
+    FLAMEGPU_DEVICE_FUNCTION float cuda_room_rng(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, int b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
 
         if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
@@ -55,7 +55,10 @@ namespace device_functions {
     /** 
      * Generate a random offset inside rooms.
     */
-    FLAMEGPU_DEVICE_FUNCTION void generate_offset(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, float* jitter_x, float* jitter_z,  short new_target){
+    FLAMEGPU_DEVICE_FUNCTION void generate_offset(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, float* jitter_x, float* jitter_z,  short new_target){
+#ifdef DEBUG
+        printf("5,%d,%d,Beginning of generate_offset for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+#endif
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const float yaw = FLAMEGPU->environment.getProperty<float, V>(NODE_YAW, new_target);
         const bool yaw_condition = compare_float(yaw, M_PI/2, 0.5f) || compare_float(yaw, 2*M_PI - M_PI/2, 0.5f);
@@ -69,18 +72,20 @@ namespace device_functions {
 
         *jitter_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, offset_x, false);
         *jitter_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, offset_z, false);
+#ifdef DEBUG
+        printf("5,%d,%d,Ending of generate_offset for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+#endif
     }
 
  /** 
      * Find a room of free resources for an event, searching the nearest
     */
-    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {  
-        
-        #ifdef DEBUG
-        printf("5,%d,%d,Beginning of findFreeRoomForEventOfTypeAndAre for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-        #endif
+    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {  
+#ifdef DEBUG
+        printf("5,%d,%d,Beginning of findFreeRoomForEventOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+#endif
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
-        short event_node = -1;
+        short event_node;
         float min_separation = numeric_limits<float>::max();
         float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
         //resources
@@ -133,28 +138,19 @@ namespace device_functions {
         }
         while(!*available && event_node != -1);  
 
-        #ifdef DEBUG
+#ifdef DEBUG
         printf("5,%d,%d,Ending of findFreeRoomForEventOfTypeAndAre for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-        #endif
-
+#endif
         return event_node;
-
-  
-     }
-
-
-
-
+    }
 
     /** 
      * Find a room of free resources 
     */
-    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {  
-        
-        #ifdef DEBUG
+    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {  
+#ifdef DEBUG
         printf("5,%d,%d,Beginning of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-        #endif
-        
+#endif
         int random_iterator = random;
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         unsigned short final_target = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
@@ -179,7 +175,6 @@ namespace device_functions {
             bool room_resources = false;
 
             if(get_specific_resource <= specific_resources[agent_type][final_target]){
-
                 int get_global_resource = ++global_resources_counter[final_target];
 
                 if(get_global_resource <= global_resources[final_target]){
@@ -198,18 +193,17 @@ namespace device_functions {
         }
         while(!*available && random_iterator != random);  
 
-        return final_target;
-
-        #ifdef DEBUG
+#ifdef DEBUG
         printf("5,%d,%d,Ending of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-        #endif
-     }
+#endif
+        return final_target;
+    }
 
 
     /** 
      * Take the next destination inside the determined flow of the agent.
     */
-    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, int *stay, const short start_node, bool *available, const bool identified = false, const unsigned short severity = MINOR){  
+    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int *stay, const short start_node, bool *available, const bool identified = false, const unsigned short severity = MINOR){  
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -409,7 +403,7 @@ namespace device_functions {
     /** 
      * Find the shortest path between two nodes in the graph.
     */
-    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
+    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif        
@@ -476,6 +470,10 @@ namespace device_functions {
                 solution[length] = goal;
                 for(unsigned short i = length+1; i < SOLUTION_LENGTH; ++i)
                     solution[i] = -1;
+
+#ifdef DEBUG
+                printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+#endif
                 return;
             }
 
@@ -519,7 +517,7 @@ namespace device_functions {
     /** 
      * Update agent intermediate and final targets.
     */
-    FLAMEGPU_DEVICE_FUNCTION void update_targets(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, short* new_targets, unsigned short *target_index, const bool clean, int stay) {
+    FLAMEGPU_DEVICE_FUNCTION void update_targets(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, short* new_targets, unsigned short *target_index, const bool clean, const int stay) {
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif       
@@ -579,7 +577,7 @@ namespace device_functions {
     /** 
      * Update agent's flow for the next day in which the agent will enter in the environment.
     */
-    FLAMEGPU_DEVICE_FUNCTION void update_flow(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU, const bool quarantine){
+    FLAMEGPU_DEVICE_FUNCTION void update_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, const bool quarantine){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of update_flow for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -633,7 +631,7 @@ namespace device_functions {
 #endif
     }
 
-    FLAMEGPU_DEVICE_FUNCTION void put_in_quarantine(DeviceAPI<MessageBucket, MessageNone> *FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION void put_in_quarantine(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning put_in_quarantine for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -716,7 +714,7 @@ namespace device_functions {
     /** 
      * Make a swab to the agent and handle quarantine.
     */
-    FLAMEGPU_DEVICE_FUNCTION void swab(DeviceAPI<MessageBucket, MessageNone> *FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION void swab(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning swab for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -820,7 +818,7 @@ namespace device_functions {
     /** 
      * The agent exits from quarantine.
     */
-    FLAMEGPU_DEVICE_FUNCTION void exit_from_quarantine(DeviceAPI<MessageBucket, MessageNone> *FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION void exit_from_quarantine(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning exit_from_quarantine for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -899,7 +897,7 @@ namespace device_functions {
     /** 
      * Handle internal screening.
     */
-    FLAMEGPU_DEVICE_FUNCTION void screening(DeviceAPI<MessageBucket, MessageNone> *FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION void screening(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -929,7 +927,7 @@ namespace device_functions {
     /** 
      * Handle external screening.
     */
-    FLAMEGPU_DEVICE_FUNCTION void external_screening(DeviceAPI<MessageBucket, MessageNone> *FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION void external_screening(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning external_screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -948,7 +946,7 @@ namespace device_functions {
             if(random_external_screening_first < (float) env_external_screening_first[day-1][agent_type]){
                 swab(FLAMEGPU);
 #ifdef DEBUG
-        printf("5,%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+                printf("5,%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
                 return;
             }
@@ -966,7 +964,7 @@ namespace device_functions {
     /** 
      * Handle contagion processes.
     */
-    FLAMEGPU_DEVICE_FUNCTION flamegpu::AGENT_STATUS contagion_processes(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION flamegpu::AGENT_STATUS contagion_processes(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of contagion_processes for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -1035,16 +1033,16 @@ namespace device_functions {
         FLAMEGPU->setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
         FLAMEGPU->setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, end_of_immunization_days);
 
-        return ALIVE;
 #ifdef DEBUG
         printf("5,%d,%d,Ending contagion_processes for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
+        return ALIVE;
     }
 
 /** 
      * Update disease state.
     */
-    FLAMEGPU_DEVICE_FUNCTION void update_infection(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION void update_infection(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of update_infected for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -1085,6 +1083,9 @@ namespace device_functions {
                 num_seird[DIED]++;
 
                 disease_state = DIED;
+#ifdef DEBUG
+                printf("5,%d,%d,Ending update_infected for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+#endif
                 return DEAD;
             }
             else{
@@ -1135,7 +1136,7 @@ namespace device_functions {
     /** 
      * Handle outside contagion.
     */
-    FLAMEGPU_DEVICE_FUNCTION void outside_contagion(DeviceAPI<MessageBucket, MessageNone>* FLAMEGPU){
+    FLAMEGPU_DEVICE_FUNCTION void outside_contagion(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of outside_contagion for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
