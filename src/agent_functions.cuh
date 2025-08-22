@@ -339,7 +339,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                 }
 
                 // if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
-                if(available){                    
+                if(available){      
                     a_star(FLAMEGPU, start_node, event_node, solution_start_event);
                     a_star(FLAMEGPU, event_node, final_node, solution_event_target);
 
@@ -368,12 +368,12 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                     // Handle new support, if necessary
                     if(agentlinked != -1){
                         if(requested_support == -1){
+                            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
+                            FLAMEGPU->setVariable<short>(REQUESTED_TYPE, agentlinked_type);
+
                             auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
                             unsigned int request_id = ++support_requests[agentlinked][0];
-
-                            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
-                            FLAMEGPU->setVariable<short>(REQUESTED_TYPE, agentlinked_type);
 
                             FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
                             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
@@ -621,7 +621,7 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
         FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
         FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
 
-        if((next_index == target_index || in_an_event) && ((stay == 1 && requested_type == ACCOMPANIMENT_AND_STAY) || requested_type == ACCOMPANIMENT_ONLY)){
+        if((next_index == target_index || (in_an_event && requested_support_event_with_flow == -1)) && ((stay == 1 && requested_type == ACCOMPANIMENT_AND_STAY) || requested_type == ACCOMPANIMENT_ONLY)){
             // The support is finished
             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -2);
 

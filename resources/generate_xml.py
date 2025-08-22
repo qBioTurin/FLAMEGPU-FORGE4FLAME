@@ -485,11 +485,14 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			nawar = 0
 			agents_count = 0
 			agent_type_idx = 0
+
+			for agent_name, _ in agents.items():
+				agent_names[agent_name] = {"ID": agent_type_idx}
+				agent_type_idx = agent_type_idx + 1
+
+			agent_type_idx = 0
 			for agent_name, agent_info in agents.items():
 				n = int(agent_info["NumAgent"][0])
-
-				agent_names[agent_name] = {"ID": agent_type_idx}
-
 
 				deterministic_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
 				random_flow = agent_info["RandFlow"]
