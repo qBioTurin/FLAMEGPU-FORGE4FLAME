@@ -63,8 +63,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         external_screening(FLAMEGPU);
 
         FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 0);
-    }
-
 
 
         // Update daily What-If
