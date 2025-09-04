@@ -379,8 +379,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		hours_schedule_length = 2
 		event_length = 2
 		for agent_name, agent_info in agents.items():
-			deterministic_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
-			flowid_counts = deterministic_flow["FlowID"].value_counts()
+			determined_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
+			flowid_counts = determined_flow["FlowID"].value_counts()
 			flow_length = max(flowid_counts.max(), flow_length)
 
 			entry_exit_time = agent_info["EntryExitTime"]
@@ -460,9 +460,14 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		total_number_of_agents = 0
 		number_of_agents_by_type = np.zeros(total_number_of_agents_types+1, dtype=int)
 		for index, (agent_name, agent_info) in enumerate(agents.items()):
-			n = int(agent_info["NumAgent"][0])
-			number_of_agents_by_type[index] = n
-			total_number_of_agents = total_number_of_agents + n
+			entry_exit_time = pd.DataFrame(agent_info["EntryExitTime"])
+
+			for shift in entry_exit_time["Shift"].unique():
+				mask = np.array(entry_exit_time["Shift"] == shift)
+				n = int(entry_exit_time[mask]["NumAgent"].iloc[0])
+
+				number_of_agents_by_type[index] = n
+				total_number_of_agents = total_number_of_agents + n
 		
 		number_of_agents_by_type[total_number_of_agents_types] = total_number_of_agents
 
@@ -492,36 +497,72 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 			agent_type_idx = 0
 			for agent_name, agent_info in agents.items():
-				n = int(agent_info["NumAgent"][0])
-
-				deterministic_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
+				determined_flow = pd.DataFrame(agent_info["DeterFlow"]).sort_values(by=["FlowID","Flow"])
 				random_flow = agent_info["RandFlow"]
 				entry_exit_time = agent_info["EntryExitTime"]
 				
-				for weekday, i in days_of_a_week.items():
-					flow_index = 0
+				shifts = (pd.DataFrame(entry_exit_time)["Shift"]).unique()
 
-					entry_exit_time_weekday = [eetw for eetw in entry_exit_time if eetw["Days"] == weekday]
+				for shift in shifts:
+					mask = np.array(pd.DataFrame(entry_exit_time)["Shift"] == shift)
+					n = int(pd.DataFrame(entry_exit_time)[mask]["NumAgent"].iloc[0])
 
-					if entry_exit_time_weekday == []:
-						continue
+					for weekday, i in days_of_a_week.items():
+						flow_index = 0
 
-					entry_exit_time_weekday = pd.DataFrame(entry_exit_time_weekday)
+						entry_exit_time_weekday = [eetw for eetw in entry_exit_time if eetw["Days"] == weekday and eetw["Shift"] == shift]
 
-					if not "Rate" in agent_info["entry_type"][0]:
-						entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
-						entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
+						if entry_exit_time_weekday == []:
+							continue
 
-						for j, eetw in entry_exit_time_weekday.iterrows():
-							flow_type = pd.DataFrame([df for _, df in deterministic_flow.iterrows() if df.loc["FlowID"] == eetw.loc["FlowID"]])
-							env_hours_schedule[agent_type_idx][i][2 * j] = eetw.loc["EntryTime"]
+						entry_exit_time_weekday = pd.DataFrame(entry_exit_time_weekday)
 
-							if j > 0:
-								env_flow_distr[agent_type_idx][i][flow_index-1] = distributions["Deterministic"]
-								env_flow_distr_firstparam[agent_type_idx][i][flow_index-1] = 0
-								env_flow_distr_secondparam[agent_type_idx][i][flow_index-1] = 0
+						if not "Rate" in agent_info["entry_type"][0]:
+							entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
+							entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
+
+							for j, eetw in entry_exit_time_weekday.iterrows():
+								flow_type = pd.DataFrame([df for _, df in determined_flow.iterrows() if df.loc["FlowID"] == eetw.loc["FlowID"]])
+								env_hours_schedule[agent_type_idx][i][2 * j] = eetw.loc["EntryTime"]
+
+								if j > 0:
+									env_flow_distr[agent_type_idx][i][flow_index-1] = distributions["Deterministic"]
+									env_flow_distr_firstparam[agent_type_idx][i][flow_index-1] = 0
+									env_flow_distr_secondparam[agent_type_idx][i][flow_index-1] = 0
+								
+								for k, f in flow_type.iterrows():
+									ft, fa = f.loc["Room"].strip().split("-")
+
+									a, b = parse_distribution(f.loc["Time"], f.loc["Dist"])
+									env_flow[agent_type_idx][i][flow_index] = MapEncoding.to_value(ft.upper())
+									env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
+									env_flow_agentlinked[agent_type_idx][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
+									env_flow_agentlinked_type[agent_type_idx][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
+									env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
+									env_flow_distr_firstparam[agent_type_idx][i][flow_index] = int(a) * steps_in_a_minute
+									env_flow_distr_secondparam[agent_type_idx][i][flow_index] = int(b) * steps_in_a_minute
+									env_activity_type[agent_type_idx][i][flow_index] = f.loc["Activity"]
+
+									flow_index = flow_index + 1
+						else:
+							n = 0
 							
-							for k, f in flow_type.iterrows():
+							entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
+							entry_exit_time_weekday["ExitTime"] = entry_exit_time_weekday["ExitTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
+							entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
+
+							for j, eetw in entry_exit_time_weekday.iterrows():
+								env_hours_schedule[agent_type_idx][i][2 * j] = eetw.loc["EntryTime"]
+								env_hours_schedule[agent_type_idx][i][2 * j + 1] = eetw.loc["ExitTime"]
+								
+								a, b = parse_distribution(eetw.loc["RateTime"], eetw.loc["RateDist"])
+								env_birth_rates_distr[agent_type_idx][i][j] = distributions[eetw.loc["RateDist"]]
+								env_birth_rates_distr_firstparam[agent_type_idx][i][j] = int(a)
+								env_birth_rates_distr_secondparam[agent_type_idx][i][j] = int(b)
+
+								total_agents_estimation = total_agents_estimation + distribution_average(eetw.loc["RateDist"], int(a), int(b)) * 2
+										
+							for k, f in determined_flow.iterrows():
 								ft, fa = f.loc["Room"].strip().split("-")
 
 								a, b = parse_distribution(f.loc["Time"], f.loc["Dist"])
@@ -535,85 +576,53 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								env_activity_type[agent_type_idx][i][flow_index] = f.loc["Activity"]
 
 								flow_index = flow_index + 1
-					else:
-						n = 0
+
+						e = len(random_flow) - 1
+						for rf in random_flow:
+							if rf["Room"] == "Do nothing":
+									continue
+		
+							room = rf["Room"].strip().split("-")
+		
+							a, b = parse_distribution(rf["Time"], rf["Dist"])
+		
+							env_events[agent_type_idx][e] = MapEncoding.to_value(room[0].upper())
+							env_events_area[agent_type_idx][e] = areas[room[1]]["ID"]
+							env_events_probability[agent_type_idx][e] = float(rf["Weight"])
+							env_events_activity[agent_type_idx][e] = rf["Activity"]
+							env_events_starttime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[0].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[0].split(":")[1]) * steps_in_a_minute
+							env_events_endtime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute
+							env_events_agentlinked[agent_type_idx][e] = agent_names[rf["AgentLinked"]]["ID"]
+							env_events_agentlinked_type[agent_type_idx][e] = agentlinked_types[rf["AgentLinkedType"]]
+							env_events_distr[agent_type_idx][e] = distributions[rf["Dist"]]
+							env_events_distr_firstparam[agent_type_idx][e] = int(a) * steps_in_a_minute
+							env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
+
+							e = e - 1
 						
-						entry_exit_time_weekday["EntryTime"] = entry_exit_time_weekday["EntryTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
-						entry_exit_time_weekday["ExitTime"] = entry_exit_time_weekday["ExitTime"].transform(lambda x: int(x.split(":")[0]) * steps_in_a_hour + int(x.split(":")[1]) * steps_in_a_minute)
-						entry_exit_time_weekday = entry_exit_time_weekday.sort_values("EntryTime")
+						env_events[agent_type_idx][0] = 0
+						env_events_area[agent_type_idx][0] = -1
+						env_events_activity[agent_type_idx][0] = 1.0
+						env_events_starttime[agent_type_idx][0] = 0
+						env_events_endtime[agent_type_idx][0] = steps_in_a_day - 1
+						env_events_agentlinked[agent_type_idx][0] = -1
+						env_events_agentlinked_type[agent_type_idx][0] = -1
+						env_events_probability[agent_type_idx][0] = 0
+						env_events_distr[agent_type_idx][0] = distributions["Deterministic"]
+						env_events_distr_firstparam[agent_type_idx][0] = 0
+						env_events_distr_secondparam[agent_type_idx][0] = 0
 
-						for j, eetw in entry_exit_time_weekday.iterrows():
-							env_hours_schedule[agent_type_idx][i][2 * j] = eetw.loc["EntryTime"]
-							env_hours_schedule[agent_type_idx][i][2 * j + 1] = eetw.loc["ExitTime"]
-							
-							a, b = parse_distribution(eetw.loc["RateTime"], eetw.loc["RateDist"])
-							env_birth_rates_distr[agent_type_idx][i][j] = distributions[eetw.loc["RateDist"]]
-							env_birth_rates_distr_firstparam[agent_type_idx][i][j] = int(a)
-							env_birth_rates_distr_secondparam[agent_type_idx][i][j] = int(b)
+					if n > 0:
+						total_agents_estimation = total_agents_estimation + n
 
-							total_agents_estimation = total_agents_estimation + distribution_average(eetw.loc["RateDist"], int(a), int(b)) * 2
-									
-						for k, f in deterministic_flow.iterrows():
-							ft, fa = f.loc["Room"].strip().split("-")
+					for i in range(n):
+						agent_file.write("\t<xagent>\n")
+						agent_file.write("\t\t<name>pedestrian</name>\n")
+						agent_file.write("\t\t<contacts_id>" + str(agents_count) + "</contacts_id>\n")
+						agent_file.write("\t\t<agent_type>" + str(agent_type_idx) + "</agent_type>\n")
+						agent_file.write("\t</xagent>\n")
 
-							a, b = parse_distribution(f.loc["Time"], f.loc["Dist"])
-							env_flow[agent_type_idx][i][flow_index] = MapEncoding.to_value(ft.upper())
-							env_flow_area[agent_type_idx][i][flow_index] = areas[fa]["ID"]
-							env_flow_agentlinked[agent_type_idx][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
-							env_flow_agentlinked_type[agent_type_idx][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
-							env_flow_distr[agent_type_idx][i][flow_index] = distributions[f.loc["Dist"]]
-							env_flow_distr_firstparam[agent_type_idx][i][flow_index] = int(a) * steps_in_a_minute
-							env_flow_distr_secondparam[agent_type_idx][i][flow_index] = int(b) * steps_in_a_minute
-							env_activity_type[agent_type_idx][i][flow_index] = f.loc["Activity"]
-
-							flow_index = flow_index + 1
-
-					e = len(random_flow) - 1
-					for rf in random_flow:
-						if rf["Room"] == "Do nothing":
-								continue
-	
-						room = rf["Room"].strip().split("-")
-	
-						a, b = parse_distribution(rf["Time"], rf["Dist"])
-	
-						env_events[agent_type_idx][e] = MapEncoding.to_value(room[0].upper())
-						env_events_area[agent_type_idx][e] = areas[room[1]]["ID"]
-						env_events_probability[agent_type_idx][e] = float(rf["Weight"])
-						env_events_activity[agent_type_idx][e] = rf["Activity"]
-						env_events_starttime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[0].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[0].split(":")[1]) * steps_in_a_minute
-						env_events_endtime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute
-						env_events_agentlinked[agent_type_idx][e] = agent_names[rf["AgentLinked"]]["ID"]
-						env_events_agentlinked_type[agent_type_idx][e] = agentlinked_types[rf["AgentLinkedType"]]
-						env_events_distr[agent_type_idx][e] = distributions[rf["Dist"]]
-						env_events_distr_firstparam[agent_type_idx][e] = int(a) * steps_in_a_minute
-						env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
-
-						e = e - 1
-					
-					env_events[agent_type_idx][0] = 0
-					env_events_area[agent_type_idx][0] = -1
-					env_events_activity[agent_type_idx][0] = 1.0
-					env_events_starttime[agent_type_idx][0] = 0
-					env_events_endtime[agent_type_idx][0] = steps_in_a_day - 1
-					env_events_agentlinked[agent_type_idx][0] = -1
-					env_events_agentlinked_type[agent_type_idx][0] = -1
-					env_events_probability[agent_type_idx][0] = 0
-					env_events_distr[agent_type_idx][0] = distributions["Deterministic"]
-					env_events_distr_firstparam[agent_type_idx][0] = 0
-					env_events_distr_secondparam[agent_type_idx][0] = 0
-
-				if n > 0:
-					total_agents_estimation = total_agents_estimation + n
-
-				for i in range(n):
-					agent_file.write("\t<xagent>\n")
-					agent_file.write("\t\t<name>pedestrian</name>\n")
-					agent_file.write("\t\t<contacts_id>" + str(agents_count) + "</contacts_id>\n")
-					agent_file.write("\t\t<agent_type>" + str(agent_type_idx) + "</agent_type>\n")
-					agent_file.write("\t</xagent>\n")
-
-					agents_count = agents_count + 1
+						agents_count = agents_count + 1
 
 				if "Rate" in agent_info["entry_type"][0]:
 					nawar = nawar + 1
