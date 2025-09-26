@@ -215,13 +215,14 @@ namespace device_functions {
         
         const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
+        const int agent_subtype = FLAMEGPU->getVariable<int>(AGENT_SUBTYPE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
 
-        auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
-        auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
-        auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
-        auto env_flow_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
-        auto env_flow_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
+        auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
+        auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
+        auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
+        auto env_flow_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
+        auto env_flow_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
         auto env_room_for_quarantine_type = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_TYPE);
         auto env_room_for_quarantine_area = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_AREA);
 
@@ -233,15 +234,15 @@ namespace device_functions {
         auto alternative_resources_area_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_DET);
         auto alternative_resources_type_det = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_DET);
 
-        const int flow = (int) env_flow[agent_type][week_day_flow][flow_index];
-        const int flow_area = (int) env_flow_area[agent_type][week_day_flow][flow_index];
+        const int flow = (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index];
+        const int flow_area = (int) env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index];
 
         FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, flow_index);
 
         const bool isValidFlow = (flow != -1 && flow != SPAWNROOM);
 
-        if(env_flow_distr[agent_type][week_day_flow][flow_index] != -1)
-            *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][week_day_flow][flow_index], contacts_id, (float) env_flow_distr_firstparam[agent_type][week_day_flow][flow_index], (float) env_flow_distr_secondparam[agent_type][week_day_flow][flow_index], true);
+        if(env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index] != -1)
+            *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index], contacts_id, (float) env_flow_distr_firstparam[agent_type][agent_subtype][week_day_flow][flow_index], (float) env_flow_distr_secondparam[agent_type][agent_subtype][week_day_flow][flow_index], true);
 
         unsigned short j = 0;
         if(isValidFlow && ((severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM) || identified == NOT_IDENTIFIED)){
@@ -391,7 +392,7 @@ namespace device_functions {
         if(identified == IDENTIFIED)
             FLAMEGPU->setVariable<int>(ROOM_FOR_QUARANTINE_INDEX, final_target);
 
-        if((int) env_flow[agent_type][week_day_flow][flow_index + 1] == -1 && final_target == FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE))
+        if((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] == -1 && final_target == FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE))
             *stay = 1;
 
 #ifdef DEBUG
@@ -407,6 +408,8 @@ namespace device_functions {
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif        
+        printf("[TEMP_DEBUG] a_star(id %d) from %d to %d\n", FLAMEGPU->getVariable<short>(CONTACTS_ID), start, goal);
+
         short closedset[V];
         short openset[V][3];
 
@@ -582,41 +585,42 @@ namespace device_functions {
         printf("5,%d,%d,Beginning of update_flow for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
+        const int agent_subtype = FLAMEGPU->getVariable<int>(AGENT_SUBTYPE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         const unsigned short identified = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
         auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
-        auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
-        auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
-        auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
-        auto env_flow_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
-        auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
+        auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
+        auto env_flow_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
+        auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
+        auto env_flow_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
+        auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
         
         unsigned short entry_time_index = FLAMEGPU->getVariable<unsigned short>(ENTRY_TIME_INDEX) + 1;
         unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
         unsigned short empty_days;
         int start_step;
 
-        if((int) env_hours_schedule[agent_type][week_day_flow][2 * entry_time_index] == 0 || quarantine){
+        if((int) env_hours_schedule[agent_type][agent_subtype][week_day_flow][2 * entry_time_index] == 0 || quarantine){
             entry_time_index = 0;
             week_day_flow = (week_day_flow + 1) % DAYS_IN_A_WEEK;
             
             empty_days = 0;
-            while((int) env_flow[agent_type][week_day_flow][0] == -1){
+            while((int) env_flow[agent_type][agent_subtype][week_day_flow][0] == -1){
                 empty_days++;
                 week_day_flow = (week_day_flow + 1) % DAYS_IN_A_WEEK;
             }
 
-            start_step = (int) env_hours_schedule[agent_type][week_day_flow][0];
+            start_step = (int) env_hours_schedule[agent_type][agent_subtype][week_day_flow][0];
         }
         else{
-            start_step = ((int) env_hours_schedule[agent_type][week_day_flow][2 * entry_time_index] - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY));
+            start_step = ((int) env_hours_schedule[agent_type][agent_subtype][week_day_flow][2 * entry_time_index] - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY));
             start_step = start_step < 1 ? 1: start_step;
         }
 
         if(entry_time_index == 0){
-            unsigned int stay_flow_index_0 = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][week_day_flow][0], contacts_id, (float) env_flow_distr_firstparam[agent_type][week_day_flow][0], (float) env_flow_distr_secondparam[agent_type][week_day_flow][0], true);
+            unsigned int stay_flow_index_0 = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][agent_subtype][week_day_flow][0], contacts_id, (float) env_flow_distr_firstparam[agent_type][agent_subtype][week_day_flow][0], (float) env_flow_distr_secondparam[agent_type][agent_subtype][week_day_flow][0], true);
             stay_matrix[contacts_id][target_index].exchange((unsigned int) (empty_days * STEPS_IN_A_DAY + (STEPS_IN_A_DAY - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)) + start_step + stay_flow_index_0));
             FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, 0);
         }
@@ -827,13 +831,14 @@ namespace device_functions {
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         const short extern_node = FLAMEGPU->environment.getProperty<unsigned short>(EXTERN_NODE);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
+        const int agent_subtype = FLAMEGPU->getVariable<int>(AGENT_SUBTYPE);
         const int quarantine_node = FLAMEGPU->getVariable<int>(ROOM_FOR_QUARANTINE_INDEX);
 
         short solution_quarantine_extern[SOLUTION_LENGTH] = {-1};
         unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
 
         auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
-        auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
+        auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
         auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
         auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
@@ -857,12 +862,12 @@ namespace device_functions {
 
             unsigned short empty_days = 0;
             unsigned short agent_index = week_day;
-            while((int) env_hours_schedule[agent_type][agent_index][1] - (int) env_hours_schedule[agent_type][agent_index][0] == 0){
+            while((int) env_hours_schedule[agent_type][agent_subtype][agent_index][1] - (int) env_hours_schedule[agent_type][agent_subtype][agent_index][0] == 0){
                 empty_days++;
                 agent_index = (agent_index + 1) % DAYS_IN_A_WEEK;
             }
 
-            const unsigned short start_step = (unsigned short) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_HOURS_SCHEDULE_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, (float) env_hours_schedule[agent_type][agent_index][0], (float) env_hours_schedule[agent_type][agent_index][1], true);
+            const unsigned short start_step = (unsigned short) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_HOURS_SCHEDULE_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, (float) env_hours_schedule[agent_type][agent_subtype][agent_index][0], (float) env_hours_schedule[agent_type][agent_subtype][agent_index][1], true);
 
             int stay_spawnroom = (STEPS_IN_A_DAY - ((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)) + start_step;
 
