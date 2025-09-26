@@ -64,7 +64,7 @@ set -- "${POSITIONAL_ARGS[@]}"  # Restore positional parameters
 mkdir -p build && cd build
 
 # Configure CMake from the command line passing configure-time options. 
-cmake .. -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=$COMP_CAP -DFLAMEGPU_SEATBELTS=OFF -DCHECKPOINT=$CHECKPOINT_SIMULATION -DFLAMEGPU_VISUALISATION=$VISUALISATION -DDEBUG=$DEBUG
+cmake .. -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CUDA_ARCHITECTURES=$COMP_CAP -DFLAMEGPU_SEATBELTS=OFF -DCHECKPOINT=$CHECKPOINT_SIMULATION -DFLAMEGPU_VISUALISATION=$VISUALISATION -DDEBUG=$DEBUG
 
 #  Build the required targets. In this case all targets
 cmake --build . --target all -j8

@@ -407,9 +407,7 @@ namespace device_functions {
     FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
 #ifdef DEBUG
         printf("5,%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-#endif        
-        printf("[TEMP_DEBUG] a_star(id %d) from %d to %d\n", FLAMEGPU->getVariable<short>(CONTACTS_ID), start, goal);
-
+#endif
         short closedset[V];
         short openset[V][3];
 
