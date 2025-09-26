@@ -391,6 +391,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
                         new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][i]) ? (int) env_mask_type[0][i]: NO_MASK);
                         new_pedestrian.setVariable<int>(AGENT_TYPE, i);
+                        new_pedestrian.setVariable<int>(AGENT_SUBTYPE, 0);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                         new_pedestrian.setVariable<unsigned short>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned short>(SEVERITY, MINOR);
