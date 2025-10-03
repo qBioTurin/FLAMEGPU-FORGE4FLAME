@@ -81,9 +81,9 @@ fi
 
 if [ $ENSEMBLE == "ON" ];
 then
-  ./build/bin/Release/FLAMEGPUABM -c $PARALLEL_RUN $EXPERIMENT_DIR
+  __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./build/bin/RelWithDebInfo/FLAMEGPUABM -c $PARALLEL_RUN $EXPERIMENT_DIR
 else
-  ./build/bin/Release/FLAMEGPUABM -i resources/configuration_file.xml $EXPERIMENT_DIR
+  __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./build/bin/RelWithDebInfo/FLAMEGPUABM -i resources/configuration_file.xml $EXPERIMENT_DIR
 fi
 
 bash postprocessing.sh -expdir $EXPERIMENT_DIR
