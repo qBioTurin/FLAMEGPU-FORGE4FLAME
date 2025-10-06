@@ -12,7 +12,7 @@
       -ob     or --only_build:             build the model without execute it
    	  -v      or --visualisation:          activate the visualisation
       -cps    or --checkpoint_simulation:  run the model in a simplified version with the aim to obtain a checkpoint
-      -g      or --debug:                  execute the simulation with debug prints
+      -g      or --debug:                  execute the simulation with debug
       -c      or --clean:                  clean old files and directories
 
   Authors: Daniele Baccega, Irene Terrone, Simone Pernice

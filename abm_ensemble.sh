@@ -10,6 +10,7 @@
   Inputs:
       -expdir or --experiment_dir:  directory with the scenario to simulate
       -ob     or --only_build:      build the model without execute it
+      -g      or --debug:           execute the simulation with debug
       -c      or --clean:           clean files and directories
 
   Authors: Daniele Baccega, Irene Terrone, Simone Pernice
@@ -25,6 +26,7 @@ fi
 EXPERIMENT_DIR="None"
 RESULTS_DIR="results"
 ONLY_BUILD="OFF"
+DEBUG="OFF"
 CLEAN="OFF"
 SUBSTITUTE_DIR="OFF"
 
@@ -45,6 +47,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -g|--debug)
+      DEBUG="$2"
+      shift
+      shift
+      ;;
     -c|--clean)
       CLEAN="$2"
       shift
@@ -60,6 +67,7 @@ while [[ $# -gt 0 ]]; do
   	  printf "Arguments:\n"
       printf "        -expdir or --experiment_dir:  directory with the scenario to simulate\n"
       printf "        -ob     or --only_build:      build the model without execute it (default: OFF; possible values: ON, OFF)\n"
+      printf "        -g      or --debug:           execute the simulation with debug (default: OFF; possible values: ON, OFF)\n"
       printf "        -c      or --clean:           clean old files and directories (default: OFF; possible values: ON, OFF)\n"
       exit 1
       ;;
@@ -134,7 +142,7 @@ PARALLEL_RUN="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f2)"
 echo $SEED > results/$EXPERIMENT_DIR/seed.txt
 
 # Build the model
-bash build.sh -cps OFF -g OFF -v OFF
+bash build.sh -cps OFF -g $DEBUG -v OFF
 
 if [ $ONLY_BUILD == "OFF" ];
 then

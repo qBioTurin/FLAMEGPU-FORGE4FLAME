@@ -57,7 +57,7 @@ namespace host_functions {
      * Initialization function.
     */
     FLAMEGPU_INIT_FUNCTION(initFunction){        
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
@@ -92,7 +92,7 @@ namespace host_functions {
         printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
 
         
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
@@ -101,7 +101,7 @@ namespace host_functions {
      * Import macro properties from XML files.
     */
     FLAMEGPU_INIT_FUNCTION(macroPropertyIO) {
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         // Import a macro properties
@@ -172,7 +172,7 @@ namespace host_functions {
 
         
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
@@ -181,7 +181,7 @@ namespace host_functions {
      * Generate pedestrians with time window as entry type.
     */
     FLAMEGPU_INIT_FUNCTION(generateAgents) {
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
@@ -490,7 +490,7 @@ namespace host_functions {
         evolution_file << endl;
         evolution_file.close();
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
@@ -499,7 +499,7 @@ namespace host_functions {
      * Update the simulation day and log.
     */
     FLAMEGPU_STEP_FUNCTION(updateDayAndLog) {
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_HOUR)){
@@ -557,7 +557,7 @@ namespace host_functions {
             counters_file.close();
          }
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending updateDayAndLog for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
@@ -567,7 +567,7 @@ namespace host_functions {
     */
     FLAMEGPU_STEP_FUNCTION(birth) {
         if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Beginning birth for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
             const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
@@ -663,7 +663,7 @@ namespace host_functions {
             }
 
             FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending birth for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         }
@@ -673,17 +673,17 @@ namespace host_functions {
      * End of simulation condition.
     */
     FLAMEGPU_EXIT_CONDITION(endOfSimulation){
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         if(FLAMEGPU->environment.getProperty<unsigned short>(DAY) == DAYS){
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
             return EXIT;
         }
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         return CONTINUE;
@@ -693,7 +693,7 @@ namespace host_functions {
      * End the simulation logging some information.
     */
     FLAMEGPU_EXIT_FUNCTION(exitFunction){
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         // Log the environment macro properties
@@ -736,7 +736,7 @@ namespace host_functions {
         rng_state.close();
 
         printf("4,%d,%d,Simulation completed.\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
