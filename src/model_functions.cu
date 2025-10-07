@@ -292,6 +292,7 @@ void define_pedestrian_messages(ModelDescription& model){
     link_message.newVariable<float>(FINAL_Z);
     link_message.newVariable<int>(SUPPORT_TIME);
     link_message.setBounds(0, NUMBER_OF_AGENTS_TYPES + TOTAL_AGENTS_ESTIMATION);
+    link_message.setPersistent(true);
 }
 
 // Define model's agents room messages
@@ -367,6 +368,9 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<short>(SUPPORT_TIME_EVENT, -1);
     pedestrian.newVariable<short>(CURRENTLY_SUPPORTED, -1);
     pedestrian.newVariable<short>(ON_THE_WAY_TO_SUPPORT, -1);
+    pedestrian.newVariable<int>(REQUEST_ID, -1);
+    pedestrian.newVariable<short>(REQUEST_NODE, -1);
+    pedestrian.newVariable<int>(REQUEST_TIME, -1);
 
     define_pedestrian_functions(pedestrian);
 }
