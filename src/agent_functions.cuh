@@ -215,7 +215,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         }
     }
 
-    // If an agent is waiting for a support agent or an agent is supporting another agent, we skip the rest of the code
+    // If an agent is waiting for a support agent, send the initial support message
     if(requested_support != -1 && currently_supported == -1 && on_the_way_to_support == -1 && FLAMEGPU->getVariable<short>(REQUEST_NODE) != -1){
         FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
         FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, FLAMEGPU->getVariable<int>(REQUEST_ID));
@@ -228,9 +228,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, FLAMEGPU->getVariable<int>(REQUEST_TIME));
 
         FLAMEGPU->message_out.setKey(requested_support);
-        printf("[TEMP_DEBUG]id: %d, I'M WAITING!\n", contacts_id);
     }
 
+    // If an agent is waiting for a support agent or an agent is supporting another agent, we skip the rest of the code
     if((requested_support != -1 && currently_supported == -1 && on_the_way_to_support == -1) ||
        (requested_support == -1 && on_the_way_to_support == -1 && currently_supported != -1)){
 #if defined(DEBUG) && !defined(ENSEMBLE)
@@ -390,8 +390,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                             auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
                             unsigned int request_id = ++support_requests[agentlinked][0];
-
-                            printf("[TEMP_DEBUG]1: run: %d, step: %d, id: %d, type: %d, request_id: %d, x: %d, y: %d, z: %d, final_x: %d, final_y: %d, final_z: %d, event_node: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, request_id, (int) agent_pos[0], (int) agent_pos[1], (int) agent_pos[2], FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, event_node), FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, event_node), FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, event_node), event_node);
 
                             FLAMEGPU->setVariable<int>(REQUEST_ID, (int) request_id);
                             FLAMEGPU->setVariable<short>(REQUEST_NODE, event_node);
@@ -705,6 +703,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
     // Check if there is at least one support request
     if(currently_supported == -1 && on_the_way_to_support == -1 && requested_support == -1 && !in_an_event){
         auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
+        
         unsigned int total_requests = support_requests[agent_type][0];
         unsigned int request_id = ++support_requests[agent_type][1];
         bool found = false;
@@ -716,7 +715,6 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             while(interested_message != messages.end()){
                 const int message_request_id = (*interested_message).getVariable<int>(REQUEST_ID);
 
-                printf("[TEMP_DEBUG]3 ID MESSAGE: %d, request_id: %d\n", message_request_id, (int) request_id);
                 if(message_request_id != (int) request_id)
                     interested_message++;
                 else{
@@ -749,7 +747,6 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
 
             final_stay = final_stay > 0 ? final_stay: 1;
 
-            printf("[TEMP_DEBUG]2: found? %d, step: %d, run: %d, id: %d, type: %d, request_id: %d, x: %f, y: %f, z: %f, start: %d, target: %d, support: %d, final: %d\n", found ? 1: 0, FLAMEGPU->getStepCounter(), FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), contacts_id, agent_type, request_id, (*interested_message).getVariable<float>(FINAL_X), (*interested_message).getVariable<float>(FINAL_Y), (*interested_message).getVariable<float>(FINAL_Z), start_node, target_node, support_node, final_node); 
             a_star(FLAMEGPU, start_node, target_node, solution_start_support);
             a_star(FLAMEGPU, support_node, final_node, solution_support_final);
 
