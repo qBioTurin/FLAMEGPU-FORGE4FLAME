@@ -403,8 +403,10 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		max_number_of_agents_subtype = 1
 		for index, (agent_name, agent_info) in enumerate(agents.items()):
 			entry_exit_time = pd.DataFrame(agent_info["EntryExitTime"])
-			if not "Rate" in agent_info["entry_type"][0]:
-				max_number_of_agents_subtype = max(max_number_of_agents_subtype, len(entry_exit_time["Shift"].unique()))
+			if "Rate" in agent_info["entry_type"][0]:
+				continue
+			
+			max_number_of_agents_subtype = max(max_number_of_agents_subtype, len(entry_exit_time["Shift"].unique()))
 
 			for shift in entry_exit_time["Shift"].unique():
 				mask = np.array(entry_exit_time["Shift"] == shift)
