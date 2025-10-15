@@ -170,10 +170,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     const unsigned short agent_with_a_rate = FLAMEGPU->getVariable<unsigned short>(AGENT_WITH_A_RATE);
     const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
 
-    printf("[TEMP_DEBUG] final_target x: %f\n", final_target[0]);
-    printf("[TEMP_DEBUG] final_target y: %f\n", final_target[1]/YOFFSET);
-    printf("[TEMP_DEBUG] final_target z: %f\n", final_target[2]);
-
     short solution[SOLUTION_LENGTH] = {-1};
     unsigned short identified = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
@@ -477,9 +473,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
                 unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index]][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (unsigned short) spawnrooms_areas_ids[(int) env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index]][0], false))]);
 
-                float x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 4), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 1), false);
+                float x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
                 float y = FLAMEGPU->environment.getProperty<unsigned short, NUM_SPAWNROOM>(ENTRANCE_Y_COORDS, spawnroom_id);
-                float z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 3), false);
+                float z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM + 1), false);
 
                 FLAMEGPU->setVariable<float>(X, x);
                 FLAMEGPU->setVariable<float>(Y, y);
@@ -488,20 +484,15 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                 agent_pos[1] = y;
                 agent_pos[2] = z;
 
-                printf("[TEMP_DEBUG] env_flow: %d, env_flow_area: %d, spawnroom_id: %d, type: %d, x: %f, y: %f, z: %f\n", (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index], (int) env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index], spawnroom_id, agent_type, x, y, z);
             }
 
             int flow_stay = 1;
+
             const short start_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
             const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
 
-            printf("[TEMP_DEBUG] final_target x: %f\n", final_target[0]);
-            printf("[TEMP_DEBUG] final_target y: %f\n", final_target[1]/YOFFSET);
-            printf("[TEMP_DEBUG] final_target z: %f\n", final_target[2]);
-            printf("[TEMP_DEBUG] coord2index: %d\n", (int) coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]]);
-            printf("[TEMP_DEBUG] start_node: %d\n", start_node);
             if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM) {
-                --global_resources_counter[start_node]; 
+                --global_resources_counter[start_node];
                 --specific_resources_counter[agent_type][start_node];
             }
             

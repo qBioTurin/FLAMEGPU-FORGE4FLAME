@@ -293,9 +293,9 @@ namespace host_functions {
             // Get random spawnroom from the available ones
             unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(unsigned short) env_flow_area[agent_type][agent_subtype][weekday_agent][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (float) spawnrooms_areas_ids[(int) env_flow_area[agent_type][agent_subtype][weekday_agent][0]][0], false))]);
 
-            float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 4), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 1), false);
+            float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
             float y = FLAMEGPU->environment.getProperty<unsigned short, NUM_SPAWNROOM>(ENTRANCE_Y_COORDS, spawnroom_id);
-            float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 3), false);
+            float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM + 1), false);
 
             int new_agent_state = SUSCEPTIBLE;
             
@@ -370,9 +370,9 @@ namespace host_functions {
 
                         unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (float) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][0], false))]);
 
-                        float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 4), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 1), false);
+                        float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
                         float y = FLAMEGPU->environment.getProperty<unsigned short, NUM_SPAWNROOM>(ENTRANCE_Y_COORDS, spawnroom_id);
-                        float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 3), false);
+                        float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM + 1), false);
 
                         float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
                         float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
@@ -616,9 +616,9 @@ namespace host_functions {
 
                         unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][0], false))]);
 
-                        float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 4), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 1), false);
+                        float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
                         float y = FLAMEGPU->environment.getProperty<unsigned short, NUM_SPAWNROOM>(ENTRANCE_Y_COORDS, spawnroom_id);
-                        float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 4) + 3), false);
+                        float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM + 1), false);
 
                         float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
                         float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
