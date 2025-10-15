@@ -1407,7 +1407,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				configuration_file.write("\t\t\t\t\"NODE_LENGTH\": [" + ','.join(map(str, node_length)) + "],\n")
 				configuration_file.write("\t\t\t\t\"NODE_WIDTH\": [" + ','.join(map(str, node_width)) + "],\n")
 				configuration_file.write("\t\t\t\t\"EXTERN_RANGES\": [" + ','.join(map(str, starting_x_range)) + "," + ','.join(map(str, starting_z_range)) + "],\n")
-				configuration_file.write("\t\t\t\t\"ENTRANCE_Y_COORDS\": " + ','.join(map(str, entrance_y_coords)) + ",\n")
+				configuration_file.write("\t\t\t\t\"ENTRANCE_Y_COORDS\": [" + ','.join(map(str, entrance_y_coords)) + "],\n")
 				configuration_file.write("\t\t\t\t\"NEXT_CONTACTS_ID\": " + str(agents_count) + ",\n")
 				configuration_file.write("\t\t\t\t\"DAY\": 1,\n")
 				configuration_file.write("\t\t\t\t\"WEEK_DAY\": " + str(days_of_a_week[init_week_day]) + ",\n")
