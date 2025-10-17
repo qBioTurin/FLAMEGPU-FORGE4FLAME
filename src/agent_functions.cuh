@@ -499,10 +499,14 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
                 FLAMEGPU->setVariable<float>(X, x);
                 FLAMEGPU->setVariable<float>(Y, y);
                 FLAMEGPU->setVariable<float>(Z, z);
+
                 agent_pos[0] = x;
                 agent_pos[1] = y;
                 agent_pos[2] = z;
 
+                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 0, x);
+                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 1, y);
+                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 2, z);
             }
 
             int flow_stay = 1;

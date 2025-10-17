@@ -244,7 +244,7 @@ namespace device_functions {
 
         FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, flow_index);
 
-        const bool isValidFlow = (flow != -1 && flow != SPAWNROOM);
+        const bool isValidFlow = flow != -1 && flow != SPAWNROOM;
 
         if(env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index] != -1)
             *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index], contacts_id, (float) env_flow_distr_firstparam[agent_type][agent_subtype][week_day_flow][flow_index], (float) env_flow_distr_secondparam[agent_type][agent_subtype][week_day_flow][flow_index], true);
@@ -389,10 +389,12 @@ namespace device_functions {
             }
         }
         else{
-            int area_param = (flow == SPAWNROOM) ? flow_area: -1;
+            unsigned short spawnroom_area = flow_area;
+            if(flow == -1){
+                spawnroom_area = env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index-1];
+            }
 
-            unsigned short random_area = (unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false));
-            final_target =  (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
+            final_target = (unsigned short) spawnrooms_areas_ids[spawnroom_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[spawnroom_area][0], false))];
         }
 
         FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 0, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, final_target));
@@ -697,9 +699,8 @@ namespace device_functions {
             if(!CHECK_IS_SPAWNROOM(quarantine_node) && !FLAMEGPU->getVariable<unsigned char>(INIT)){
                 FLAMEGPU->setVariable<unsigned char>(INIT, 1);
 
-                unsigned short spawnroom_area = (unsigned short) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false);
-
-                unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[spawnroom_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (unsigned short) spawnrooms_areas_ids[spawnroom_area][0], false))]);
+                unsigned short random_area = (unsigned short) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false);
+                unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (unsigned short) spawnrooms_areas_ids[random_area][0], false))]);
 
                 float x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
                 float y = FLAMEGPU->environment.getProperty<unsigned short, NUM_SPAWNROOM>(ENTRANCE_Y_COORDS, spawnroom_id);
@@ -708,6 +709,10 @@ namespace device_functions {
                 FLAMEGPU->setVariable<float>(X, x);
                 FLAMEGPU->setVariable<float>(Y, y);
                 FLAMEGPU->setVariable<float>(Z, z);
+
+                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 0, x);
+                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 1, y);
+                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 2, z);
             }
 
             short solution_start_quarantine[SOLUTION_LENGTH] = {-1};
