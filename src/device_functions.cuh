@@ -781,6 +781,8 @@ namespace device_functions {
 
         counters[SWABS]++;
 
+        FLAMEGPU->setVariable<int>(SWAB_STEPS, 0);
+
         // Now the agent could has been identified as infected
         if(identified_bool == IDENTIFIED){
             /**
@@ -793,8 +795,6 @@ namespace device_functions {
              *                                           make a swab every m days (where m is generated using the selected distribution
              *                                           and parameters). A Negative swab will allow the agent to exit from the quarantine.
              */
-            FLAMEGPU->setVariable<int>(SWAB_STEPS, -1);
-
             if((int) env_quarantine_days_distr[day-1][agent_type] != NO_QUARANTINE){
                 put_in_quarantine(FLAMEGPU);
             }
@@ -843,7 +843,7 @@ namespace device_functions {
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
         FLAMEGPU->setVariable<unsigned short>(SEVERITY, MINOR);
-        FLAMEGPU->setVariable<int>(SWAB_STEPS, -1);
+        FLAMEGPU->setVariable<int>(SWAB_STEPS, 0);
         FLAMEGPU->setVariable<int>(ROOM_FOR_QUARANTINE_INDEX, -1);
         FLAMEGPU->setVariable<unsigned short>(QUARANTINE, 0);
         FLAMEGPU->setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
@@ -876,7 +876,7 @@ namespace device_functions {
         }
 
         if((int) env_swab_distr[day-1][agent_type] != NO_SWAB){
-            int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_swab_distr[day-1][agent_type], contacts_id, STEPS_IN_A_DAY * (float) env_swab_distr_firstparam[day-1][agent_type], STEPS_IN_A_DAY * (float) env_swab_distr_secondparam[day-1][agent_type], true));
+            int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_swab_distr[day-1][agent_type], contacts_id, (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[day-1][agent_type]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[day-1][agent_type]), true));
             FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
         }
 
@@ -913,9 +913,9 @@ namespace device_functions {
 
         int swab_steps = FLAMEGPU->getVariable<int>(SWAB_STEPS);
 
+        swab_steps = swab_steps - 1;
         if(((int) env_swab_distr[day-1][agent_type] != NO_SWAB || (int) env_quarantine_swab_days_distr[day-1][agent_type] != NO_QUARANTINE_SWAB) && swab_steps != -1){
             if(swab_steps){
-                swab_steps = swab_steps - 1;
                 FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
             }
             else{

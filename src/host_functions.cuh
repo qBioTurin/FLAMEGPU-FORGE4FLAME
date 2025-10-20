@@ -401,7 +401,6 @@ namespace host_functions {
                         int swab_steps = -1;
                         if((int) env_swab_distr[0][i] != NO_SWAB)
                             swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[0][i], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[0][i]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[0][i]), true));
-
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
                         const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (float) env_hours_schedule[i][0][week_day][2 * slot], (float) env_hours_schedule[i][0][week_day][2 * slot + 1], true);
@@ -642,7 +641,6 @@ namespace host_functions {
                         int swab_steps = -1;
                         if((int) env_swab_distr[day-1][i] != NO_SWAB)
                             swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (int) env_swab_distr[day-1][i], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[day-1][i]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[day-1][i]), true));
-
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
                         const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (float) env_hours_schedule[i][0][week_day][2 * slot], (float) env_hours_schedule[i][0][week_day][2 * slot + 1], true);

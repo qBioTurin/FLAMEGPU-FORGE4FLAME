@@ -111,7 +111,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
         int swab_steps = -1;
         if((int) env_swab_distr[day-1][agent_type] != NO_SWAB){
-            if(FLAMEGPU->getVariable<int>(SWAB_STEPS) == -1)
+            if(FLAMEGPU->getVariable<int>(SWAB_STEPS) == 0)
                 swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_swab_distr[day-1][agent_type], contacts_id, (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[day-1][agent_type]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[day-1][agent_type]), true));
             else
                 swab_steps = FLAMEGPU->getVariable<int>(SWAB_STEPS);
@@ -129,7 +129,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         if(quarantine > 0){
             int swab_steps = -1;
             if((int) env_quarantine_swab_days_distr[day-1][agent_type] != NO_SWAB){
-                if(FLAMEGPU->getVariable<int>(SWAB_STEPS) == -1)
+                if(FLAMEGPU->getVariable<int>(SWAB_STEPS) == 0)
                     swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[day-1][agent_type], contacts_id, (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_firstparam[day-1][agent_type]), (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_secondparam[day-1][agent_type]), true));
                 else
                     swab_steps = FLAMEGPU->getVariable<int>(SWAB_STEPS);

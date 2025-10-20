@@ -351,7 +351,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned short>(SEVERITY, MINOR);
     pedestrian.newVariable<unsigned short>(QUARANTINE);
     pedestrian.newVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
-    pedestrian.newVariable<int>(SWAB_STEPS, -1);
+    pedestrian.newVariable<int>(SWAB_STEPS);
     pedestrian.newVariable<unsigned short>(ENTRY_TIME_INDEX);
     pedestrian.newVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE);
     pedestrian.newVariable<unsigned short>(WEEK_DAY_FLOW);
