@@ -497,7 +497,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
 
             if(start_node != extern_node && start_node_type != WAITINGROOM) {
-                --global_resources_counter[start_node]; 
+                --global_resources_counter[start_node];
                 --specific_resources_counter[agent_type][start_node];
             }
             
