@@ -13,6 +13,34 @@ using namespace std;
 using namespace pugi;
 
 namespace host_functions {
+    unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) { 
+        int left = 0;
+        int right = num_events - 1;
+
+        if (target > env_events_cdf[1])
+            return left;
+
+        if (target <= env_events_cdf[right])
+            return right;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+
+            float upper = env_events_cdf[mid];
+            float lower = env_events_cdf[mid + 1];
+
+            if (target <= upper && target > lower) {
+                return mid;
+            } else if (target > upper) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+
+        return left;
+    }
+
     /** 
      * Compare floating points.
     */
@@ -259,6 +287,11 @@ namespace host_functions {
         // Get the root node
         xml_node agents = doc_agents.child("agents");
 
+        float risk_classes_cdf[RISK_CLASSES + 1] = {0.0f};
+        for(unsigned short i = 0; i < RISK_CLASSES; i++){
+            risk_classes_cdf[i] = FLAMEGPU->environment.getProperty<float, RISK_CLASSES + 1>(PROPORTIONS, i);
+        }
+
         // Loop through each xagent node
         for (xml_node xagent = agents.child("xagent"); xagent; xagent = xagent.next_sibling("xagent")) {
             // Extract child nodes of xagent, like <name>, <state>, <x>, etc.
@@ -294,6 +327,8 @@ namespace host_functions {
                 weekday_agent = (weekday_agent + 1) % DAYS_IN_A_WEEK;
             }
 
+            unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
+
             int new_agent_state = SUSCEPTIBLE;
             
             float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
@@ -310,9 +345,9 @@ namespace host_functions {
             unsigned short fatality_days = 0;
             if(new_agent_state == SUSCEPTIBLE && find(selectedIndices.begin(), selectedIndices.end(), contacts_id) != selectedIndices.end()){
                 new_agent_state = INFECTED;
-                infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 0), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 1), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, 2), false)));
+                infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
 #ifdef FATALITY
-                fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 0), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 1), (float) FLAMEGPU->environment.getProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, 2), false)));
+                fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES>(MEAN_FATALITY_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), false)));
 #endif
             }
 
@@ -323,12 +358,13 @@ namespace host_functions {
             new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
             new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
             new_pedestrian.setVariable<int>(AGENT_TYPE, agent_type);
-             new_pedestrian.setVariable<int>(AGENT_SUBTYPE, agent_subtype);
+            new_pedestrian.setVariable<int>(AGENT_SUBTYPE, agent_subtype);
             new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][agent_type]) ? (int) env_mask_type[0][agent_type]: NO_MASK);
             new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
             new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
             new_pedestrian.setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
             new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, weekday_agent);
+            new_pedestrian.setVariable<unsigned short>(RISK_CLASS, risk_class);
 
             int swab_steps = -1;
             if((int) env_swab_distr[0][agent_type] != NO_SWAB)
@@ -369,6 +405,8 @@ namespace host_functions {
                         float y = YEXTERN;
                         float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 2), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 3), false);
 
+                        unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
+
                         float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
                         float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
                         unsigned short vaccination_end_of_immunization_days = 0;
@@ -397,6 +435,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned short>(SEVERITY, MINOR);
                         new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
                         new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, week_day);
+                        new_pedestrian.setVariable<unsigned short>(RISK_CLASS, risk_class);
 
                         int swab_steps = -1;
                         if((int) env_swab_distr[0][i] != NO_SWAB)
@@ -595,6 +634,11 @@ namespace host_functions {
             auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
+            float risk_classes_cdf[RISK_CLASSES + 1] = {0.0f};
+            for(unsigned short i = 0; i < RISK_CLASSES; i++){
+                risk_classes_cdf[i] = FLAMEGPU->environment.getProperty<float, RISK_CLASSES + 1>(PROPORTIONS, i);
+            }
+
             for(int i = NUMBER_OF_AGENTS_TYPES_WITHOUT_A_RATE; i < NUMBER_OF_AGENTS_TYPES; i++){
                 unsigned short slot = 0;
                 while((int) env_rate_distr[i][week_day][slot] != -1){
@@ -608,6 +652,8 @@ namespace host_functions {
                         float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 0), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 1), false);
                         float y = YEXTERN;
                         float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 2), FLAMEGPU->environment.getProperty<float, 4>(EXTERN_RANGES, 3), false);
+
+                        unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
 
                         float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
                         float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
@@ -637,6 +683,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned short>(SEVERITY, MINOR);
                         new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
                         new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, week_day);
+                        new_pedestrian.setVariable<unsigned short>(RISK_CLASS, risk_class);
 
                         int swab_steps = -1;
                         if((int) env_swab_distr[day-1][i] != NO_SWAB)

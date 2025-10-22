@@ -145,14 +145,19 @@ void define_environment(ModelDescription& model){
     env.newProperty<short>(NEXT_CONTACTS_ID, 0);
     env.newProperty<unsigned short>(DAY, 1);
     env.newProperty<unsigned short>(WEEK_DAY, 0);
-    env.newProperty<unsigned short, 3>(MEAN_INCUBATION_DAYS, {0});
-    env.newProperty<unsigned short, 3>(MEAN_INFECTION_DAYS, {0});
-    env.newProperty<unsigned short, 3>(MEAN_END_OF_IMMUNIZATION_DAYS, {0});
-    env.newProperty<unsigned short, 3>(MEAN_FATALITY_DAYS, {0});
+    env.newProperty<float, RISK_CLASSES + 1>(PROPORTIONS, {0.0f});
+    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_INCUBATION_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INCUBATION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_INFECTION_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_END_OF_IMMUNIZATION_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_END_OF_IMMUNIZATION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_FATALITY_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_FATALITY_DAYS, {0});
 
     env.newProperty<float, 3>(EXHALATION_MASK_EFFICACY, {0.0f});
     env.newProperty<float, 3>(INHALATION_MASK_EFFICACY, {0.0f});
-    env.newProperty<float>(CONTAMINATION_RISK, 0.0f);
+    env.newProperty<float, RISK_CLASSES>(CONTAMINATION_RISK, {0.0f});
     env.newProperty<float>(CONTAMINATION_RISK_DECREASED_WITH_MASK, 0.0f);
     env.newProperty<float>(NGEN_BASE, 0.0f);
     env.newProperty<float>(VL, 0.0f);
@@ -161,7 +166,7 @@ void define_environment(ModelDescription& model){
     env.newProperty<float>(GRAVITATIONAL_SETTLING_RATE, 0.0f);
     env.newProperty<float>(STERILISATION, 0.0f);
     env.newProperty<float>(INHALATION_RATE_PURE, 0.0f);
-    env.newProperty<float>(RISK_CONST, 0.0f);
+    env.newProperty<float, RISK_CLASSES>(RISK_CONST, {0.0f});
 
     env.newProperty<float, DAYS>(PERC_INF, {0.0f});
 
@@ -371,6 +376,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<int>(REQUEST_ID, -1);
     pedestrian.newVariable<short>(REQUEST_NODE, -1);
     pedestrian.newVariable<int>(REQUEST_TIME, -1);
+    pedestrian.newVariable<unsigned short>(RISK_CLASS);
 
     define_pedestrian_functions(pedestrian);
 }
