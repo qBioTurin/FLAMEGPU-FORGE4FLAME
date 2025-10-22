@@ -325,8 +325,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		compartments = {"S": 0, "E": 1, "I": 2, "R": 3, "D": 4}
 
-		disease = WHOLEmodel["disease"]
-		compartmental_model_name = disease["Name"][0]
+		disease = WHOLEmodel["disease"][0]
+		compartmental_model_name = disease["disease_model_name"][0]
 
 		disease_states = len(compartments.keys())
 		compartmental_model = np.zeros(disease_states, dtype=int)
