@@ -2,34 +2,32 @@ import json
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
 
-# SEIRS model ODEs
-def seirs_model(y, t, beta, gamma, sigma, xi, N):
-    S, E, I, R = y
-    dSdt = -beta * S * I / N + xi * R
-    dEdt = beta * S * I / N - sigma * E
-    dIdt = sigma * E - gamma * I
-    dRdt = gamma * I - xi * R
-    return dSdt, dEdt, dIdt, dRdt
+def gaussian_curve(x, mean, amplitude, std):
+    return amplitude * np.exp(-0.5 * ((x - mean) / std)**2)
 
-def generate_seirs_curve(days=105):
-    beta = np.random.uniform(0.2, 0.9)    # transmission
-    gamma = 0.2                            # recovery
-    sigma = 0.2                            # incubation fixed
-    xi = 0.001826484                       # S to R loss rate fixed
-    N = 1e6
-    S0 = N - 1
-    E0 = 0
-    I0 = 1
-    R0 = 0
-    y0 = (S0, E0, I0, R0)
-    t = np.linspace(0, days-1, days)
-    ret = odeint(seirs_model, y0, t, args=(beta, gamma, sigma, xi, N))
-    S, E, I, R = ret.T
-    fraction_infected = I / N
-    data = [{"day": int(day+1), "percentage_infected": f"{val:.12f}"} for day, val in enumerate(fraction_infected)]
-    return data, beta, gamma, sigma, xi
+def generate_random_peak_curve(days=105):
+    x = np.arange(1, days+1)
+    single_peak = np.random.choice([True, False])
+    if single_peak:
+        mean = np.random.uniform(10, days-10)
+        amplitude = np.random.uniform(0, 0.03)
+        std = np.random.uniform(5, 10)
+        curve = gaussian_curve(x, mean, amplitude, std)
+    else:
+        mean1 = np.random.uniform(10, days/2)
+        mean2 = np.random.uniform(mean1 + 10, days-10)
+        amplitude1 = np.random.uniform(0, 0.03)
+        amplitude2 = np.random.uniform(0, 0.01)
+        std1 = np.random.uniform(5, 10)
+        std2 = np.random.uniform(5, 10)
+        curve = gaussian_curve(x, mean1, amplitude1, std1) + gaussian_curve(x, mean2, amplitude2, std2)
+    
+    # Clip massimo 0.1 per il picco
+    curve = np.clip(curve, 0, 0.05)
+
+    data = [{"day": int(day), "percentage_infected": f"{val:.12f}"} for day, val in zip(x, curve)]
+    return data
 
 def generate_files(input_path, output_dir="NODE", n_files=500):
     os.makedirs(output_dir, exist_ok=True)
@@ -37,27 +35,27 @@ def generate_files(input_path, output_dir="NODE", n_files=500):
         base_data = json.load(f)
 
     for i in range(1, n_files + 1):
-        new_curve, beta, gamma, sigma, xi = generate_seirs_curve()
+        new_curve = generate_random_peak_curve()
         base_data["outside_contagion"] = new_curve
-        output_path = f"{output_dir}/outside_contagion_{i}/model.json"
-        os.makedirs(f"{output_dir}/outside_contagion_{i}", exist_ok=True)
+        dir_path = f"{output_dir}/outside_contagion_{i}"
+        os.makedirs(dir_path, exist_ok=True)
+        output_path = f"{dir_path}/model.json"
         with open(output_path, "w") as out_f:
-            json.dump(base_data, out_f, indent = 2)
+            json.dump(base_data, out_f, indent=2)
 
         days = [d["day"] for d in new_curve]
         values = [float(d["percentage_infected"]) for d in new_curve]
 
         plt.figure(figsize=(10, 5))
-        plt.plot(days, values, label="fraction_infected (SEIRS)")
-        plt.title(f"Outside Contagion SEIRS {i}\nβ={beta:.3f} γ={gamma:.3f} σ={sigma:.3f} ξ={xi:.6f}")
+        plt.plot(days, values, label="fraction infected")
+        plt.title(f"Outside Contagion {i}")
         plt.xlabel("Day")
         plt.ylabel("Fraction Infected")
         plt.grid(True)
         plt.legend()
         plt.tight_layout()
-        fname = f"{output_dir}/outside_contagion_{i}.png"
-        # plt.savefig(fname)
+        #plt.savefig(f"{output_dir}/outside_contagion_{i}.png")
         plt.close()
 
-# Esempio d'uso:
+# Uso:
 generate_files("resources/f4f/Hospital_NoCountermeasures/model.json")
