@@ -37,6 +37,7 @@ def generate_files(input_path, output_dir="NODE", n_files=500):
     for i in range(1, n_files + 1):
         new_curve = generate_random_peak_curve()
         base_data["outside_contagion"] = new_curve
+        base_data["starting"][0]["nrun"] = "25"
         dir_path = f"{output_dir}/outside_contagion_{i}"
         os.makedirs(dir_path, exist_ok=True)
         output_path = f"{dir_path}/model.json"
