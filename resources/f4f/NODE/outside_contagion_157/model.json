@@ -90998,7 +90998,7 @@
       "day": "Monday",
       "time": "06:00",
       "step": "60",
-      "nrun": "25",
+      "nrun": "10",
       "prun": "10"
     }
   ],
@@ -109333,423 +109333,423 @@
   "outside_contagion": [
     {
       "day": 1,
-      "percentage_infected": "0.000000000274"
+      "percentage_infected": "0.000000812857"
     },
     {
       "day": 2,
-      "percentage_infected": "0.000000000481"
+      "percentage_infected": "0.000001355501"
     },
     {
       "day": 3,
-      "percentage_infected": "0.000000000834"
+      "percentage_infected": "0.000002231112"
     },
     {
       "day": 4,
-      "percentage_infected": "0.000000001431"
+      "percentage_infected": "0.000003624761"
     },
     {
       "day": 5,
-      "percentage_infected": "0.000000002430"
+      "percentage_infected": "0.000005812658"
     },
     {
       "day": 6,
-      "percentage_infected": "0.000000004082"
+      "percentage_infected": "0.000009200438"
     },
     {
       "day": 7,
-      "percentage_infected": "0.000000006784"
+      "percentage_infected": "0.000014374133"
     },
     {
       "day": 8,
-      "percentage_infected": "0.000000011153"
+      "percentage_infected": "0.000022166417"
     },
     {
       "day": 9,
-      "percentage_infected": "0.000000018141"
+      "percentage_infected": "0.000033740496"
     },
     {
       "day": 10,
-      "percentage_infected": "0.000000029193"
+      "percentage_infected": "0.000050693376"
     },
     {
       "day": 11,
-      "percentage_infected": "0.000000046476"
+      "percentage_infected": "0.000075179020"
     },
     {
       "day": 12,
-      "percentage_infected": "0.000000073201"
+      "percentage_infected": "0.000110049992"
     },
     {
       "day": 13,
-      "percentage_infected": "0.000000114064"
+      "percentage_infected": "0.000159013438"
     },
     {
       "day": 14,
-      "percentage_infected": "0.000000175842"
+      "percentage_infected": "0.000226793732"
     },
     {
       "day": 15,
-      "percentage_infected": "0.000000268185"
+      "percentage_infected": "0.000319289818"
     },
     {
       "day": 16,
-      "percentage_infected": "0.000000404657"
+      "percentage_infected": "0.000443710619"
     },
     {
       "day": 17,
-      "percentage_infected": "0.000000604059"
+      "percentage_infected": "0.000608667124"
     },
     {
       "day": 18,
-      "percentage_infected": "0.000000892097"
+      "percentage_infected": "0.000824195777"
     },
     {
       "day": 19,
-      "percentage_infected": "0.000001303422"
+      "percentage_infected": "0.001101685194"
     },
     {
       "day": 20,
-      "percentage_infected": "0.000001884073"
+      "percentage_infected": "0.001453678104"
     },
     {
       "day": 21,
-      "percentage_infected": "0.000002694329"
+      "percentage_infected": "0.001893523578"
     },
     {
       "day": 22,
-      "percentage_infected": "0.000003811919"
+      "percentage_infected": "0.002434861813"
     },
     {
       "day": 23,
-      "percentage_infected": "0.000005335520"
+      "percentage_infected": "0.003090935425"
     },
     {
       "day": 24,
-      "percentage_infected": "0.000007388391"
+      "percentage_infected": "0.003873737135"
     },
     {
       "day": 25,
-      "percentage_infected": "0.000010121924"
+      "percentage_infected": "0.004793023188"
     },
     {
       "day": 26,
-      "percentage_infected": "0.000013718807"
+      "percentage_infected": "0.005855243101"
     },
     {
       "day": 27,
-      "percentage_infected": "0.000018395419"
+      "percentage_infected": "0.007062457260"
     },
     {
       "day": 28,
-      "percentage_infected": "0.000024402992"
+      "percentage_infected": "0.008411331500"
     },
     {
       "day": 29,
-      "percentage_infected": "0.000032027022"
+      "percentage_infected": "0.009892309130"
     },
     {
       "day": 30,
-      "percentage_infected": "0.000041584368"
+      "percentage_infected": "0.011489063088"
     },
     {
       "day": 31,
-      "percentage_infected": "0.000053417521"
+      "percentage_infected": "0.013178321807"
     },
     {
       "day": 32,
-      "percentage_infected": "0.000067885561"
+      "percentage_infected": "0.014930141167"
     },
     {
       "day": 33,
-      "percentage_infected": "0.000085351501"
+      "percentage_infected": "0.016708662020"
     },
     {
       "day": 34,
-      "percentage_infected": "0.000106165886"
+      "percentage_infected": "0.018473350841"
     },
     {
       "day": 35,
-      "percentage_infected": "0.000130646831"
+      "percentage_infected": "0.020180673855"
     },
     {
       "day": 36,
-      "percentage_infected": "0.000159057020"
+      "percentage_infected": "0.021786108043"
     },
     {
       "day": 37,
-      "percentage_infected": "0.000191578545"
+      "percentage_infected": "0.023246351510"
     },
     {
       "day": 38,
-      "percentage_infected": "0.000228286889"
+      "percentage_infected": "0.024521566614"
     },
     {
       "day": 39,
-      "percentage_infected": "0.000269125679"
+      "percentage_infected": "0.025577476586"
     },
     {
       "day": 40,
-      "percentage_infected": "0.000313884143"
+      "percentage_infected": "0.026387142760"
     },
     {
       "day": 41,
-      "percentage_infected": "0.000362179348"
+      "percentage_infected": "0.026932275285"
     },
     {
       "day": 42,
-      "percentage_infected": "0.000413445298"
+      "percentage_infected": "0.027203972799"
     },
     {
       "day": 43,
-      "percentage_infected": "0.000466930779"
+      "percentage_infected": "0.027202841158"
     },
     {
       "day": 44,
-      "percentage_infected": "0.000521707423"
+      "percentage_infected": "0.026938501329"
     },
     {
       "day": 45,
-      "percentage_infected": "0.000576688908"
+      "percentage_infected": "0.026428554516"
     },
     {
       "day": 46,
-      "percentage_infected": "0.000630661400"
+      "percentage_infected": "0.025697121270"
     },
     {
       "day": 47,
-      "percentage_infected": "0.000682324509"
+      "percentage_infected": "0.024773105016"
     },
     {
       "day": 48,
-      "percentage_infected": "0.000730341133"
+      "percentage_infected": "0.023688345493"
     },
     {
       "day": 49,
-      "percentage_infected": "0.000773393682"
+      "percentage_infected": "0.022475823145"
     },
     {
       "day": 50,
-      "percentage_infected": "0.000810243486"
+      "percentage_infected": "0.021168053396"
     },
     {
       "day": 51,
-      "percentage_infected": "0.000839789703"
+      "percentage_infected": "0.019795774123"
     },
     {
       "day": 52,
-      "percentage_infected": "0.000861123837"
+      "percentage_infected": "0.018386986255"
     },
     {
       "day": 53,
-      "percentage_infected": "0.000873576105"
+      "percentage_infected": "0.016966362545"
     },
     {
       "day": 54,
-      "percentage_infected": "0.000876750356"
+      "percentage_infected": "0.015554999169"
     },
     {
       "day": 55,
-      "percentage_infected": "0.000870544997"
+      "percentage_infected": "0.014170453480"
     },
     {
       "day": 56,
-      "percentage_infected": "0.000855158401"
+      "percentage_infected": "0.012826991866"
     },
     {
       "day": 57,
-      "percentage_infected": "0.000831078368"
+      "percentage_infected": "0.011535965051"
     },
     {
       "day": 58,
-      "percentage_infected": "0.000799056445"
+      "percentage_infected": "0.010306233118"
     },
     {
       "day": 59,
-      "percentage_infected": "0.000760068980"
+      "percentage_infected": "0.009144576512"
     },
     {
       "day": 60,
-      "percentage_infected": "0.000715267722"
+      "percentage_infected": "0.008056048697"
     },
     {
       "day": 61,
-      "percentage_infected": "0.000665923459"
+      "percentage_infected": "0.007044247343"
     },
     {
       "day": 62,
-      "percentage_infected": "0.000613366527"
+      "percentage_infected": "0.006111500480"
     },
     {
       "day": 63,
-      "percentage_infected": "0.000558928040"
+      "percentage_infected": "0.005258979571"
     },
     {
       "day": 64,
-      "percentage_infected": "0.000503885420"
+      "percentage_infected": "0.004486761378"
     },
     {
       "day": 65,
-      "percentage_infected": "0.000449415199"
+      "percentage_infected": "0.003793864580"
     },
     {
       "day": 66,
-      "percentage_infected": "0.000396555328"
+      "percentage_infected": "0.003178285926"
     },
     {
       "day": 67,
-      "percentage_infected": "0.000346178340"
+      "percentage_infected": "0.002637055619"
     },
     {
       "day": 68,
-      "percentage_infected": "0.000298975818"
+      "percentage_infected": "0.002166324141"
     },
     {
       "day": 69,
-      "percentage_infected": "0.000255453762"
+      "percentage_infected": "0.001761484697"
     },
     {
       "day": 70,
-      "percentage_infected": "0.000215937770"
+      "percentage_infected": "0.001417328029"
     },
     {
       "day": 71,
-      "percentage_infected": "0.000180586379"
+      "percentage_infected": "0.001128220745"
     },
     {
       "day": 72,
-      "percentage_infected": "0.000149410610"
+      "percentage_infected": "0.000888294920"
     },
     {
       "day": 73,
-      "percentage_infected": "0.000122297606"
+      "percentage_infected": "0.000691635626"
     },
     {
       "day": 74,
-      "percentage_infected": "0.000099036331"
+      "percentage_infected": "0.000532453994"
     },
     {
       "day": 75,
-      "percentage_infected": "0.000079343471"
+      "percentage_infected": "0.000405235835"
     },
     {
       "day": 76,
-      "percentage_infected": "0.000062888020"
+      "percentage_infected": "0.000304859146"
     },
     {
       "day": 77,
-      "percentage_infected": "0.000049313373"
+      "percentage_infected": "0.000226677376"
     },
     {
       "day": 78,
-      "percentage_infected": "0.000038256177"
+      "percentage_infected": "0.000166568593"
     },
     {
       "day": 79,
-      "percentage_infected": "0.000029361518"
+      "percentage_infected": "0.000120953441"
     },
     {
       "day": 80,
-      "percentage_infected": "0.000022294385"
+      "percentage_infected": "0.000086786612"
     },
     {
       "day": 81,
-      "percentage_infected": "0.000016747600"
+      "percentage_infected": "0.000061527640"
     },
     {
       "day": 82,
-      "percentage_infected": "0.000012446571"
+      "percentage_infected": "0.000043097120"
     },
     {
       "day": 83,
-      "percentage_infected": "0.000009151387"
+      "percentage_infected": "0.000029824107"
     },
     {
       "day": 84,
-      "percentage_infected": "0.000006656780"
+      "percentage_infected": "0.000020389731"
     },
     {
       "day": 85,
-      "percentage_infected": "0.000004790508"
+      "percentage_infected": "0.000013771031"
     },
     {
       "day": 86,
-      "percentage_infected": "0.000003410664"
+      "percentage_infected": "0.000009187989"
     },
     {
       "day": 87,
-      "percentage_infected": "0.000002402351"
+      "percentage_infected": "0.000006055688"
     },
     {
       "day": 88,
-      "percentage_infected": "0.000001674071"
+      "percentage_infected": "0.000003942640"
     },
     {
       "day": 89,
-      "percentage_infected": "0.000001154122"
+      "percentage_infected": "0.000002535620"
     },
     {
       "day": 90,
-      "percentage_infected": "0.000000787171"
+      "percentage_infected": "0.000001610826"
     },
     {
       "day": 91,
-      "percentage_infected": "0.000000531162"
+      "percentage_infected": "0.000001010823"
     },
     {
       "day": 92,
-      "percentage_infected": "0.000000354589"
+      "percentage_infected": "0.000000626556"
     },
     {
       "day": 93,
-      "percentage_infected": "0.000000234187"
+      "percentage_infected": "0.000000383617"
     },
     {
       "day": 94,
-      "percentage_infected": "0.000000153017"
+      "percentage_infected": "0.000000232000"
     },
     {
       "day": 95,
-      "percentage_infected": "0.000000098914"
+      "percentage_infected": "0.000000138588"
     },
     {
       "day": 96,
-      "percentage_infected": "0.000000063258"
+      "percentage_infected": "0.000000081773"
     },
     {
       "day": 97,
-      "percentage_infected": "0.000000040024"
+      "percentage_infected": "0.000000047659"
     },
     {
       "day": 98,
-      "percentage_infected": "0.000000025053"
+      "percentage_infected": "0.000000027436"
     },
     {
       "day": 99,
-      "percentage_infected": "0.000000015514"
+      "percentage_infected": "0.000000015600"
     },
     {
       "day": 100,
-      "percentage_infected": "0.000000009505"
+      "percentage_infected": "0.000000008762"
     },
     {
       "day": 101,
-      "percentage_infected": "0.000000005761"
+      "percentage_infected": "0.000000004861"
     },
     {
       "day": 102,
-      "percentage_infected": "0.000000003455"
+      "percentage_infected": "0.000000002663"
     },
     {
       "day": 103,
-      "percentage_infected": "0.000000002049"
+      "percentage_infected": "0.000000001441"
     },
     {
       "day": 104,
-      "percentage_infected": "0.000000001203"
+      "percentage_infected": "0.000000000771"
     },
     {
       "day": 105,
-      "percentage_infected": "0.000000000698"
+      "percentage_infected": "0.000000000407"
     }
   ],
   "virus_variant": [
