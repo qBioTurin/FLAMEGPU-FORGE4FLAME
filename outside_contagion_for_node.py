@@ -38,7 +38,7 @@ def generate_random_peak_curve(days=105):
     data = [{"day": int(day), "percentage_infected": f"{val:.12f}"} for day, val in zip(x, curve)]
     return data, curve_params
 
-def generate_files(input_path, output_dir="NODE", n_files=200, params_csv="contagion_params.csv"):
+def generate_files(input_path, output_dir="NODE", n_files=400, params_csv="contagion_params.csv"):
     os.makedirs(output_dir, exist_ok=True)
     with open(input_path, "r") as f:
         base_data = json.load(f)
