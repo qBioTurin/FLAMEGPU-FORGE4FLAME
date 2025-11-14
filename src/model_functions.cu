@@ -139,9 +139,8 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, V>(NODE_LENGTH, {0.0f});
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
     
-    env.newProperty<float, 4>(EXTERN_RANGES, {0.0f}); // Eventually modify to handle different entrances
-
-    env.newProperty<unsigned short>(EXTERN_NODE, 0); // Eventually modify to handle different entrances
+    env.newProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, {0.0f});
+    env.newProperty<unsigned short, NUM_SPAWNROOM>(ENTRANCE_Y_COORDS, {0});
     env.newProperty<short>(NEXT_CONTACTS_ID, 0);
     env.newProperty<unsigned short>(DAY, 1);
     env.newProperty<unsigned short>(WEEK_DAY, 0);
@@ -173,6 +172,8 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
     env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
+
+    env.newMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
 
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
