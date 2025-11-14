@@ -73,7 +73,7 @@ namespace host_functions {
             filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
             ofstream counters_file(filename.c_str(), ofstream::out);
             counters_file << "Day,COUNTERS_CREATED_AGENTS_WITH_RATE,COUNTERS_KILLED_AGENTS_WITH_RATE,AGENTS_IN_QUARANTINE,SWABS,NUM_INFECTED_OUTSIDE" << endl;
-            counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY)-1 << ",0,0,0" << endl;
+            counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY)-1 << ",0,0,0,0,0" << endl;
             counters_file.close();
         }
         else{
