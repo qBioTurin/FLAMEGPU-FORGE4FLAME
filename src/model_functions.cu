@@ -345,7 +345,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned short>(FATALITY_DAYS);
     pedestrian.newVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS);
     pedestrian.newVariable<unsigned char>(INIT);
-    pedestrian.newVariable<unsigned int>(INFECTED_CONTACTS_STEPS);
+    pedestrian.newVariable<unsigned char>(INFECTED_CONTACT);
     pedestrian.newVariable<short>(ANIMATE_DIR, 1);
     pedestrian.newVariable<short>(CONTACTS_ID, -1);
     pedestrian.newVariable<int>(DISEASE_STATE);

@@ -46,17 +46,17 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 #ifndef CHECKPOINT
     flamegpu::AGENT_STATUS state = ALIVE;
 
-    if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME + 1) % STEPS_IN_A_DAY)){
-        // Contagion processes (contacts and aerosol)
-        state = contagion_processes(FLAMEGPU);
+    // Contagion processes (contacts and aerosol)
+    state = contagion_processes(FLAMEGPU);
 
-        if(state == DEAD){
+    if(state == DEAD){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
-            return state;
-        }
+        return state;
+    }
 
+    if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME + 1) % STEPS_IN_A_DAY)){
         // Outside contagion
         outside_contagion(FLAMEGPU);
 
@@ -1127,8 +1127,8 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
 
             // Count contacts among a susceptible agent and an infected one.
             if(FLAMEGPU->getVariable<int>(DISEASE_STATE) == SUSCEPTIBLE && message.getVariable<int>(DISEASE_STATE) == INFECTED){
-                unsigned int infected_contacts_steps = FLAMEGPU->getVariable<unsigned int>(INFECTED_CONTACTS_STEPS);
-                FLAMEGPU->setVariable<unsigned int>(INFECTED_CONTACTS_STEPS, infected_contacts_steps + 1);
+                unsigned char infected_contact = FLAMEGPU->getVariable<unsigned char>(INFECTED_CONTACT);
+                FLAMEGPU->setVariable<unsigned char>(INFECTED_CONTACT, infected_contact + 1);
 
                 printf("1,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), agent_type, message.getVariable<short>(AGENT_TYPE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
             }

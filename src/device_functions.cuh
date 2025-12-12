@@ -1006,6 +1006,7 @@ namespace device_functions {
         unsigned short infection_days = FLAMEGPU->getVariable<unsigned short>(INFECTION_DAYS);
         unsigned short fatality_days = FLAMEGPU->getVariable<unsigned short>(FATALITY_DAYS);;
         unsigned short end_of_immunization_days = FLAMEGPU->getVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS);
+        unsigned char infected_contact = FLAMEGPU->getVariable<unsigned char>(INFECTED_CONTACT);
 
         if(disease_state == SUSCEPTIBLE){
             // Contagion through contact
@@ -1019,21 +1020,21 @@ namespace device_functions {
 
             contamination_risk = (mask_type != NO_MASK) ? contamination_risk * (1 - contamination_risk_decreased_with_mask): contamination_risk;
 
-            const float infected_contacts_minutes = ((float) (FLAMEGPU->getVariable<unsigned int>(INFECTED_CONTACTS_STEPS) / (60 / STEP))) * virus_variant_factor;
-
-            const float p_contact = contamination_risk * (infected_contacts_minutes / area_around_agent);
-
-            const float random_contact = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
+            // 0.01 because for now we are not cconsidering symptomatic infected agents (otherwise
+            // it would be 1/2^t where t is the time since the beginning of the symptoms)
+            const float p_contact = infected_contact > 0 ? ((contamination_risk * 0.01) / area_around_agent): 0.0f;
 
             // Contagion through aerosol
             const float risk_const = FLAMEGPU->environment.getProperty<float, RISK_CLASSES>(RISK_CONST, risk_class);
             const float quanta_inhaled = FLAMEGPU->getVariable<float>(QUANTA_INHALED);
             const float p_aerosol = 1 - exp(-(quanta_inhaled / risk_const));
 
-            const float random_aerosol = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
+            const float p = p_contact + p_aerosol - (p_contact * p_aerosol);
+
+            const float random = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
 
             // See if the agent get the virus
-            if(random_contact < p_contact || random_aerosol < p_aerosol){
+            if(random < p){
                 auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
                 num_seird[SUSCEPTIBLE]--;
 
@@ -1056,7 +1057,7 @@ namespace device_functions {
         }
 
         FLAMEGPU->setVariable<float>(QUANTA_INHALED, 0.0f);
-        FLAMEGPU->setVariable<unsigned int>(INFECTED_CONTACTS_STEPS, 0);
+        FLAMEGPU->setVariable<unsigned char>(INFECTED_CONTACT, 0);
         
         FLAMEGPU->setVariable<int>(DISEASE_STATE, disease_state);
         FLAMEGPU->setVariable<unsigned short>(INCUBATION_DAYS, incubation_days);
