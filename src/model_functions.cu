@@ -140,23 +140,23 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
     
     env.newProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, {0.0f});
-    env.newProperty<unsigned short, NUM_SPAWNROOM>(ENTRANCE_Y_COORDS, {0});
+    env.newProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, {0});
     env.newProperty<short>(NEXT_CONTACTS_ID, 0);
     env.newProperty<unsigned short>(DAY, 1);
     env.newProperty<unsigned short>(WEEK_DAY, 0);
     env.newProperty<float, RISK_CLASSES + 1>(PROPORTIONS, {0.0f});
-    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_INCUBATION_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INCUBATION_DAYS, {0});
-    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_INFECTION_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, {0});
-    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_END_OF_IMMUNIZATION_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_END_OF_IMMUNIZATION_DAYS, {0});
-    env.newProperty<unsigned short, RISK_CLASSES>(MEAN_FATALITY_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2>(MEAN_FATALITY_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INCUBATION_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_INCUBATION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_INFECTION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_END_OF_IMMUNIZATION_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_END_OF_IMMUNIZATION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_FATALITY_DAYS, {0});
 
     env.newProperty<float, 3>(EXHALATION_MASK_EFFICACY, {0.0f});
     env.newProperty<float, 3>(INHALATION_MASK_EFFICACY, {0.0f});
-    env.newProperty<float, RISK_CLASSES>(CONTAMINATION_RISK, {0.0f});
+    env.newProperty<float, RISK_CLASSES + 1>(CONTAMINATION_RISK, {0.0f});
     env.newProperty<float>(CONTAMINATION_RISK_DECREASED_WITH_MASK, 0.0f);
     env.newProperty<float>(NGEN_BASE, 0.0f);
     env.newProperty<float>(VL, 0.0f);
@@ -165,11 +165,11 @@ void define_environment(ModelDescription& model){
     env.newProperty<float>(GRAVITATIONAL_SETTLING_RATE, 0.0f);
     env.newProperty<float>(STERILISATION, 0.0f);
     env.newProperty<float>(INHALATION_RATE_PURE, 0.0f);
-    env.newProperty<float, RISK_CLASSES>(RISK_CONST, {0.0f});
+    env.newProperty<float, RISK_CLASSES + 1>(RISK_CONST, {0.0f});
 
     env.newProperty<float, DAYS>(PERC_INF, {0.0f});
 
-    env.newProperty<float, RISK_CLASSES>(VIRUS_SEVERITY, {0.0f});
+    env.newProperty<float, RISK_CLASSES + 1>(VIRUS_SEVERITY, {0.0f});
 
     env.newProperty<unsigned short>(RUN_IDX, 0);
     
