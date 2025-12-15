@@ -384,6 +384,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		compartmental_model = np.zeros(disease_states, dtype=int)
 
 		proportions = np.full(len(disease) + 1, 1.0, dtype=float)
+		virus_severity = np.zeros(len(disease), dtype=float)
 		contamination_risk = np.zeros(len(disease), dtype=float)
 		risk_const = np.zeros(len(disease), dtype=float)
 		mean_infection_days_time = np.zeros(len(disease) * 2, dtype=int)
@@ -397,6 +398,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		for disease_idx, disease_dict in enumerate(disease):
 			proportions[disease_idx + 1] = proportions[disease_idx] - float(disease_dict["proportion"][0])
+			virus_severity[disease_idx] = float(disease_dict["virus_severity"][0])
 			contamination_risk[disease_idx] = 1 - (1 - float(disease_dict["beta_contact"][0])) ** (1 / (60 / step))
 			risk_const[disease_idx] = float(disease_dict["beta_aerosol"][0])
 
@@ -1404,8 +1406,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		exhalation_efficacy_no_surgical_ffp2_masks = [0, 0.59, 0.9]
 		inhalation_efficacy_no_surgical_ffp2_masks = [0, 0.59, 0.9]
 		inhalation_rate_pure = 0.521
-
-		virus_severity = float(WHOLEmodel["virus_severity"][0])
 		
 		nrun = int(WHOLEmodel["starting"][0]["nrun"])
 		if ensemble == "ON":
@@ -1457,7 +1457,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 				configuration_file.write("\t\t\t\t\"INHALATION_RATE_PURE\": " + str(inhalation_rate_pure) + ",\n")
 				configuration_file.write("\t\t\t\t\"RISK_CONST\": [" + ','.join(map(str, risk_const)) + "],\n")
 				configuration_file.write("\t\t\t\t\"PERC_INF\": [" + ','.join(map(str, perc_inf_df.loc[:, "percentage_infected"])) + "],\n")
-				configuration_file.write("\t\t\t\t\"VIRUS_SEVERITY\": " + str(virus_severity) + ",\n")
+				configuration_file.write("\t\t\t\t\"VIRUS_SEVERITY\": [" + ','.join(map(str, virus_severity)) + "],\n")
 				configuration_file.write("\t\t\t\t\"RUN_IDX\": " + str(run) + "\n")
 				configuration_file.write("\t\t\t}\n")
 				configuration_file.write("\t\t}" + ("\n" if run == nrun - 1 else ",\n"))
@@ -1515,7 +1515,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			configuration_file.write("\t\t<INHALATION_RATE_PURE>" + str(inhalation_rate_pure) + "</INHALATION_RATE_PURE>\n")
 			configuration_file.write("\t\t<RISK_CONST>" + ','.join(map(str, risk_const)) + "</RISK_CONST>\n")
 			configuration_file.write("\t\t<PERC_INF>" + ','.join(map(str, perc_inf_df.loc[:, "percentage_infected"])) + "</PERC_INF>\n")
-			configuration_file.write("\t\t<VIRUS_SEVERITY>" + str(virus_severity) + "</VIRUS_SEVERITY>\n")
+			configuration_file.write("\t\t<VIRUS_SEVERITY>" + ','.join(map(str, virus_severity)) + "</VIRUS_SEVERITY>\n")
 			configuration_file.write("\t\t<RUN_IDX>0</RUN_IDX>\n")
 			configuration_file.write("\t</environment>\n")
 

@@ -169,7 +169,7 @@ void define_environment(ModelDescription& model){
 
     env.newProperty<float, DAYS>(PERC_INF, {0.0f});
 
-    env.newProperty<float>(VIRUS_SEVERITY, 0.0f);
+    env.newProperty<float, RISK_CLASSES>(VIRUS_SEVERITY, {0.0f});
 
     env.newProperty<unsigned short>(RUN_IDX, 0);
     

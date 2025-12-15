@@ -773,7 +773,9 @@ namespace device_functions {
             if(random_sensitivity < sensitivity_swab){
                 // True positive
                 if(!already_in_quarantine){
-                    const float severity_covid = FLAMEGPU->environment.getProperty<float>(VIRUS_SEVERITY);
+                    const unsigned short risk_class = FLAMEGPU->getVariable<unsigned short>(RISK_CLASS);
+                    const float severity_covid = FLAMEGPU->environment.getProperty<float, RISK_CLASSES>(VIRUS_SEVERITY, risk_class);
+
                     float random_severity = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
 
                     if(random_severity < severity_covid)
