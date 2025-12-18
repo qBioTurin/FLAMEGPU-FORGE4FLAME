@@ -40,28 +40,34 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         FLAMEGPU->setVariable<unsigned short>(CUDA_INITIALIZED, 1);
     }
 
+    auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+
     const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+
+    unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
+    int disease_state = FLAMEGPU->getVariable<int>(DISEASE_STATE);
 
     // Contagion processes
 #ifndef CHECKPOINT
     flamegpu::AGENT_STATUS state = ALIVE;
 
     // Contagion processes (contacts and aerosol)
-    state = contagion_processes(FLAMEGPU);
-
-    if(state == DEAD){
-#if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-#endif
-        return state;
-    }
+    contagion_processes(FLAMEGPU);
 
     if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME + 1) % STEPS_IN_A_DAY)){
         // Outside contagion
         outside_contagion(FLAMEGPU);
 
         // Update disease state
-        update_infection(FLAMEGPU);
+        state = update_infection(FLAMEGPU);
+
+        if(state == DEAD){           
+            //Set stay to 1 to correctly update the agent death
+            stay_matrix[contacts_id][target_index].exchange(1);
+
+            disease_state = DIED;
+            FLAMEGPU->setVariable<int>(DISEASE_STATE, disease_state);
+        }
 
         // External screening
         external_screening(FLAMEGPU);
@@ -89,7 +95,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         auto env_vaccination_end_of_immunization_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_FIRSTPARAM);
         auto env_vaccination_end_of_immunization_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM);
 
-        int disease_state = FLAMEGPU->getVariable<int>(DISEASE_STATE);
         float random = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
         float random_efficacy = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
 
@@ -157,7 +162,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
     auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-    auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
     const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
     const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
@@ -173,7 +177,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     short solution[SOLUTION_LENGTH] = {-1};
     unsigned short identified = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
-    unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
     unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
@@ -517,6 +520,16 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM) {
                 --global_resources_counter[start_node];
                 --specific_resources_counter[agent_type][start_node];
+            }
+
+            if(disease_state == DIED){     
+                if(agent_with_a_rate)
+                    counters[COUNTERS_KILLED_AGENTS_WITH_RATE]++;
+
+#if defined(DEBUG) && !defined(ENSEMBLE)
+              printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+#endif
+                return DEAD;
             }
             
             bool available = false;
@@ -955,7 +968,9 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     auto rooms_quanta_concentration = FLAMEGPU->environment.getMacroProperty<float, V>(ROOMS_QUANTA_CONCENTRATION);
     auto env_ventilation = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_VENTILATION);
-    
+    auto env_sterilisation = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_STERILISATION);
+    auto env_air = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_AIR);
+
     const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
     const int area = FLAMEGPU->getVariable<int>(AREA);
     const int type = FLAMEGPU->getVariable<int>(TYPE);
@@ -963,12 +978,13 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     const short node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, node);
     const float volume = FLAMEGPU->getVariable<float>(VOLUME);
     const float ventilation = (float) env_ventilation[day][area][type];
+    const float sterilisation = (float) env_sterilisation[day][area][type];
+    const float air = (float) env_air[day][area][type];
     const float vl = FLAMEGPU->environment.getProperty<float>(VL);
     const float ngen_base = FLAMEGPU->environment.getProperty<float>(NGEN_BASE);
     const float virus_variant_factor = FLAMEGPU->environment.getProperty<float>(VIRUS_VARIANT_FACTOR);
     const float gravitational_settling_rate = FLAMEGPU->environment.getProperty<float>(GRAVITATIONAL_SETTLING_RATE);
     const float decay_rate = FLAMEGPU->environment.getProperty<float>(DECAY_RATE);
-    const float sterilisation = FLAMEGPU->environment.getProperty<float>(STERILISATION);
 
     float total_n_r = 0.0f;
     for(const auto& message: FLAMEGPU->message_in(node)) {
@@ -982,7 +998,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
         }
     }
 
-    float total_first_order_lost_rate = ventilation + gravitational_settling_rate + decay_rate + sterilisation;
+    float total_first_order_lost_rate = gravitational_settling_rate + decay_rate + ventilation * (air + (1 - air) * sterilisation);
     float new_concentration = ((total_n_r / volume) / total_first_order_lost_rate) + (((float) rooms_quanta_concentration[node]) - ((total_n_r / volume) / total_first_order_lost_rate)) * exp(-(total_first_order_lost_rate * STEP));
 
     rooms_quanta_concentration[node].exchange(new_concentration);

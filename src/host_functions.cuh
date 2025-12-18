@@ -161,6 +161,8 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_EVENTS_DISTR_SECONDPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_MASK_TYPE, string("resources/macro_environment/") + ENV_MASK_TYPE + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_VENTILATION, string("resources/macro_environment/") + ENV_VENTILATION + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_STERILISATION, string("resources/macro_environment/") + ENV_STERILISATION + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_AIR, string("resources/macro_environment/") + ENV_AIR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_MASK_FRACTION, string("resources/macro_environment/") + ENV_MASK_FRACTION + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_FRACTION, string("resources/macro_environment/") + ENV_VACCINATION_FRACTION + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_VACCINATION_EFFICACY, string("resources/macro_environment/") + ENV_VACCINATION_EFFICACY + ".xml");
@@ -347,9 +349,9 @@ namespace host_functions {
             unsigned short fatality_days = 0;
             if(new_agent_state == SUSCEPTIBLE && find(selectedIndices.begin(), selectedIndices.end(), contacts_id) != selectedIndices.end()){
                 new_agent_state = INFECTED;
-                infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
+                infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
 #ifdef FATALITY
-                fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), false)));
+                fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), false)));
 #endif
             }
 

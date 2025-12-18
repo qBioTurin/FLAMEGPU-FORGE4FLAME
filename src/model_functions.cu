@@ -146,13 +146,13 @@ void define_environment(ModelDescription& model){
     env.newProperty<unsigned short>(WEEK_DAY, 0);
     env.newProperty<float, RISK_CLASSES + 1>(PROPORTIONS, {0.0f});
     env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INCUBATION_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_INCUBATION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INCUBATION_DAYS, {0});
     env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_INFECTION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, {0});
     env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_END_OF_IMMUNIZATION_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_END_OF_IMMUNIZATION_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_END_OF_IMMUNIZATION_DAYS, {0});
     env.newProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, {0});
-    env.newProperty<unsigned short, RISK_CLASSES * 2 + 2>(MEAN_FATALITY_DAYS, {0});
+    env.newProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, {0});
 
     env.newProperty<float, 3>(EXHALATION_MASK_EFFICACY, {0.0f});
     env.newProperty<float, 3>(INHALATION_MASK_EFFICACY, {0.0f});
@@ -163,7 +163,6 @@ void define_environment(ModelDescription& model){
     env.newProperty<float>(VIRUS_VARIANT_FACTOR, 0.0f);
     env.newProperty<float>(DECAY_RATE, 0.0f);
     env.newProperty<float>(GRAVITATIONAL_SETTLING_RATE, 0.0f);
-    env.newProperty<float>(STERILISATION, 0.0f);
     env.newProperty<float>(INHALATION_RATE_PURE, 0.0f);
     env.newProperty<float, RISK_CLASSES + 1>(RISK_CONST, {0.0f});
 
@@ -211,6 +210,8 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
 
     env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_VENTILATION);
+    env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_STERILISATION);
+    env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_AIR);
     env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
