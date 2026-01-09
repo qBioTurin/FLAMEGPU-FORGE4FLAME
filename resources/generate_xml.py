@@ -71,7 +71,7 @@ def obtain_rooms(WHOLEmodel):
 		r, g, b, _ = room["colorFill"].replace("rgba(", "").replace(")", "").replace(" ", "").split(",")
 
 		rooms_info[name] = {"ID": ID, "length": length, "width": width, "height": height, "RGB": (int(float(r)), int(float(g)), int(float(b)))}
-		
+	
 	return rooms_info
 
 def obtain_canvas_dimension(WHOLEmodel):
@@ -97,7 +97,7 @@ def obtain_areas(WHOLEmodel):
 
 	return areas_dict
 
-def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name, types_IDs):
+def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name, types_IDs, max_dimension, max_objects):
 	roomsINcanvas = WHOLEmodel["roomsINcanvas"]
 
 	color = WHOLEmodel["color"][0]
@@ -106,7 +106,6 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 	local_graph = graph.SpatialGraph()
 
 	roomsINcanvas =  [room for room in roomsINcanvas if room["CanvasID"] == floor_name]
-
 
 	num_spawnroom = 0
 	y = y_offset * floor
@@ -146,7 +145,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 				resources_room = resources[type + "-" + area]["roomResource"]
 				waiting_room_det = resources[type + "-" + area]["waitingRoomsDeter"]
 				waiting_room_rand = resources[type + "-" + area]["waitingRoomsRand"]
-		
+
 		for res in resources_room:
 			if res["room"] == room_name:
 				for key, value in res.items():
@@ -160,6 +159,44 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			waiting_room_det_dataframe = waiting_room_det_dataframe.set_index("Agent")
 		if len(waiting_room_rand_dataframe) != 0:
 			waiting_room_rand_dataframe = waiting_room_rand_dataframe.set_index("Agent")
+
+		door_x = int(np.ceil(int(math.ceil(length)) / 2) if math.ceil(length) % 2 == 0 else np.floor(int(math.ceil(length)) / 2))
+		door_z = int(math.ceil(width)) - 1
+
+		# Create room's matrix based on max_dimension (excluding Fillingroom)
+		room_matrix = np.zeros((max_dimension, max_dimension), dtype=int)
+		if type != "Fillingroom":
+			room_matrix[:int(math.ceil(width)), :int(math.ceil(length))] = 1
+			room_matrix[door_z][door_x] = 2
+
+			# Parse room's information about internal objects and obstacles
+			room_objects = WHOLEmodel["objectsINrooms"][room_name]
+
+			# Count non-obstacles
+			non_obstacle_count = sum(1 for obj in room_objects if not obj["obstacle"])
+			if non_obstacle_count > max_objects:
+				max_objects = non_obstacle_count
+
+			# Sort objects: false (non-obstacles) first, then true (obstacles), then by distance from door to corner
+			room_objects = sorted(room_objects, key=lambda obj: (obj["obstacle"], ((obj["x_nw"] - door_x)**2 + (obj["z_nw"] - door_z)**2)**0.5))
+			room_objects_names = np.unique([obj["name"] for obj in room_objects])
+			for i, name in enumerate(room_objects_names):
+				room_objects_filtered = [obj for obj in room_objects if obj["name"] == name]
+
+				for obj in room_objects_filtered:
+					obj_x_nw = int(obj["x_nw"])
+					obj_z_nw = int(obj["z_nw"])
+					obj_x_se = int(obj["x_se"])
+					obj_z_se = int(obj["z_se"])
+
+					obj_obstacle = obj["obstacle"]
+
+					for j in range(obj_z_nw, obj_z_se):
+						for k in range(obj_x_nw, obj_x_se):
+							if obj_obstacle:
+								room_matrix[j][k] = 0
+							else:
+								room_matrix[j][k] = i + 3
 
 		if door == "bottom":
 			yaw = 0
@@ -177,6 +214,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			z_position = z
 			dimension_x = width - 1
 			dimension_z = length - 1
+			if type != "Fillingroom":
+				room_matrix[:int(math.ceil(length)), :int(math.ceil(width))] = np.rot90(room_matrix[:int(math.ceil(width)), :int(math.ceil(length))], k=3)
 		elif door == "top":
 			yaw = math.pi
 			x_offset = np.floor(length) + 1
@@ -185,6 +224,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			z_position = z - (np.floor(width + 1) - width)
 			dimension_x = length - 1
 			dimension_z = width - 1
+			if type != "Fillingroom":
+				room_matrix[:int(math.ceil(width)), :int(math.ceil(length))] = np.rot90(room_matrix[:int(math.ceil(width)), :int(math.ceil(length))], k=2)
 		elif door == "right":
 			yaw = 3 * math.pi / 2
 			x_offset = 0
@@ -193,6 +234,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			z_position = z - (np.floor(length + 1) - length)
 			dimension_x = width - 1
 			dimension_z = length - 1
+			if type != "Fillingroom":
+				room_matrix[:int(math.ceil(length)), :int(math.ceil(width))] = np.rot90(room_matrix[:int(math.ceil(width)), :int(math.ceil(length))])
 		else:
 			yaw = 0
 			x_offset = 0
@@ -223,35 +266,43 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			num_spawnroom = num_spawnroom + 1
 			
 		if door != "none":
-			local_graph.add_vertex(x_door, y, z_door, x_door, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
-			local_graph.add_vertex(center_x, y, center_z, x, z, [int(x), int(z)], [math.ceil(x + dimension_x), math.ceil(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe)
-	
+			local_graph.add_vertex(x_door, y, z_door, x_door, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), np.zeros((max_dimension, max_dimension), dtype=int))
+			local_graph.add_vertex(center_x, y, center_z, x, z, [int(x), int(z)], [math.ceil(x + dimension_x), math.ceil(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe, room_matrix)
+
 	nodesINcanvas = WHOLEmodel["nodesINcanvas"]
 	nodesINcanvas = [node for node in nodesINcanvas if node["CanvasID"] == floor_name]
 	for node in nodesINcanvas:
 		x = node["x"]
 		z = node["y"]
 
-		local_graph.add_vertex(x, y, z, x, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CPOINT, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+		local_graph.add_vertex(x, y, z, x, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CPOINT, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), np.zeros((max_dimension, max_dimension), dtype=int))
 
 	local_graph.init_edges(np.array(WHOLEmodel["matricesCanvas"][floor_name]))
 
-	return local_graph, num_spawnroom
+	return local_graph, num_spawnroom, max_objects
 
 
 def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents, ensemble, checkpoint,
 				 env_dims, y_offset, dirname_experiment,
 				 WHOLEmodel, autogenerated_defines, autogenerated_variables_names, days, floors_IDs, types_IDs,
 				 steps_in_a_day, steps_in_a_hour, steps_in_a_minute, init_week_day, num_counters, step):
-	days_in_a_week = 7
-
 	with open(input_file, "w") as configuration_file:
 		graphs = []
+		days_in_a_week = 7
 		num_spawnroom = 0
+		max_objects = 0
+
+		# Get max length and width across all rooms, excluding Fillingroom
+		roomsINcanvas = WHOLEmodel["roomsINcanvas"]
+		non_filling_room_names = [r["Name"] for r in roomsINcanvas if r["type"] != "Fillingroom"]
+		max_room_length = int(np.ceil(max(rooms[name]["length"] for name in non_filling_room_names)))
+		max_room_width = int(np.ceil(max(rooms[name]["width"] for name in non_filling_room_names)))
+		max_dimension = max(max_room_length, max_room_width)
+
 		with open("rooms_file.xml", "w") as room_file:
 			room_file.write("<rooms>\n")
 			for key, value in floors_IDs.items():
-				local_graph, num_spawnroom_graph = read_model(room_file, rooms, areas, y_offset, value["order"], WHOLEmodel, key, types_IDs)
+				local_graph, num_spawnroom_graph, max_objects = read_model(room_file, rooms, areas, y_offset, value["order"], WHOLEmodel, key, types_IDs, max_dimension, max_objects)
 				num_spawnroom = num_spawnroom + num_spawnroom_graph
 				graphs.append(local_graph)
 			room_file.write("</rooms>\n")
@@ -282,8 +333,10 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_defines.write("#define SOLUTION_LENGTH " + str(sol_length) + "\n\n")
 
 		vlist = sorted(chain.from_iterable(final_graph.vertices.values()), key = lambda v: v.id)
+		rooms_max_objects = np.zeros((len(vlist), max_objects+1), dtype=int)
 		index2coord = np.full((3, len(vlist)), -1, dtype=int)
 		coord2index = np.full((num_floors, env_dims[2], env_dims[0]), -1, dtype=int)
+		rooms_matrices = np.zeros((len(vlist), max_dimension, max_dimension), dtype=int)
 		adjmatrix = np.zeros((len(vlist), len(vlist)), dtype=int)
 		node_type = np.full(len(vlist), -1, dtype=int)
 		node_yaw = np.zeros(len(vlist), dtype=float)
@@ -318,6 +371,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			for i in range(int(v.coords.northwest[0]), int(v.coords.southeast[0]+1)):
 				for j in range(int(v.coords.northwest[1]), int(v.coords.southeast[1]+1)):
 					coord2index[int(v.coords.y/y_offset)][j][i] = v.id
+
+			rooms_matrices[v.id, :, :] = v.room_matrix
 
 			node_type[v.id] = v.type.value
 			node_yaw[v.id] = v.yaw
@@ -878,6 +933,15 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 						file.write(str(coord2index[k][i][j]) + ("" if((i == env_dims[2] - 1) and (j == env_dims[0] - 1) and (k == num_floors - 1)) else ","))
 			file.write("</COORD2INDEX></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define COORD2INDEX \"COORD2INDEX\"\n")
+
+		with open(macro_environment_dir + "ROOM_MATRICES.xml", "w") as file:
+			file.write("<states><macro_environment><ROOM_MATRICES>")
+			for k in range(len(vlist)):
+				for i in range(max_dimension):
+					for j in range(max_dimension):
+						file.write(str(rooms_matrices[k][i][j]) + ("" if((i == max_dimension - 1) and (j == max_dimension - 1) and (k == len(vlist) - 1)) else ","))
+			file.write("</ROOM_MATRICES></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ROOM_MATRICES \"ROOM_MATRICES\"\n")
 
 		with open(macro_environment_dir + "ADJMATRIX.xml", "w") as file:
 			file.write("<states><macro_environment><ADJMATRIX>")
@@ -1596,6 +1660,9 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_defines.write("#define EXPERIMENT_NAME \"" + dirname_experiment + "\"\n\n")
 
 		autogenerated_defines.write("#define NRUN " + str(nrun) + "\n\n")
+
+		autogenerated_defines.write("#define MAX_OBJECTS " + str(max_objects) + "\n")
+		autogenerated_defines.write("#define MAX_DIMENSION " + str(max_dimension) + "\n\n")
 
 		autogenerated_defines.write("#define AGENT_WITHOUT_RATE 0\n")
 		autogenerated_defines.write("#define AGENT_WITH_RATE 1\n\n")

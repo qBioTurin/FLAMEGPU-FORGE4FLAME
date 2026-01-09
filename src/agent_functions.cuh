@@ -321,9 +321,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             short solution_start_event[SOLUTION_LENGTH] = {-1};
             short solution_event_target[SOLUTION_LENGTH] = {-1};
 
-            // waitingroom for now suspended; if in the future, see the code in take new destination to handle the sending in the
-            // nearest waiting room
-            //try getting inside the event room
+            // Try getting inside the event room (move the resources check when the agent reaches the door of the event room)
             if(event_node != -1){
                 get_specific_resource = ++specific_resources_counter[agent_type][event_node];
                 
@@ -594,6 +592,12 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         FLAMEGPU->setVariable<unsigned short>(NEXT_INDEX, next_index);
         stay = (unsigned int) stay_matrix[contacts_id][next_index];
 
+        if(next_index == target_index - 1 && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] != SPAWNROOM){
+            // The agent is on the door of the room (here we have to implement resorces and path finding)
+            // TO DO
+            break;
+        }
+            
         if(next_index != target_index && !stay){
             intermediate_target[0] = (float) intermediate_target_x[contacts_id][next_index];
             intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
