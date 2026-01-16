@@ -1054,6 +1054,7 @@ namespace device_functions {
                 fatality_days = (unsigned short) max(0.0f, round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FATALITY_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), false)));
 #endif
 #endif
+                printf("6,%d,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), SUSCEPTIBLE, disease_state);
             }
         }
 
@@ -1083,6 +1084,7 @@ namespace device_functions {
         const unsigned short risk_class = FLAMEGPU->getVariable<unsigned short>(RISK_CLASS);
 
         int disease_state = FLAMEGPU->getVariable<int>(DISEASE_STATE);
+        int disease_state_old = disease_state;
         unsigned short incubation_days = FLAMEGPU->getVariable<unsigned short>(INCUBATION_DAYS);
         unsigned short infection_days = FLAMEGPU->getVariable<unsigned short>(INFECTION_DAYS);
         unsigned short fatality_days = FLAMEGPU->getVariable<unsigned short>(FATALITY_DAYS);
@@ -1161,6 +1163,10 @@ namespace device_functions {
         FLAMEGPU->setVariable<unsigned short>(INFECTION_DAYS, infection_days);
         FLAMEGPU->setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
         FLAMEGPU->setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, end_of_immunization_days);
+
+        if(disease_state != disease_state_old)
+            printf("6,%d,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), disease_state_old, disease_state);
+
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending update_infected for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
