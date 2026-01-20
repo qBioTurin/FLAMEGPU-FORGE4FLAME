@@ -70,17 +70,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     // Contagion processes (contacts and aerosol)
     contagion_processes(FLAMEGPU);
 
-    if (FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) == 1) {
-        
-        outside_contagion(FLAMEGPU);
-
-        external_screening(FLAMEGPU);
-
-        FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 0); 
-    }
-
     if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME + 1) % STEPS_IN_A_DAY)){
-        // Outside contagion
 
         // Update disease state
         state = update_infection(FLAMEGPU);
