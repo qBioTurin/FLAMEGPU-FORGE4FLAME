@@ -285,7 +285,6 @@ namespace device_functions {
             //if the agent is already waiting for a node, go for it
             if(FLAMEGPU->getVariable<short>(NODE_WAITING_FOR) != -1){
                 final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
-               // printf("ma qui entra mai?? %d\n ", final_target);
             }
             else {
                 auto list_front = messages.begin();
@@ -298,7 +297,6 @@ namespace device_functions {
             if(severity == MINOR){
                 if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
                     
-                    //printf("e dovrebbe rientare qui subbito con nodo %d\n", final_target);
                      *available = true;
                     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
@@ -326,7 +324,6 @@ namespace device_functions {
                     final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
                     int src = specific_resources_counter[agent_type][final_target];
-                    //printf("e qui le risorse sono? %d\n", src);
                 
                 }
                 else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM){
@@ -1345,7 +1342,7 @@ namespace device_functions {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of outside_contagion for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
-        if(FLAMEGPU->getVariable<int>(DISEASE_STATE) == SUSCEPTIBLE && FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT)){
+        if(FLAMEGPU->getVariable<int>(DISEASE_STATE) == SUSCEPTIBLE && FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) && FLAMEGPU->getVariable<float>(Y) == INVISIBLE_AGENT_Y){
             const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
             const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY)-1;
             const float perc_inf = FLAMEGPU->environment.getProperty<float, DAYS>(PERC_INF, day);
@@ -1377,7 +1374,7 @@ namespace device_functions {
                 FLAMEGPU->setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
 #endif
 #endif
-            }
+            } 
         }
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending outside_contagion for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));

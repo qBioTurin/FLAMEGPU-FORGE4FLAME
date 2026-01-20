@@ -43,6 +43,22 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
     const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
+
+    // If the agent exits from the environment, I mark it for the outside contagion and the external screening
+    if(agent_pos[1] == INVISIBLE_AGENT_Y && !FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT))
+        FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 1);
+
+    if(agent_pos[1] != INVISIBLE_AGENT_Y && FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) != 0){
+         FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 0);
+    }
+
+    if(FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) == 1){
+
+        outside_contagion(FLAMEGPU);
+
+        FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 2);
+    }
 
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     int disease_state = FLAMEGPU->getVariable<int>(DISEASE_STATE);
@@ -54,9 +70,17 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     // Contagion processes (contacts and aerosol)
     contagion_processes(FLAMEGPU);
 
+    if (FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) == 1) {
+        
+        outside_contagion(FLAMEGPU);
+
+        external_screening(FLAMEGPU);
+
+        FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 0); 
+    }
+
     if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME + 1) % STEPS_IN_A_DAY)){
         // Outside contagion
-        outside_contagion(FLAMEGPU);
 
         // Update disease state
         state = update_infection(FLAMEGPU);
@@ -179,7 +203,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
     unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
-    float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
     float agent_pos_init[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
     float intermediate_target[3] = {(float) intermediate_target_x[contacts_id][next_index], (float) intermediate_target_y[contacts_id][next_index], (float) intermediate_target_z[contacts_id][next_index]};
     unsigned int get_global_resource, get_specific_resource;
@@ -190,10 +213,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     auto alternative_resources_area_rand = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
     auto alternative_resources_type_rand = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
 
-    // If the agent exits from the environment, I mark it for the outside contagion and the external screening
-    if(agent_pos[1] == INVISIBLE_AGENT_Y && !FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT))
-        FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 1);
-
+ 
     // Check if the support agent has reached the agent to support
     if(requested_support == -1 && on_the_way_to_support != -1 && currently_supported == -1){
         // Send a message to it after reaching it
@@ -1145,7 +1165,6 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
             if(FLAMEGPU->getVariable<int>(DISEASE_STATE) == SUSCEPTIBLE && message.getVariable<int>(DISEASE_STATE) == INFECTED){
                 unsigned char infected_contact = FLAMEGPU->getVariable<unsigned char>(INFECTED_CONTACT);
                 FLAMEGPU->setVariable<unsigned char>(INFECTED_CONTACT, infected_contact + 1);
-
                 printf("1,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), agent_type, message.getVariable<short>(AGENT_TYPE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
             }
         }

@@ -655,7 +655,6 @@ namespace host_functions {
 
                     for(int j = 0; j < random_agent; j++){
                         int new_agent_state = SUSCEPTIBLE;
-                        
                         HostAgentAPI pedestrian = FLAMEGPU->agent("pedestrian");
 
                         unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][0], false))]);
@@ -695,6 +694,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
                         new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, week_day);
                         new_pedestrian.setVariable<unsigned short>(RISK_CLASS, risk_class);
+                        new_pedestrian.setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 1);
 
                         int swab_steps = -1;
                         if((int) env_swab_distr[day-1][i] != NO_SWAB)
