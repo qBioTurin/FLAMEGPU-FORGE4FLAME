@@ -390,6 +390,8 @@ namespace host_functions {
             num_seird[new_agent_state]++;
 
             FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+
+            printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, new_agent_state);
         }
 
         short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID) + 1;
@@ -460,7 +462,7 @@ namespace host_functions {
                         contacts_id = contacts_id + 1;
                         num_seird[new_agent_state]++;
 
-                        printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
+                        printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
                     }
                 }
 
@@ -715,7 +717,7 @@ namespace host_functions {
                         contacts_id = contacts_id + 1;
                         num_seird[new_agent_state]++;
 
-                        printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
+                        printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
                     }
 
                     slot++;
