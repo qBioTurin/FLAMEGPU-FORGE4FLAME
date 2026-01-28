@@ -548,6 +548,8 @@ namespace host_functions {
            
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
+            string filename;
+
             filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
             ofstream counters_file(filename.c_str(), ofstream::app);
             counters_file << day-1 << ",";
