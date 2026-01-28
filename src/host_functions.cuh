@@ -96,8 +96,6 @@ namespace host_functions {
         string filename;
 
         if(day == 1){
-            auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
-
             filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
             ofstream counters_file(filename.c_str(), ofstream::out);
             counters_file << "Day,COUNTERS_CREATED_AGENTS_WITH_RATE,COUNTERS_KILLED_AGENTS_WITH_RATE,AGENTS_IN_QUARANTINE,SWABS,NUM_INFECTED_OUTSIDE" << endl;
@@ -239,7 +237,6 @@ namespace host_functions {
         auto env_swab_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
         auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
         auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
-        auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
         auto initial_infected = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(INITIAL_INFECTED);
         auto number_of_agents_by_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(NUMBER_OF_AGENTS_BY_TYPE);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
@@ -387,11 +384,9 @@ namespace host_functions {
             new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
             new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
-            num_seird[new_agent_state]++;
-
             FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
 
-            printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, new_agent_state);
+            // printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, new_agent_state);
         }
 
         short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID) + 1;
@@ -460,9 +455,8 @@ namespace host_functions {
                         new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
                         contacts_id = contacts_id + 1;
-                        num_seird[new_agent_state]++;
 
-                        printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
+                        // printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
                     }
                 }
 
@@ -519,25 +513,6 @@ namespace host_functions {
             new_room.setVariable<unsigned short>(Z_CENTER, z_center);
         }
 
-        string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";
-        ofstream evolution_file(filename.c_str(), ofstream::out);
-        evolution_file << "Day,Susceptible,Exposed,Infected,Recovered,Died" << endl;
-
-        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
-
-        evolution_file << day-1 << ",";
-        for(int i = 0; i < DISEASE_STATES; i++){
-            if(i == (DISEASE_STATES - 1)){
-                evolution_file << num_seird[i];
-            }
-            else{
-                evolution_file << num_seird[i] << ",";
-            }
-        }
-
-        evolution_file << endl;
-        evolution_file.close();
-
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
@@ -571,23 +546,7 @@ namespace host_functions {
             FLAMEGPU->environment.setProperty<unsigned short>(WEEK_DAY, week_day);
             printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
            
-            auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
-
-            string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";
-            ofstream evolution_file(filename.c_str(), ofstream::app);
-            evolution_file << day-1 << ",";
-            for(int i = 0; i < DISEASE_STATES; i++){
-                if(i == (DISEASE_STATES - 1)){
-                    evolution_file << num_seird[i];
-                }
-                else{
-                    evolution_file << num_seird[i] << ",";
-                }
-            }
-
-            evolution_file << endl;
-            evolution_file.close();
 
             filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
             ofstream counters_file(filename.c_str(), ofstream::app);
@@ -628,7 +587,6 @@ namespace host_functions {
             auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
             auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
             auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
-            auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
             auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
             auto env_flow_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
             auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
@@ -715,9 +673,8 @@ namespace host_functions {
                         new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
                         contacts_id = contacts_id + 1;
-                        num_seird[new_agent_state]++;
 
-                        printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
+                        // printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
                     }
 
                     slot++;
@@ -759,24 +716,9 @@ namespace host_functions {
         printf("5,%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         // Log the environment macro properties
-        auto num_seird = FLAMEGPU->environment.getMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
         string filename;
-
-        filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/evolution.csv";
-        ofstream evolution_file(filename.c_str(), ofstream::app);
-        evolution_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << ",";
-        for(int i = 0; i < DISEASE_STATES; i++){
-            if(i == (DISEASE_STATES - 1)){
-                evolution_file << num_seird[i];
-            }
-            else{
-                evolution_file << num_seird[i] << ",";
-            }
-        }
-        evolution_file << endl;
-        evolution_file.close();
 
         filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
         ofstream counters_file(filename.c_str(), ofstream::app);
