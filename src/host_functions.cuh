@@ -385,8 +385,6 @@ namespace host_functions {
             new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
             FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
-
-            // printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, new_agent_state);
         }
 
         short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID) + 1;
@@ -455,8 +453,6 @@ namespace host_functions {
                         new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
                         contacts_id = contacts_id + 1;
-
-                        // printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
                     }
                 }
 
@@ -537,14 +533,16 @@ namespace host_functions {
                 }
             }
         }
+
         if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
             unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY) + 1;
             unsigned short week_day = (FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY) + 1) % DAYS_IN_A_WEEK;
             
-
             FLAMEGPU->environment.setProperty<unsigned short>(DAY, day);
             FLAMEGPU->environment.setProperty<unsigned short>(WEEK_DAY, week_day);
-            printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
+
+            if(day <= DAYS)
+                printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
            
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
@@ -575,7 +573,6 @@ namespace host_functions {
      * Generate pedestrians with daily rate as entry type.
     */
     FLAMEGPU_STEP_FUNCTION(birth) {
-
         const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
 
         if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY) && day <= DAYS){
@@ -678,8 +675,6 @@ namespace host_functions {
                         new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
                         contacts_id = contacts_id + 1;
-
-                        // printf("6,%d,%d,%d,%d,NA,%d,NA,NA,NA,NA\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, i, new_agent_state);
                     }
 
                     slot++;
@@ -721,25 +716,25 @@ namespace host_functions {
         printf("5,%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         // Log the environment macro properties
-        auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
+        // auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
-        string filename;
+        // string filename;
 
-        filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
-        ofstream counters_file(filename.c_str(), ofstream::app);
-        counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << ",";
-        for(int i = 0; i < NUM_COUNTERS; i++){
-            if(i == (NUM_COUNTERS - 1)){
-                counters_file << counters[i];
-            }
-            else{
-                counters_file << counters[i] << ",";
-            }
-        }
-        counters_file << endl;
-        counters_file.close();
+        // filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
+        // ofstream counters_file(filename.c_str(), ofstream::app);
+        // counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << ",";
+        // for(int i = 0; i < NUM_COUNTERS; i++){
+        //     if(i == (NUM_COUNTERS - 1)){
+        //         counters_file << counters[i];
+        //     }
+        //     else{
+        //         counters_file << counters[i] << ",";
+        //     }
+        // }
+        // counters_file << endl;
+        // counters_file.close();
 
-        filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/host_rng_state.txt";
+        string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/host_rng_state.txt";
         ofstream rng_state(filename.c_str(), ofstream::out);
         rng_state << host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)];
         rng_state.close();

@@ -1,7 +1,6 @@
 import argparse
 import math
 import json
-import sys
 import graph
 import os
 import os
@@ -429,9 +428,20 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		outside_contagion = pd.DataFrame(WHOLEmodel["outside_contagion"])
 
-		perc_inf_df = pd.DataFrame(data={'day': range(1, days+1), "percentage_infected": np.zeros(days)})
+		perc_inf_df = pd.DataFrame(data={'day': range(1, days+2), "percentage_infected": np.zeros(days+1)})
 		if len(outside_contagion) > 0:
-			perc_inf_df = outside_contagion.iloc[:days, :]
+			# Extract the percentage_infected column if it exists, otherwise take the second column
+			if "percentage_infected" in outside_contagion.columns:
+				values = pd.to_numeric(outside_contagion.iloc[:days, outside_contagion.columns.get_loc("percentage_infected")], errors='coerce').values
+				perc_inf_df.loc[:days-1, "percentage_infected"] = values
+			elif len(outside_contagion.columns) > 1:
+				# Use the second column (index 1) if first is 'day'
+				values = pd.to_numeric(outside_contagion.iloc[:days, 1], errors='coerce').values
+				perc_inf_df.loc[:days-1, "percentage_infected"] = values
+			else:
+				# Use first column as fallback
+				values = pd.to_numeric(outside_contagion.iloc[:days, 0], errors='coerce').values
+				perc_inf_df.loc[:days-1, "percentage_infected"] = values
 
 		mask_types = {"No mask": 0, "Surgical mask": 1, "FFP2 mask": 2}
 

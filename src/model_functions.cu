@@ -166,7 +166,7 @@ void define_environment(ModelDescription& model){
     env.newProperty<float>(INHALATION_RATE_PURE, 0.0f);
     env.newProperty<float, RISK_CLASSES + 1>(RISK_CONST, {0.0f});
 
-    env.newProperty<float, DAYS>(PERC_INF, {0.0f});
+    env.newProperty<float, DAYS + 1>(PERC_INF, {0.0f});
 
     env.newProperty<float, RISK_CLASSES + 1>(VIRUS_SEVERITY, {0.0f});
 
@@ -469,8 +469,8 @@ void define_layers(ModelDescription& model){
     model.addInitFunction(initFunction);
     model.addInitFunction(macroPropertyIO);
     model.addInitFunction(generateAgents);
-    model.addExitCondition(endOfSimulation);
     model.addStepFunction(updateDayAndLog);
+    model.addExitCondition(endOfSimulation);
     model.addStepFunction(birth);
     model.addExitFunction(exitFunction);
 }
