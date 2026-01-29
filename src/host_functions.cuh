@@ -575,7 +575,10 @@ namespace host_functions {
      * Generate pedestrians with daily rate as entry type.
     */
     FLAMEGPU_STEP_FUNCTION(birth) {
-        if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
+
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
+
+        if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY) && day <= DAYS){
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Beginning birth for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
@@ -697,7 +700,7 @@ namespace host_functions {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
-        if(FLAMEGPU->environment.getProperty<unsigned short>(DAY) == DAYS){
+        if(FLAMEGPU->environment.getProperty<unsigned short>(DAY) == DAYS+1){
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending endOfSimulation for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
