@@ -88,7 +88,7 @@ for input_file in *.csv; do
             mapping[5] = "DEBUG"
 
             # Define the expected number of columns for each category
-            expected["AGENT_POSITION_AND_STATUS"] = 9
+            expected["AGENT_POSITION_AND_STATUS"] = 10
             expected["CONTACT"] = 6
             expected["CONTACTS_MATRIX"] = 6
             expected["AEROSOL"] = 5
