@@ -987,9 +987,9 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     const short node = coord2index[(unsigned short)(room_pos[1]/YOFFSET)][(unsigned short)room_pos[2]][(unsigned short)room_pos[0]];
     const short node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, node);
     const float volume = FLAMEGPU->getVariable<float>(VOLUME);
-    const float ventilation = (float) env_ventilation[day][area][type];
-    const float sterilisation = (float) env_sterilisation[day][area][type];
-    const float air = (float) env_air[day][area][type];
+    const float ventilation = (float) env_ventilation[day-1][area][type];
+    const float sterilisation = (float) env_sterilisation[day-1][area][type];
+    const float air = (float) env_air[day-1][area][type];
     const float vl = FLAMEGPU->environment.getProperty<float>(VL);
     const float ngen_base = FLAMEGPU->environment.getProperty<float>(NGEN_BASE);
     const float virus_variant_factor = FLAMEGPU->environment.getProperty<float>(VIRUS_VARIANT_FACTOR);
@@ -1009,6 +1009,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     }
 
     float total_first_order_lost_rate = gravitational_settling_rate + decay_rate + ventilation * (air + (1 - air) * sterilisation);
+
     float new_concentration = ((total_n_r / volume) / total_first_order_lost_rate) + (((float) rooms_quanta_concentration[node]) - ((total_n_r / volume) / total_first_order_lost_rate)) * exp(-(total_first_order_lost_rate * STEP));
 
     rooms_quanta_concentration[node].exchange(new_concentration);
