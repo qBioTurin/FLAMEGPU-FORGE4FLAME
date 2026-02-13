@@ -42,6 +42,15 @@
 
 #define MIN_DISTANCE 1e-10f
 
+#define MIN_DISTANCE_STEER 1e-4f
+
+#define SCALE_FACTOR 0.03125
+
+#define I_SCALER (SCALE_FACTOR*0.35f)
+
+#define STEER_WEIGHT 0.1f
+#define AVOID_WEIGHT 0.02f
+
 #define DAYS_IN_A_WEEK 7
 
 #define INVISIBLE_AGENT_Y 10000.0f

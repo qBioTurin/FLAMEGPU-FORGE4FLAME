@@ -44,6 +44,11 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
     waitingInWaitingRoom_fn.setMessageOutput("waiting_room_message");
     waitingInWaitingRoom_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription avoid_pedestrians_fn = pedestrian.newFunction("avoid_pedestrians", avoid_pedestrians);
+    avoid_pedestrians_fn.setFunctionCondition(initCondition);
+    avoid_pedestrians_fn.setMessageInput("location");
+    avoid_pedestrians_fn.setMessageOutputOptional(true);
 }
 
 // Define model's agents room functions
@@ -138,7 +143,6 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, V>(NODE_Z, {0.0f});
     env.newProperty<float, V>(NODE_LENGTH, {0.0f});
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
-    
     env.newProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, {0.0f});
     env.newProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, {0});
     env.newProperty<short>(NEXT_CONTACTS_ID, 0);
@@ -336,6 +340,9 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<float>(VELX);
     pedestrian.newVariable<float>(VELY);
     pedestrian.newVariable<float>(VELZ);
+    pedestrian.newVariable<float>(STEER_X);
+    pedestrian.newVariable<float>(STEER_Y);
+    pedestrian.newVariable<float>(STEER_Z);
     pedestrian.newVariable<float>(QUANTA_INHALED);
     pedestrian.newVariable<float, 3>(FINAL_TARGET);
     pedestrian.newVariable<unsigned short>(NEXT_INDEX);
@@ -414,6 +421,8 @@ void define_room(ModelDescription& model){
 
 void define_layers(ModelDescription& model){
     // Define the execution order
+
+
     // Layer 1
     {
         LayerDescription layer = model.newLayer();
@@ -448,6 +457,13 @@ void define_layers(ModelDescription& model){
 #ifndef CHECKPOINT
         layer.addAgentFunction("room", "updateQuantaConcentration");
 #endif
+    }
+
+    //Layer 5.5
+
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(avoid_pedestrians); 
     }
     
     // Layer 6
