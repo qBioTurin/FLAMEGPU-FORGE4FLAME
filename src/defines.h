@@ -26,8 +26,8 @@
 #define NOT_PRESENT -1
 #define STARTING_POINT -2
 
-#define WALL 0
-#define WALKABLE 1
+// #define WALL 0
+// #define WALKABLE 1
 #define MAX_MATRIX_SOLUTION_LENGTH 100 
 
 #define F_COST 0 
@@ -44,12 +44,14 @@
 
 #define MIN_DISTANCE_STEER 1e-4f
 
-#define SCALE_FACTOR 0.03125
+//#define SCALE_FACTOR 0.03125
 
-#define I_SCALER (SCALE_FACTOR*0.35f)
+//#define I_SCALER (SCALE_FACTOR*0.35f)
 
-#define STEER_WEIGHT 0.1f
-#define AVOID_WEIGHT 0.02f
+#define I_SCALER 0.75
+
+#define STEER_WEIGHT 2.0f
+#define AVOID_WEIGHT 1.0f
 
 #define DAYS_IN_A_WEEK 7
 

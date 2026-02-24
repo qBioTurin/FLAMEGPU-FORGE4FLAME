@@ -55,6 +55,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 
     if(FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) == 1){
         outside_contagion(FLAMEGPU);
+        external_screening(FLAMEGPU);
 
         FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 2);
     }
@@ -82,10 +83,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
             FLAMEGPU->setVariable<int>(DISEASE_STATE, disease_state);
         }
 
-        // External screening
-        external_screening(FLAMEGPU);
-
-        FLAMEGPU->setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 0);
     }
 
 
@@ -619,7 +616,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
     agent_vel[1] = (available_vel * (intermediate_target[1] - agent_pos[1]))/std::max(1.0f, distance);
     agent_vel[2] = (available_vel * (intermediate_target[2] - agent_pos[2]))/std::max(1.0f, distance);
 
-
     float steer_step[3] = {agent_steer[0] * STEP, 0.0f, agent_steer[2] * STEP};
 
     const float MAX_DODGE = 1.0f;
@@ -632,14 +628,18 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
         steer_step[2] = (steer_step[2] / len) * MAX_DODGE;
     }
 
-    float proposed_position[3] = {agent_pos[0] + agent_vel[0] + steer_step[0], agent_pos[1] + agent_vel[1], agent_pos[2] + agent_vel[2] + steer_step[2]};
+    float proposed_position[3] = {
+        agent_pos[0] + agent_vel[0] + steer_step[0], 
+        agent_pos[1] + agent_vel[1], 
+        agent_pos[2] + agent_vel[2] + steer_step[2]
+    };
 
     // Update position
     // agent_pos[0] += agent_vel[0];
     // agent_pos[1] += agent_vel[1];
     // agent_pos[2] += agent_vel[2];
 
-    //se funziona mettere tutta la logica dell'evitamento del muro
+    //Eventually logic to avoid wall? In the future
 
     agent_pos[0] = proposed_position[0];
     agent_pos[1] = proposed_position[1];
@@ -674,6 +674,17 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, Messa
 #endif
     return ALIVE;
 }
+
+// FLAMEGPU_AGENT_FUNCTION(printPosition, MessageNone, MessageNone) {
+
+//     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+//     //if(agent_pos[0] != agent_pos_init[0] || agent_pos[1] != agent_pos_init[1] || agent_pos[2] != agent_pos_init[2])
+
+//     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
+//     printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+    
+//     return ALIVE;
+// }
 
 
 /** 
@@ -983,12 +994,13 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
     };
 
     // Set variables
+
     FLAMEGPU->setVariable<float>(STEER_X, steer_velocity[0]);
     FLAMEGPU->setVariable<float>(STEER_Y, steer_velocity[1]);
     FLAMEGPU->setVariable<float>(STEER_Z, steer_velocity[2]);
 
 
-    return flamegpu::ALIVE;
+    return ALIVE;
 }
 
 

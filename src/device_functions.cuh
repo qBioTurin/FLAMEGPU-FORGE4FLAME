@@ -349,6 +349,7 @@ namespace device_functions {
                         //search another room of the same type and area
                         if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
                             //random = (random + 1) % lenght_rooms;
+                            printf("si spana nelle stanze dello stesso tipo??\n");
                             final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, available);
                         }
                         //search another room of the alternative
@@ -372,7 +373,6 @@ namespace device_functions {
                                 i++;
                                 k++;
                             }
-
                             int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (j-1), false));
                             final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, available);
                         }
@@ -529,162 +529,151 @@ namespace device_functions {
 
    /** 
      * Find the shortest path between two cells in matrix
+     * TOFINISHNOTALREADYUSED A STAR IN UNA MATRICE
     */
-    FLAMEGPU_DEVICE_FUNCTION void a_star_matrix( DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU,  const unsigned short start_idx, const unsigned short goal_idx, short* solution) {
-        // ---------------------------------------------------------
-        // A. SETUP MEMORIA (Local Stack)
-        // ---------------------------------------------------------
+    // FLAMEGPU_DEVICE_FUNCTION void a_star_matrix( DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU,  const unsigned short start_idx, const unsigned short goal_idx, short* solution) {
+    //     // ClosedSet: Mappa [Indice Nodo] -> [Indice Padre]
+    //     // Serve sia per sapere se visitato, sia per ricostruire il percorso
+    //     short closedset[GRID_SIZE];
         
-        // ClosedSet: Mappa [Indice Nodo] -> [Indice Padre]
-        // Serve sia per sapere se visitato, sia per ricostruire il percorso
-        short closedset[GRID_SIZE];
-        
-        // OpenSet: Mappa [Indice Nodo] -> {F_Cost, G_Cost, Parent}
-        // Usiamo array statici per evitare malloc/new che su GPU non esistono/sono lenti
-        short openset[GRID_SIZE][3];
+    //     // OpenSet: Mappa [Indice Nodo] -> {F_Cost, G_Cost, Parent}
+    //     // Usiamo array statici per evitare malloc/new che su GPU non esistono/sono lenti
+    //     short openset[GRID_SIZE][3];
 
-        // Inizializzazione rapida a "Vuoto"
-        for (unsigned short i = 0; i < GRID_SIZE; ++i) {
-            closedset[i] = NOT_PRESENT; 
-            openset[i][F_COST] = NOT_PRESENT;
-            openset[i][G_COST] = NOT_PRESENT;
-            openset[i][PARENT] = NOT_PRESENT;
-        }
+    //     // Inizializzazione rapida a "Vuoto"
+    //     for (unsigned short i = 0; i < GRID_SIZE; ++i) {
+    //         closedset[i] = NOT_PRESENT; 
+    //         openset[i][F_COST] = NOT_PRESENT;
+    //         openset[i][G_COST] = NOT_PRESENT;
+    //         openset[i][PARENT] = NOT_PRESENT;
+    //     }
 
-        // ---------------------------------------------------------
-        // B. SETUP INIZIALE
-        // ---------------------------------------------------------
+    //     // Coordinate Start/Goal
+    //     short start_x = start_idx % MAP_DIM_X;
+    //     short start_y = start_idx / MAP_DIM_X;
+    //     short goal_x = goal_idx % MAP_DIM_X;
+    //     short goal_y = goal_idx / MAP_DIM_X;
 
-        // Coordinate Start/Goal
-        short start_x = start_idx % MAP_DIM_X;
-        short start_y = start_idx / MAP_DIM_X;
-        short goal_x = goal_idx % MAP_DIM_X;
-        short goal_y = goal_idx / MAP_DIM_X;
+    //     // Recuperiamo la mappa dall'Environment (Global Read-Only Memory)
+    //     // Assumiamo esista una proprietà macro 'grid_map' contenente 1 (walkable) e 0 (wall)
+    //     auto grid_data = FLAMEGPU->environment.getMacroProperty<unsigned short, GRID_SIZE>("grid_map");
 
-        // Recuperiamo la mappa dall'Environment (Global Read-Only Memory)
-        // Assumiamo esista una proprietà macro 'grid_map' contenente 1 (walkable) e 0 (wall)
-        auto grid_data = FLAMEGPU->environment.getMacroProperty<unsigned short, GRID_SIZE>("grid_map");
+    //     // Check banale: Se start o goal sono muri, esci subito
+    //     if (grid_data[start_idx] == WALL || grid_data[goal_idx] == WALL) {
+    //         solution[0] = -1; 
+    //         return; 
+    //     }
 
-        // Check banale: Se start o goal sono muri, esci subito
-        if (grid_data[start_idx] == WALL || grid_data[goal_idx] == WALL) {
-            solution[0] = -1; 
-            return; 
-        }
+    //     // Inseriamo il nodo di partenza
+    //     short initial_h = CHEBYSHEV_DISTANCE(start_x, goal_x, start_y, goal_y);
+    //     openset[start_idx][F_COST] = initial_h; // G=0, quindi F = H
+    //     openset[start_idx][G_COST] = 0;
+    //     openset[start_idx][PARENT] = STARTING_POINT;
 
-        // Inseriamo il nodo di partenza
-        short initial_h = CHEBYSHEV_DISTANCE(start_x, goal_x, start_y, goal_y);
-        openset[start_idx][F_COST] = initial_h; // G=0, quindi F = H
-        openset[start_idx][G_COST] = 0;
-        openset[start_idx][PARENT] = STARTING_POINT;
+    //     // n_open tiene traccia di quanti nodi ci sono da esplorare
+    //     for(unsigned short n_open = 1; n_open > 0;) {
 
-        // ---------------------------------------------------------
-        // C. LOOP PRINCIPALE
-        // ---------------------------------------------------------
-        
-        // n_open tiene traccia di quanti nodi ci sono da esplorare
-        for(unsigned short n_open = 1; n_open > 0;) {
+    //         // 1. Trova il nodo con F_COST minore (Lowest F)
+    //         // Su GPU non abbiamo priority_queue, facciamo una scansione lineare (O(N))
+    //         // Questo è il collo di bottiglia, ma con short array in cache è accettabile.
+    //         short current_idx = NOT_PRESENT;
+    //         short min_f = 32000; // Valore sentinella (MAX_SHORT approx)
 
-            // 1. Trova il nodo con F_COST minore (Lowest F)
-            // Su GPU non abbiamo priority_queue, facciamo una scansione lineare (O(N))
-            // Questo è il collo di bottiglia, ma con short array in cache è accettabile.
-            short current_idx = NOT_PRESENT;
-            short min_f = 32000; // Valore sentinella (MAX_SHORT approx)
+    //         for(int i = 0; i < GRID_SIZE; ++i) {
+    //             short f = openset[i][F_COST];
+    //             if (f != NOT_PRESENT) {
+    //                 if (f < min_f) {
+    //                     min_f = f;
+    //                     current_idx = i;
+    //                 }
+    //             }
+    //         }
 
-            for(int i = 0; i < GRID_SIZE; ++i) {
-                short f = openset[i][F_COST];
-                if (f != NOT_PRESENT) {
-                    if (f < min_f) {
-                        min_f = f;
-                        current_idx = i;
-                    }
-                }
-            }
+    //         // Safety break
+    //         if (current_idx == NOT_PRESENT) break;
 
-            // Safety break
-            if (current_idx == NOT_PRESENT) break;
+    //         // Recuperiamo i dati del nodo corrente prima di chiuderlo
+    //         short current_g = openset[current_idx][G_COST];
+    //         short current_parent = openset[current_idx][PARENT];
 
-            // Recuperiamo i dati del nodo corrente prima di chiuderlo
-            short current_g = openset[current_idx][G_COST];
-            short current_parent = openset[current_idx][PARENT];
+    //         // 2. Sposta da OpenSet a ClosedSet
+    //         openset[current_idx][F_COST] = NOT_PRESENT; // Rimuovi da open
+    //         openset[current_idx][G_COST] = NOT_PRESENT;
+    //         openset[current_idx][PARENT] = NOT_PRESENT;
+    //         n_open--;
 
-            // 2. Sposta da OpenSet a ClosedSet
-            openset[current_idx][F_COST] = NOT_PRESENT; // Rimuovi da open
-            openset[current_idx][G_COST] = NOT_PRESENT;
-            openset[current_idx][PARENT] = NOT_PRESENT;
-            n_open--;
+    //         closedset[current_idx] = current_parent; // Segna come visitato
 
-            closedset[current_idx] = current_parent; // Segna come visitato
+    //         // 3. Controllo vittoria (Siamo arrivati?)
+    //         if (current_idx == goal_idx) {
+    //             // BACKTRACKING DEL PERCORSO
+    //             short temp_path[MAX_MATRIX_SOLUTION_LENGTH];
+    //             short length = 0;
+    //             short backtrack = current_idx;
 
-            // 3. Controllo vittoria (Siamo arrivati?)
-            if (current_idx == goal_idx) {
-                // BACKTRACKING DEL PERCORSO
-                short temp_path[MAX_MATRIX_SOLUTION_LENGTH];
-                short length = 0;
-                short backtrack = current_idx;
+    //             // Risaliamo la catena dei padri
+    //             while (backtrack != STARTING_POINT && length < MAX_MATRIX_SOLUTION_LENGTH) {
+    //                 temp_path[length++] = backtrack;
+    //                 backtrack = closedset[backtrack]; // Salta al padre
+    //             }
 
-                // Risaliamo la catena dei padri
-                while (backtrack != STARTING_POINT && length < MAX_MATRIX_SOLUTION_LENGTH) {
-                    temp_path[length++] = backtrack;
-                    backtrack = closedset[backtrack]; // Salta al padre
-                }
+    //             // Invertiamo l'array per averlo da Start -> Goal
+    //             for(unsigned short i = 0, j = length - 1; i < length; ++i, --j){
+    //                 solution[i] = temp_path[j];
+    //             }
+    //             // Riempiamo il resto con -1
+    //             for(unsigned short i = length; i < MAX_MATRIX_SOLUTION_LENGTH; ++i) {
+    //                 solution[i] = -1;
+    //             }
+    //             return; // Fine successo
+    //         }
 
-                // Invertiamo l'array per averlo da Start -> Goal
-                for(unsigned short i = 0, j = length - 1; i < length; ++i, --j){
-                    solution[i] = temp_path[j];
-                }
-                // Riempiamo il resto con -1
-                for(unsigned short i = length; i < MAX_MATRIX_SOLUTION_LENGTH; ++i) {
-                    solution[i] = -1;
-                }
-                return; // Fine successo
-            }
+    //         // 4. Espansione Vicini (8 Direzioni)
+    //         short c_x = current_idx % MAP_DIM_X;
+    //         short c_y = current_idx / MAP_DIM_X;
 
-            // 4. Espansione Vicini (8 Direzioni)
-            short c_x = current_idx % MAP_DIM_X;
-            short c_y = current_idx / MAP_DIM_X;
+    //         // Look-up table per le 8 direzioni (dx, dy)
+    //         const short dirs_x[8] = {0, 0, -1, 1, -1, 1, -1, 1};
+    //         const short dirs_y[8] = {-1, 1, 0, 0, -1, -1, 1, 1};
 
-            // Look-up table per le 8 direzioni (dx, dy)
-            const short dirs_x[8] = {0, 0, -1, 1, -1, 1, -1, 1};
-            const short dirs_y[8] = {-1, 1, 0, 0, -1, -1, 1, 1};
+    //         for (int k = 0; k < 8; ++k) {
+    //             short nx = c_x + dirs_x[k];
+    //             short ny = c_y + dirs_y[k];
 
-            for (int k = 0; k < 8; ++k) {
-                short nx = c_x + dirs_x[k];
-                short ny = c_y + dirs_y[k];
+    //             if (IS_VALID(nx, ny)) {
+    //                 short n_idx = IDX(nx, ny);
 
-                if (IS_VALID(nx, ny)) {
-                    short n_idx = IDX(nx, ny);
-
-                    // Se è calpestabile E non è stato già chiuso
-                    if (grid_data[n_idx] == WALKABLE && closedset[n_idx] == NOT_PRESENT) {
+    //                 // Se è calpestabile E non è stato già chiuso
+    //                 if (grid_data[n_idx] == WALKABLE && closedset[n_idx] == NOT_PRESENT) {
                         
-                        // Costo movimento: 1 per tutti (Coerente con Chebyshev)
-                        short new_g = current_g + 1;
+    //                     // Costo movimento: 1 per tutti (Coerente con Chebyshev)
+    //                     short new_g = current_g + 1;
                         
-                        short old_g = openset[n_idx][G_COST];
-                        bool is_in_open = (old_g != NOT_PRESENT);
+    //                     short old_g = openset[n_idx][G_COST];
+    //                     bool is_in_open = (old_g != NOT_PRESENT);
 
-                        // Se non è in open OPPURE abbiamo trovato una strada più corta
-                        if (!is_in_open || new_g < old_g) {
+    //                     // Se non è in open OPPURE abbiamo trovato una strada più corta
+    //                     if (!is_in_open || new_g < old_g) {
                             
-                            // Calcolo Euristica
-                            short h = CHEBYSHEV_DISTANCE(nx, goal_x, ny, goal_y);
+    //                         // Calcolo Euristica
+    //                         short h = CHEBYSHEV_DISTANCE(nx, goal_x, ny, goal_y);
                             
-                            openset[n_idx][F_COST] = new_g + h;
-                            openset[n_idx][G_COST] = new_g;
-                            openset[n_idx][PARENT] = current_idx;
+    //                         openset[n_idx][F_COST] = new_g + h;
+    //                         openset[n_idx][G_COST] = new_g;
+    //                         openset[n_idx][PARENT] = current_idx;
 
-                            if (!is_in_open) {
-                                n_open++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    //                         if (!is_in_open) {
+    //                             n_open++;
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        // Se arriviamo qui, open set è vuoto e non abbiamo trovato il goal
-        solution[0] = -1;
-    }
+    //     // Se arriviamo qui, open set è vuoto e non abbiamo trovato il goal
+    //     solution[0] = -1;
+    // }
 
     /** 
      * Update agent intermediate and final targets.

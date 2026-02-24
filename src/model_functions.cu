@@ -2,6 +2,7 @@
 #include "model_functions.h"
 #include "agent_functions.cuh"
 #include "host_functions.cuh"
+//#include "movement_submodule.cuh"
 
 using namespace std;
 using namespace flamegpu;
@@ -428,6 +429,12 @@ void define_layers(ModelDescription& model){
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
     }
+
+    // // Layer 1.5
+    // {
+    //     LayerDescription layer = model.newLayer();
+    //     layer.addSubModel(create_smm(model));
+    // }
 
     // Layer 2
     {
