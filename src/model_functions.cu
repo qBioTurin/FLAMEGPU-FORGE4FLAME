@@ -2,7 +2,7 @@
 #include "model_functions.h"
 #include "agent_functions.cuh"
 #include "host_functions.cuh"
-//#include "movement_submodule.cuh"
+#include "movement_submodule.cuh"
 
 using namespace std;
 using namespace flamegpu;
@@ -14,6 +14,11 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     beingSupported_fn.setFunctionCondition(initCondition);
     beingSupported_fn.setMessageOutput("link_message");
     beingSupported_fn.setMessageOutputOptional(true);
+
+    // AgentFunctionDescription CUDAEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAEventsAndMovePedestrian", CUDAEventsAndMovePedestrian);
+    // CUDAEventsAndMovePedestrian_fn.setMessageInput("room_location");
+    // CUDAEventsAndMovePedestrian_fn.setMessageOutput("link_message");
+    // CUDAEventsAndMovePedestrian_fn.setMessageOutputOptional(true);
 
     AgentFunctionDescription CUDAInitContagionScreeningEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAInitContagionScreeningEventsAndMovePedestrian", CUDAInitContagionScreeningEventsAndMovePedestrian);
     CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageInput("room_location");
@@ -46,10 +51,14 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     waitingInWaitingRoom_fn.setMessageOutput("waiting_room_message");
     waitingInWaitingRoom_fn.setMessageOutputOptional(true);
 
-    AgentFunctionDescription avoid_pedestrians_fn = pedestrian.newFunction("avoid_pedestrians", avoid_pedestrians);
-    avoid_pedestrians_fn.setFunctionCondition(initCondition);
-    avoid_pedestrians_fn.setMessageInput("location");
-    avoid_pedestrians_fn.setMessageOutputOptional(true);
+    // AgentFunctionDescription avoid_pedestrians_fn = pedestrian.newFunction("avoid_pedestrians", avoid_pedestrians);
+    // avoid_pedestrians_fn.setFunctionCondition(initCondition);
+    // avoid_pedestrians_fn.setMessageInput("location");
+    // avoid_pedestrians_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription printMoveAgentInfo_fn = pedestrian.newFunction("printMoveAgentInfo", printMoveAgentInfo);
+    printMoveAgentInfo_fn.setFunctionCondition(initCondition);
+    printMoveAgentInfo_fn.setMessageOutputOptional(true);
 }
 
 // Define model's agents room functions
@@ -276,6 +285,7 @@ void define_pedestrian_messages(ModelDescription& model){
     pedestrian_message.newVariable<int>(AGENT_TYPE);
     pedestrian_message.newVariable<short>(GRAPH_NODE);
     pedestrian_message.setRadius(DIAMETER / 2);
+    //pedestrian_message.setRadius(3.0f);
     pedestrian_message.setMin(0, 0, 0);
     pedestrian_message.setMax(ENV_DIM_X, ENV_DIM_Y, ENV_DIM_Z);
 
@@ -344,6 +354,10 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<float>(STEER_X);
     pedestrian.newVariable<float>(STEER_Y);
     pedestrian.newVariable<float>(STEER_Z);
+    pedestrian.newVariable<float>(X_PREV);
+    pedestrian.newVariable<float>(Y_PREV);
+    pedestrian.newVariable<float>(Z_PREV);
+    pedestrian.newVariable<int>(CAN_MOVE, 0);
     pedestrian.newVariable<float>(QUANTA_INHALED);
     pedestrian.newVariable<float, 3>(FINAL_TARGET);
     pedestrian.newVariable<unsigned short>(NEXT_INDEX);
@@ -430,11 +444,26 @@ void define_layers(ModelDescription& model){
         layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
     }
 
-    // // Layer 1.5
-    // {
+    //    {
     //     LayerDescription layer = model.newLayer();
-    //     layer.addSubModel(create_smm(model));
+    //     layer.addAgentFunction(CUDAInitContagionScreening);
     // }
+
+    //    {
+    //     LayerDescription layer = model.newLayer();
+    //     layer.addAgentFunction(CUDAEventsAndMovePedestrian);
+    // }
+
+    // Layer 1.5
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addSubModel(create_smm(model));
+    }
+    // Layer 2.5
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(printMoveAgentInfo);
+    }
 
     // Layer 2
     {
@@ -468,10 +497,10 @@ void define_layers(ModelDescription& model){
 
     //Layer 5.5
 
-    {
-        LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(avoid_pedestrians); 
-    }
+    // {
+    //     LayerDescription layer = model.newLayer();
+    //     layer.addAgentFunction(avoid_pedestrians); 
+    // }
     
     // Layer 6
     {

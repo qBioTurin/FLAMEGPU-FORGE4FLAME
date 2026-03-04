@@ -67,6 +67,6 @@ mkdir -p build && cd build
 cmake .. -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=$COMP_CAP -DFLAMEGPU_SEATBELTS=OFF -DCHECKPOINT=$CHECKPOINT_SIMULATION -DFLAMEGPU_VISUALISATION=$VISUALISATION -DDEBUG=$DEBUG
 
 #  Build the required targets. In this case all targets
-cmake --build . --target all -j8
+cmake --build . --target all -j8 
 
 cd ..
