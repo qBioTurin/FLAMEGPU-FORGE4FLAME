@@ -17,7 +17,8 @@ namespace device_functions {
     /** 
      * Generate a random number using the given RNG, distribution and parameters for pedestrians.
     */
-    FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
         
         if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
@@ -27,8 +28,8 @@ namespace device_functions {
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 
-        auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
-        cuda_rng_offsets_pedestrian[FLAMEGPU->getVariable<short>(CONTACTS_ID)]++;
+        auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
+        cuda_rng_offsets_pedestrian[FLAMEGPU->template getVariable<short>(CONTACTS_ID)]++;
 
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
     }
@@ -414,7 +415,8 @@ namespace device_functions {
     /** 
      * Find the shortest path between two nodes in the graph.
     */
-    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -428,10 +430,10 @@ namespace device_functions {
             openset[i][2] = NOT_PRESENT;
         }
 
-        float x_start = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, start);
-        float x_goal = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, goal);
-        float z_start = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, start);
-        float z_goal = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, goal);
+        float x_start = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, start);
+        float x_goal = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, goal);
+        float z_start = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, start);
+        float z_goal = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, goal);
 
         //Initialize the starting node
         short initial_h = MANHATTAN_DISTANCE(x_start, x_goal, z_start, z_goal);
@@ -439,7 +441,7 @@ namespace device_functions {
         openset[start][1] = 0;
         openset[start][2] = STARTING_POINT;
 
-        auto adjmatrix = FLAMEGPU->environment.getMacroProperty<unsigned short, V, V>(ADJMATRIX);
+        auto adjmatrix = FLAMEGPU->environment.template getMacroProperty<unsigned short, V, V>(ADJMATRIX);
 
         // Keep looping WHILE there are elements in the open set 
         for(unsigned short n_open = 1; n_open;) {
@@ -490,7 +492,7 @@ namespace device_functions {
 
             //3. Check if it is already visited (is it in the closedset?)
             if(closedset[next_vertex] == NOT_PRESENT) {
-                short curr_x = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, next_vertex), curr_z = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, next_vertex);
+                short curr_x = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, next_vertex), curr_z = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, next_vertex);
                 //4. Add each unvisited neighbor of the current node to the openset 
                 for(unsigned short i = 0; i < V; ++i) {
                     unsigned short we = adjmatrix[i][next_vertex];
@@ -507,8 +509,8 @@ namespace device_functions {
                         //If it is the first time, the node is added to the openset and the number of elements is ++increased 
                         if((first_time && ++n_open) || not_new_but_interesting) {
                             // Add new node or replace node in openset estimating f(n)
-                            float x_coord_i = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, i);
-                            float z_coord_i = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, i);
+                            float x_coord_i = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, i);
+                            float z_coord_i = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, i);
                             openset[i][0] = new_g + MANHATTAN_DISTANCE(x_coord_i, x_goal, z_coord_i, z_goal);
                             openset[i][1] = new_g;
                             openset[i][2] = next_vertex;
@@ -677,21 +679,22 @@ namespace device_functions {
     /** 
      * Update agent intermediate and final targets.
     */
-    FLAMEGPU_DEVICE_FUNCTION void update_targets(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, short* new_targets, unsigned short *target_index, const bool clean, const int stay) {
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION void update_targets(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, short* new_targets, unsigned short *target_index, const bool clean, const int stay) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif       
-        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
-        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
-        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+        auto intermediate_target_x = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+        auto intermediate_target_y = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+        auto intermediate_target_z = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+        auto stay_matrix = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
-        const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
 
         float new_target_x, new_target_y, new_target_z;
 
         if(clean){
-            const unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
+            const unsigned short next_index = FLAMEGPU->template getVariable<unsigned short>(NEXT_INDEX);
 
             stay_matrix[contacts_id][*target_index].exchange(0);
             
@@ -710,11 +713,11 @@ namespace device_functions {
                 generate_offset(FLAMEGPU, &jitter_x, &jitter_z, new_targets[i]);
             }
 
-            float x = FLAMEGPU->environment.getProperty<float, V>(NODE_X, new_targets[i]);
-            float z = FLAMEGPU->environment.getProperty<float, V>(NODE_Z, new_targets[i]);
+            float x = FLAMEGPU->environment.template getProperty<float, V>(NODE_X, new_targets[i]);
+            float z = FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, new_targets[i]);
             
             new_target_x = x + jitter_x;
-            new_target_y = FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, new_targets[i]);
+            new_target_y = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDY, new_targets[i]);
             new_target_z = z + jitter_z;
 
             intermediate_target_x[contacts_id][*target_index].exchange(new_target_x);
@@ -727,7 +730,7 @@ namespace device_functions {
         }
 
         stay_matrix[contacts_id][*target_index].exchange(stay);
-        FLAMEGPU->setVariable<unsigned short>(TARGET_INDEX, *target_index);
+        FLAMEGPU->template setVariable<unsigned short>(TARGET_INDEX, *target_index);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending update_targets for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));

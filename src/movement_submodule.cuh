@@ -17,7 +17,7 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
      if (!FLAMEGPU->getVariable<int>(CAN_MOVE)) {
 
         return ALIVE;
-    }
+    } 
     const float PI = 3.14159265f;
     const float RAD_PERCEPTION= 45.0f * (PI / 180.0f); 
     
@@ -93,8 +93,13 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
 
      if (!FLAMEGPU->getVariable<int>(CAN_MOVE)) {
 
-        return ALIVE;
-    }
+        FLAMEGPU->setVariable<float>(VELX, 0.0f);
+        FLAMEGPU->setVariable<float>(VELY, 0.0f);
+        FLAMEGPU->setVariable<float>(VELZ, 0.0f);
+    
+      
+    } 
+        
     
     FLAMEGPU->message_out.setVariable<id_t>(ID, FLAMEGPU->getID());
     FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -118,10 +123,21 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
         unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
+        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+        unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
+
+
+        if (current_stay > 0) {
+            FLAMEGPU->setVariable<float>(VELX, 0.0f);
+            FLAMEGPU->setVariable<float>(VELY, 0.0f);
+            FLAMEGPU->setVariable<float>(VELZ, 0.0f);
+        return ALIVE;
+    }
+        
+        
         float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
         float agent_vel[3] = {FLAMEGPU->getVariable<float>(VELX), FLAMEGPU->getVariable<float>(VELY), FLAMEGPU->getVariable<float>(VELZ)};
         float agent_steer[3] = {FLAMEGPU->getVariable<float>(STEER_X), FLAMEGPU->getVariable<float>(STEER_Y), FLAMEGPU->getVariable<float>(STEER_Z)};
-        auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
         auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
         auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
         auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
@@ -181,7 +197,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
         // //Eventually logic to avoid wall? In the future
 
-        // IL TUO AGGIORNAMENTO DI POSIZIONE ORIGINALE
         float proposed_position[3] = {
             agent_pos[0] + agent_vel[0] + agent_steer[0], 
             agent_pos[1] + agent_vel[1], 

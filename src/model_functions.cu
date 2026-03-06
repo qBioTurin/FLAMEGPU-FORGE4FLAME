@@ -15,16 +15,22 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     beingSupported_fn.setMessageOutput("link_message");
     beingSupported_fn.setMessageOutputOptional(true);
 
-    // AgentFunctionDescription CUDAEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAEventsAndMovePedestrian", CUDAEventsAndMovePedestrian);
-    // CUDAEventsAndMovePedestrian_fn.setMessageInput("room_location");
-    // CUDAEventsAndMovePedestrian_fn.setMessageOutput("link_message");
-    // CUDAEventsAndMovePedestrian_fn.setMessageOutputOptional(true);
+    AgentFunctionDescription CUDAInitContagionScreening_fn = pedestrian.newFunction("CUDAInitContagionScreening", CUDAInitContagionScreening);
+    CUDAInitContagionScreening_fn.setMessageInput("room_location");
+    CUDAInitContagionScreening_fn.setMessageOutput("link_message");
+    CUDAInitContagionScreening_fn.setMessageOutputOptional(true);
 
-    AgentFunctionDescription CUDAInitContagionScreeningEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAInitContagionScreeningEventsAndMovePedestrian", CUDAInitContagionScreeningEventsAndMovePedestrian);
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageInput("room_location");
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutput("link_message");
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutputOptional(true);
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setAllowAgentDeath(true);
+
+    AgentFunctionDescription CUDAEvents_fn = pedestrian.newFunction("CUDAEvents", CUDAEvents);
+    CUDAEvents_fn.setMessageInput("room_location");
+    CUDAEvents_fn.setMessageOutput("link_message");
+    CUDAEvents_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription CUDAMovePedestrian_fn = pedestrian.newFunction("CUDAMovePedestrian", CUDAMovePedestrian);
+    CUDAMovePedestrian_fn.setMessageInput("room_location");
+    CUDAMovePedestrian_fn.setMessageOutput("link_message");
+    CUDAMovePedestrian_fn.setMessageOutputOptional(true);
+    CUDAMovePedestrian_fn.setAllowAgentDeath(true);
 
     AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
     handleSupportRequest_fn.setFunctionCondition(initCondition);
@@ -50,11 +56,6 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
     waitingInWaitingRoom_fn.setMessageOutput("waiting_room_message");
     waitingInWaitingRoom_fn.setMessageOutputOptional(true);
-
-    // AgentFunctionDescription avoid_pedestrians_fn = pedestrian.newFunction("avoid_pedestrians", avoid_pedestrians);
-    // avoid_pedestrians_fn.setFunctionCondition(initCondition);
-    // avoid_pedestrians_fn.setMessageInput("location");
-    // avoid_pedestrians_fn.setMessageOutputOptional(true);
 
     AgentFunctionDescription printMoveAgentInfo_fn = pedestrian.newFunction("printMoveAgentInfo", printMoveAgentInfo);
     printMoveAgentInfo_fn.setFunctionCondition(initCondition);
@@ -285,7 +286,6 @@ void define_pedestrian_messages(ModelDescription& model){
     pedestrian_message.newVariable<int>(AGENT_TYPE);
     pedestrian_message.newVariable<short>(GRAPH_NODE);
     pedestrian_message.setRadius(DIAMETER / 2);
-    //pedestrian_message.setRadius(3.0f);
     pedestrian_message.setMin(0, 0, 0);
     pedestrian_message.setMax(ENV_DIM_X, ENV_DIM_Y, ENV_DIM_Z);
 
@@ -357,7 +357,8 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<float>(X_PREV);
     pedestrian.newVariable<float>(Y_PREV);
     pedestrian.newVariable<float>(Z_PREV);
-    pedestrian.newVariable<int>(CAN_MOVE, 0);
+    pedestrian.newVariable<int>(CAN_MOVE);
+    pedestrian.newVariable<int>(SKIP_FLOW);
     pedestrian.newVariable<float>(QUANTA_INHALED);
     pedestrian.newVariable<float, 3>(FINAL_TARGET);
     pedestrian.newVariable<unsigned short>(NEXT_INDEX);
@@ -439,20 +440,26 @@ void define_layers(ModelDescription& model){
 
 
     // Layer 1
+    // {
+    //     LayerDescription layer = model.newLayer();
+    //     layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
+    // }
+
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
+        layer.addAgentFunction(CUDAInitContagionScreening);
     }
 
-    //    {
-    //     LayerDescription layer = model.newLayer();
-    //     layer.addAgentFunction(CUDAInitContagionScreening);
-    // }
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(CUDAEvents);
+    }
 
-    //    {
-    //     LayerDescription layer = model.newLayer();
-    //     layer.addAgentFunction(CUDAEventsAndMovePedestrian);
-    // }
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(CUDAMovePedestrian);
+    }
+
 
     // Layer 1.5
     {
@@ -494,13 +501,6 @@ void define_layers(ModelDescription& model){
         layer.addAgentFunction("room", "updateQuantaConcentration");
 #endif
     }
-
-    //Layer 5.5
-
-    // {
-    //     LayerDescription layer = model.newLayer();
-    //     layer.addAgentFunction(avoid_pedestrians); 
-    // }
     
     // Layer 6
     {
