@@ -15,10 +15,15 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     beingSupported_fn.setMessageOutput("link_message");
     beingSupported_fn.setMessageOutputOptional(true);
 
-    AgentFunctionDescription CUDAInitContagionScreening_fn = pedestrian.newFunction("CUDAInitContagionScreening", CUDAInitContagionScreening);
-    CUDAInitContagionScreening_fn.setMessageInput("room_location");
-    CUDAInitContagionScreening_fn.setMessageOutput("link_message");
-    CUDAInitContagionScreening_fn.setMessageOutputOptional(true);
+    AgentFunctionDescription CUDAInit_fn = pedestrian.newFunction("CUDAInitContagionScreening", CUDAInit);
+    CUDAInit_fn.setMessageInput("room_location");
+    CUDAInit_fn.setMessageOutput("link_message");
+    CUDAInit_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription CUDAContagionScreening_fn = pedestrian.newFunction("CUDAContagionScreening", CUDAContagionScreening);
+    CUDAContagionScreening_fn.setMessageInput("room_location");
+    CUDAContagionScreening_fn.setMessageOutput("link_message");
+    CUDAContagionScreening_fn.setMessageOutputOptional(true);
 
 
     AgentFunctionDescription CUDAEvents_fn = pedestrian.newFunction("CUDAEvents", CUDAEvents);
@@ -447,8 +452,14 @@ void define_layers(ModelDescription& model){
 
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAInitContagionScreening);
+        layer.addAgentFunction(CUDAInit);
     }
+
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(CUDAContagionScreening);
+    }
+
 
     {
         LayerDescription layer = model.newLayer();

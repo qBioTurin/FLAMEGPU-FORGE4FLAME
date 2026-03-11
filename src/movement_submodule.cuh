@@ -147,12 +147,22 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
         float available_vel = 1.0f;   
         float distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-
-        if (next_index == target_index) {
-            available_vel = 0.0f;
-        }
+        //unsigned int upcoming_stay = (unsigned int) stay_matrix[contacts_id][next_index];
+        float arrival_tolerance = (next_index == target_index) ? 2.0f : 0.01f;
+        // if (next_index == target_index) {
+        //     available_vel = 0.0f;
+        // }
 
         while(distance < available_vel && available_vel > 0.0f){
+
+            if (next_index == target_index && distance <= arrival_tolerance) {
+                unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
+                if (current_stay > 0) {
+                    available_vel = 0.0f;
+                    break; 
+                }
+            }
+
             agent_pos[0] = intermediate_target[0];
             agent_pos[1] = intermediate_target[1];
             agent_pos[2] = intermediate_target[2];
@@ -170,7 +180,12 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
             
             }
             else {
-                available_vel = 0.0f;
+                //available_vel = 0.0f;
+                arrival_tolerance = 1.0f;
+            }
+
+            if (next_index == target_index && distance <= arrival_tolerance) {
+                available_vel = 0.0f; // Forza a 0 per disattivare lo steer nel codice sottostante
             }
         }
         

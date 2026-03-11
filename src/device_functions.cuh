@@ -99,6 +99,7 @@ namespace device_functions {
             // Searching the nearest room related to the event
             //to add the area
 
+            float min_separation = numeric_limits<float>::max();
             event_node = -1;
             for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
 
