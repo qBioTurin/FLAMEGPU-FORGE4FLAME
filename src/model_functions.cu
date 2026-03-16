@@ -114,6 +114,7 @@ void visualise_rooms(visualiser::ModelVis& vis){
 
             room_agt.setYawVariable(YAW);
 
+            // room_agt.setColor(flamegpu::visualiser::HSVInterpolation::GREENRED(QUANTA_CONCENTRATION, 0.0f, 42.0f));
             room_agt.setColor(cmap);
         }
     }
@@ -403,6 +404,7 @@ void define_room(ModelDescription& model){
             room.newVariable<int>(TYPE, -1);
             room.newVariable<int>(COLOR_ID, 0);
             room.newVariable<float>(VOLUME, 0.0f);
+            room.newVariable<float>(QUANTA_CONCENTRATION, 0.0f);
             room.newVariable<unsigned short>(X_CENTER, 0);
             room.newVariable<unsigned short>(Y_CENTER, 0);
             room.newVariable<unsigned short>(Z_CENTER, 0);

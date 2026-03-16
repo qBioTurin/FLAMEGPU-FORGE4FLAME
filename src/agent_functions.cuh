@@ -4,6 +4,8 @@
 #include "defines.h"
 #include "device_functions.cuh"
 
+#include <math.h>
+
 using namespace std;
 using namespace flamegpu;
 using namespace device_functions;
@@ -1017,6 +1019,8 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_HOUR)){
         if(!compare_float((float) new_concentration, 0.0f, 1e-10f))
             printf("3,%d,%d,%.10f,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), (float) new_concentration, node);
+        
+        FLAMEGPU->setVariable<float>(QUANTA_CONCENTRATION, FLAMEGPU->getVariable<float>(QUANTA_CONCENTRATION) + new_concentration);
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
