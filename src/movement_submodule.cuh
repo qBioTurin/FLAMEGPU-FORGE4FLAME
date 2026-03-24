@@ -95,11 +95,8 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
 
         FLAMEGPU->setVariable<float>(VELX, 0.0f);
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
-        FLAMEGPU->setVariable<float>(VELZ, 0.0f);
-    
-      
+        FLAMEGPU->setVariable<float>(VELZ, 0.0f); 
     } 
-        
     
     FLAMEGPU->message_out.setVariable<id_t>(ID, FLAMEGPU->getID());
     FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -125,15 +122,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
         auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
         unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
-
-
-        if (current_stay > 0) {
-            FLAMEGPU->setVariable<float>(VELX, 0.0f);
-            FLAMEGPU->setVariable<float>(VELY, 0.0f);
-            FLAMEGPU->setVariable<float>(VELZ, 0.0f);
-        return ALIVE;
-    }
-        
         
         float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
         float agent_vel[3] = {FLAMEGPU->getVariable<float>(VELX), FLAMEGPU->getVariable<float>(VELY), FLAMEGPU->getVariable<float>(VELZ)};
@@ -147,11 +135,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
         float available_vel = 1.0f;   
         float distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-        //unsigned int upcoming_stay = (unsigned int) stay_matrix[contacts_id][next_index];
         float arrival_tolerance = (next_index == target_index) ? 2.0f : 0.01f;
-        // if (next_index == target_index) {
-        //     available_vel = 0.0f;
-        // }
 
         while(distance < available_vel && available_vel > 0.0f){
 
@@ -177,15 +161,13 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
                 intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
                 intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
                 distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-            
             }
             else {
-                //available_vel = 0.0f;
                 arrival_tolerance = 1.0f;
             }
 
             if (next_index == target_index && distance <= arrival_tolerance) {
-                available_vel = 0.0f; // Forza a 0 per disattivare lo steer nel codice sottostante
+                available_vel = 0.0f; 
             }
         }
         
@@ -194,6 +176,8 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         agent_vel[1] = (available_vel * (intermediate_target[1] - agent_pos[1]))/std::max(1.0f, distance);
         agent_vel[2] = (available_vel * (intermediate_target[2] - agent_pos[2]))/std::max(1.0f, distance);
 
+        
+        //const float MAX_DODGE = 0.15f; to see if substitute in the future
         const float MAX_DODGE = 1.0f / STEP; 
         const float MAX_DODGE_SQ = MAX_DODGE * MAX_DODGE;
 
@@ -210,7 +194,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
             }
         }
 
-        // //Eventually logic to avoid wall? In the future
+        //Eventually logic to avoid wall? In the future
 
         float proposed_position[3] = {
             agent_pos[0] + agent_vel[0] + agent_steer[0], 
@@ -302,7 +286,6 @@ void define_agent_submodule(ModelDescription &smm) {
 
     AgentFunctionDescription output_location = smm.Agent("pedestrian_submodule").newFunction("outputPedestrianLocationSub", outputPedestrianLocationSub);
     output_location.setMessageOutput("location_submodule");
-    output_location.setMessageOutputOptional(true);
 
     AgentFunctionDescription move = smm.Agent("pedestrian_submodule").newFunction("move_agent_function", move_agent_function);
     move.setMessageOutputOptional(true);

@@ -443,13 +443,6 @@ void define_room(ModelDescription& model){
 void define_layers(ModelDescription& model){
     // Define the execution order
 
-
-    // Layer 1
-    // {
-    //     LayerDescription layer = model.newLayer();
-    //     layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
-    // }
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAInit);
