@@ -354,6 +354,7 @@ namespace host_functions {
 
             new_pedestrian.setVariable<float>(X, x);
             new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
+            new_pedestrian.setVariable<int>(CAN_MOVE, 0);
             new_pedestrian.setVariable<float>(Z, z);
             new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
             new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
@@ -646,6 +647,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<float>(X, x);
                         new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
                         new_pedestrian.setVariable<float>(Z, z);
+                        new_pedestrian.setVariable<int>(CAN_MOVE, 0);
                         new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
                         new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);

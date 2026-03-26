@@ -2,6 +2,7 @@
 #include "model_functions.h"
 #include "agent_functions.cuh"
 #include "host_functions.cuh"
+#include "movement_submodule.cuh"
 
 using namespace std;
 using namespace flamegpu;
@@ -14,11 +15,27 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     beingSupported_fn.setMessageOutput("link_message");
     beingSupported_fn.setMessageOutputOptional(true);
 
-    AgentFunctionDescription CUDAInitContagionScreeningEventsAndMovePedestrian_fn = pedestrian.newFunction("CUDAInitContagionScreeningEventsAndMovePedestrian", CUDAInitContagionScreeningEventsAndMovePedestrian);
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageInput("room_location");
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutput("link_message");
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setMessageOutputOptional(true);
-    CUDAInitContagionScreeningEventsAndMovePedestrian_fn.setAllowAgentDeath(true);
+    AgentFunctionDescription CUDAInit_fn = pedestrian.newFunction("CUDAInitContagionScreening", CUDAInit);
+    CUDAInit_fn.setMessageInput("room_location");
+    CUDAInit_fn.setMessageOutput("link_message");
+    CUDAInit_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription CUDAContagionScreening_fn = pedestrian.newFunction("CUDAContagionScreening", CUDAContagionScreening);
+    CUDAContagionScreening_fn.setMessageInput("room_location");
+    CUDAContagionScreening_fn.setMessageOutput("link_message");
+    CUDAContagionScreening_fn.setMessageOutputOptional(true);
+
+
+    AgentFunctionDescription CUDAEvents_fn = pedestrian.newFunction("CUDAEvents", CUDAEvents);
+    CUDAEvents_fn.setMessageInput("room_location");
+    CUDAEvents_fn.setMessageOutput("link_message");
+    CUDAEvents_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription CUDAMovePedestrian_fn = pedestrian.newFunction("CUDAMovePedestrian", CUDAMovePedestrian);
+    CUDAMovePedestrian_fn.setMessageInput("room_location");
+    CUDAMovePedestrian_fn.setMessageOutput("link_message");
+    CUDAMovePedestrian_fn.setMessageOutputOptional(true);
+    CUDAMovePedestrian_fn.setAllowAgentDeath(true);
 
     AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
     handleSupportRequest_fn.setFunctionCondition(initCondition);
@@ -44,6 +61,10 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
     waitingInWaitingRoom_fn.setMessageOutput("waiting_room_message");
     waitingInWaitingRoom_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription printMoveAgentInfo_fn = pedestrian.newFunction("printMoveAgentInfo", printMoveAgentInfo);
+    printMoveAgentInfo_fn.setFunctionCondition(initCondition);
+    printMoveAgentInfo_fn.setMessageOutputOptional(true);
 }
 
 // Define model's agents room functions
@@ -139,7 +160,6 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, V>(NODE_Z, {0.0f});
     env.newProperty<float, V>(NODE_LENGTH, {0.0f});
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
-    
     env.newProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, {0.0f});
     env.newProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, {0});
     env.newProperty<short>(NEXT_CONTACTS_ID, 0);
@@ -337,6 +357,14 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<float>(VELX);
     pedestrian.newVariable<float>(VELY);
     pedestrian.newVariable<float>(VELZ);
+    pedestrian.newVariable<float>(STEER_X);
+    pedestrian.newVariable<float>(STEER_Y);
+    pedestrian.newVariable<float>(STEER_Z);
+    pedestrian.newVariable<float>(X_PREV);
+    pedestrian.newVariable<float>(Y_PREV);
+    pedestrian.newVariable<float>(Z_PREV);
+    pedestrian.newVariable<int>(CAN_MOVE);
+    pedestrian.newVariable<int>(SKIP_FLOW);
     pedestrian.newVariable<float>(QUANTA_INHALED);
     pedestrian.newVariable<float, 3>(FINAL_TARGET);
     pedestrian.newVariable<unsigned short>(NEXT_INDEX);
@@ -416,10 +444,38 @@ void define_room(ModelDescription& model){
 
 void define_layers(ModelDescription& model){
     // Define the execution order
-    // Layer 1
+
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAInitContagionScreeningEventsAndMovePedestrian);
+        layer.addAgentFunction(CUDAInit);
+    }
+
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(CUDAContagionScreening);
+    }
+
+
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(CUDAEvents);
+    }
+
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(CUDAMovePedestrian);
+    }
+
+
+    // Layer 1.5
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addSubModel(create_smm(model));
+    }
+    // Layer 2.5
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(printMoveAgentInfo);
     }
 
     // Layer 2
