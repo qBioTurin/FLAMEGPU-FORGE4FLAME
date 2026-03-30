@@ -156,6 +156,12 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
             FLAMEGPU->setVariable<unsigned short>(NEXT_INDEX, next_index);
             stay = (unsigned int) stay_matrix[contacts_id][next_index];
 
+            if(next_index == target_index - 1 && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] != SPAWNROOM){
+                // The agent is on the door of the room (here we have to implement resorces and path finding)
+                // TO DO
+                break;
+            }
+
             if(next_index != target_index && !stay){
                 intermediate_target[0] = (float) intermediate_target_x[contacts_id][next_index];
                 intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
