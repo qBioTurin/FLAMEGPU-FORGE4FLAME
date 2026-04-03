@@ -123,6 +123,13 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
         unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
         
+
+        if (current_stay > 0) {
+            FLAMEGPU->setVariable<float>(VELX, 0.0f);
+            FLAMEGPU->setVariable<float>(VELY, 0.0f);
+            FLAMEGPU->setVariable<float>(VELZ, 0.0f);
+            return ALIVE;
+        }
         float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
         float agent_vel[3] = {FLAMEGPU->getVariable<float>(VELX), FLAMEGPU->getVariable<float>(VELY), FLAMEGPU->getVariable<float>(VELZ)};
         float agent_steer[3] = {FLAMEGPU->getVariable<float>(STEER_X), FLAMEGPU->getVariable<float>(STEER_Y), FLAMEGPU->getVariable<float>(STEER_Z)};
