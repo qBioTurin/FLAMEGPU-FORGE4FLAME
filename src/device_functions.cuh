@@ -287,6 +287,7 @@ namespace device_functions {
             //if the agent is already waiting for a node, go for it
             if(FLAMEGPU->getVariable<short>(NODE_WAITING_FOR) != -1){
                 final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
+                *available = true;
             }
             else {
                 auto list_front = messages.begin();
@@ -299,7 +300,7 @@ namespace device_functions {
             if(severity == MINOR){
                 if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
                     
-                     *available = true;
+                    *available = true;
                     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
                     float min_separation = numeric_limits<float>::max();
@@ -325,7 +326,7 @@ namespace device_functions {
                     FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, OUTSIDE_WAITING_ROOM);
                     final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
-                    int src = specific_resources_counter[agent_type][final_target];
+                    *available = true;
                 
                 }
                 else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM){

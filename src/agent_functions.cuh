@@ -742,6 +742,7 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
     const short support_time_event = FLAMEGPU->getVariable<short>(SUPPORT_TIME_EVENT);
     const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
+    int event_id = FLAMEGPU->getVariable<int>(EVENT_ID);
 
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
@@ -755,7 +756,7 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
         FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
         FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
 
-        if((next_index == target_index || (in_an_event && requested_support_event_with_flow == -1)) && ((stay == 1 && requested_type == ACCOMPANIMENT_AND_STAY) || requested_type == ACCOMPANIMENT_ONLY)){
+        if((next_index == target_index || (in_an_event == 1 && requested_support_event_with_flow == -1)) && ((stay == 1 && requested_type == ACCOMPANIMENT_AND_STAY) || requested_type == ACCOMPANIMENT_ONLY)){
             // The support is finished
             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -2);
 
@@ -1022,6 +1023,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationAerosol, MessageNone, MessageBuc
     const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
     const unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
+    int event_id = FLAMEGPU->getVariable<int>(EVENT_ID);
     const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
     const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
     const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
@@ -1030,8 +1032,8 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationAerosol, MessageNone, MessageBuc
     if(!quarantine && waiting_room_flag == OUTSIDE_WAITING_ROOM && requested_support != -1){
         activity_type = (float) env_activity_type[agent_type][agent_subtype][week_day_flow][flow_index];
 
-        if(in_an_event)
-            activity_type = (float) env_events_activity_type[agent_type][in_an_event];
+        if(in_an_event == 1)
+            activity_type = (float) env_events_activity_type[agent_type][event_id];
     }
 
     FLAMEGPU->message_out.setVariable<int>(DISEASE_STATE, FLAMEGPU->getVariable<int>(DISEASE_STATE));
@@ -1214,13 +1216,15 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
         const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
         const unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
         const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
+        int event_id = FLAMEGPU->getVariable<int>(EVENT_ID);
+
         
         float activity_type = VERY_LIGHT_ACTIVITY;
         if(!quarantine && flow_index > 0){
             activity_type = (float) env_activity_type[agent_type][agent_subtype][week_day_flow][flow_index];
 
-            if(in_an_event)
-                activity_type = (float) env_events_activity_type[agent_type][in_an_event];
+            if(in_an_event == 1)
+                activity_type = (float) env_events_activity_type[agent_type][event_id];
         }
         
         float inhalation_rate = (inhalation_rate_pure * (1 - inhalation_mask_efficacy) * activity_type) / 1000;
