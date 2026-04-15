@@ -339,8 +339,7 @@ namespace device_functions {
                         get_global_resource = ++global_resources_counter[final_target];
                         if(get_global_resource <= global_resources[final_target]){
                         *available = true;
-                        }
-                        else {
+                        } else {
                         get_global_resource = --global_resources_counter[final_target]; 
                         } 
                     } 
@@ -351,7 +350,6 @@ namespace device_functions {
 
                         //search another room of the same type and area
                         if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
-                            //random = (random + 1) % lenght_rooms;
                             final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, available);
                         }
                         //search another room of the alternative
@@ -378,10 +376,13 @@ namespace device_functions {
                             int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (j-1), false));
                             final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, available);
                         }
+                        unsigned int  get_specific_resource = --specific_resources_counter[agent_type][final_target];
                     }
                 }
 
                 if(!*available || alternative_resources_type_det[agent_type][final_target] == -1){
+                    *stay = 1;
+                    final_target = start_node;
                     if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM) {
                         ++global_resources_counter[start_node]; 
                         ++specific_resources_counter[agent_type][start_node];

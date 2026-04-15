@@ -30,7 +30,6 @@ FLAMEGPU_AGENT_FUNCTION_CONDITION(initCondition) {
 
     CUDA RNGs initialization, contagion processes (aerosol, contacts, and outside contagion), screening (internal and external), events and agent movements.
 */
-//FLAMEGPU_AGENT_FUNCTION(CUDAInitContagionScreeningEventsAndMovePedestrian, MessageBucket, MessageBucket) {
 FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageBucket) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
     printf("5,%d,%d,Beginning CUDAInit for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -247,7 +246,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             FLAMEGPU->message_out.setKey(on_the_way_to_support);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending CUDAEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
             FLAMEGPU->setVariable<int>(SKIP_FLOW, 1);
             return ALIVE;
@@ -273,7 +272,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     if((requested_support != -1 && currently_supported == -1 && on_the_way_to_support == -1) ||
        (requested_support == -1 && on_the_way_to_support == -1 && currently_supported != -1)){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending CUDaEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
         FLAMEGPU->setVariable<int>(SKIP_FLOW, 1);
         return ALIVE;
@@ -281,201 +280,201 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
 
 
-    if(FLAMEGPU->getVariable<unsigned char>(INIT) && !quarantine && !FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT)){
-        float random = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
+//     if(FLAMEGPU->getVariable<unsigned char>(INIT) && !quarantine && !FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT)){
+//         float random = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
 
-        auto env_events = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
-        auto env_events_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
-        auto env_events_starttime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
-        auto env_events_endtime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
-        auto env_events_probability = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
-        auto env_events_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
-        auto env_events_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
-        auto env_events_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
+//         auto env_events = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
+//         auto env_events_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
+//         auto env_events_starttime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
+//         auto env_events_endtime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
+//         auto env_events_probability = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
+//         auto env_events_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
+//         auto env_events_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
+//         auto env_events_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
 
-        float env_events_cdf[EVENT_LENGTH + 1] = {0.0f};
-        int env_events_mapping[EVENT_LENGTH + 1] = {-1};
+//         float env_events_cdf[EVENT_LENGTH + 1] = {0.0f};
+//         int env_events_mapping[EVENT_LENGTH + 1] = {-1};
 
-        int step = (FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY;
+//         int step = (FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY;
 
-        unsigned int num_events = 0;
-        unsigned int i = 0;
-        while((int) env_events[agent_type][i] != -1){
-            int start_time = (int) env_events_starttime[agent_type][i];
-            int end_time = (int) env_events_endtime[agent_type][i];
+//         unsigned int num_events = 0;
+//         unsigned int i = 0;
+//         while((int) env_events[agent_type][i] != -1){
+//             int start_time = (int) env_events_starttime[agent_type][i];
+//             int end_time = (int) env_events_endtime[agent_type][i];
 
-            if(start_time <= step && step <= end_time){
-                env_events_mapping[num_events] = i;
-                num_events++;
-            }
+//             if(start_time <= step && step <= end_time){
+//                 env_events_mapping[num_events] = i;
+//                 num_events++;
+//             }
 
-            i++;
-        }
+//             i++;
+//         }
 
-        for(int j = num_events; j > 1; j--){
-            if(j == num_events)
-                env_events_cdf[j-1] = (float) env_events_probability[agent_type][env_events_mapping[j-1]];
-            else
-                env_events_cdf[j-1] = env_events_cdf[j] + (float) env_events_probability[agent_type][env_events_mapping[j-1]];
-        }
-        env_events_cdf[0] = 1.0f;
+//         for(int j = num_events; j > 1; j--){
+//             if(j == num_events)
+//                 env_events_cdf[j-1] = (float) env_events_probability[agent_type][env_events_mapping[j-1]];
+//             else
+//                 env_events_cdf[j-1] = env_events_cdf[j] + (float) env_events_probability[agent_type][env_events_mapping[j-1]];
+//         }
+//         env_events_cdf[0] = 1.0f;
 
-        int event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
+//         int event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
 
-        if(event != -1) {
+//         if(event != -1) {
             
-            short event_node = -1;
-            float min_separation = numeric_limits<float>::max();
-            float previous_separation = 0;
-            bool available = false;
-            int type_room_event = (int) env_events[agent_type][event];
-            int area_room_event = (int) env_events_area[agent_type][event];
-            int event_distr = (int) env_events_distr[agent_type][event];
-            int event_distr_firstparam = (int) env_events_distr_firstparam[agent_type][event];
-            int event_distr_secondparam = (int) env_events_distr_secondparam[agent_type][event];
+//             short event_node = -1;
+//             float min_separation = numeric_limits<float>::max();
+//             float previous_separation = 0;
+//             bool available = false;
+//             int type_room_event = (int) env_events[agent_type][event];
+//             int area_room_event = (int) env_events_area[agent_type][event];
+//             int event_distr = (int) env_events_distr[agent_type][event];
+//             int event_distr_firstparam = (int) env_events_distr_firstparam[agent_type][event];
+//             int event_distr_secondparam = (int) env_events_distr_secondparam[agent_type][event];
 
 
-            // Searching the nearest room related to the event
-            for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
+//             // Searching the nearest room related to the event
+//             for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
 
-                const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
-                int area_room = message.getVariable<int>(AREA);
+//                 const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
+//                 int area_room = message.getVariable<int>(AREA);
 
-                float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
-                if(separation < min_separation && separation > previous_separation && area_room_event == area_room){
-                    min_separation = separation;
-                    event_node = message.getVariable<short>(GRAPH_NODE);
-                }
-            }
-            previous_separation = min_separation;
+//                 float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
+//                 if(separation < min_separation && separation > previous_separation && area_room_event == area_room){
+//                     min_separation = separation;
+//                     event_node = message.getVariable<short>(GRAPH_NODE);
+//                 }
+//             }
+//             previous_separation = min_separation;
 
-            short start_node;
+//             short start_node;
             
-            if(next_index != target_index)
-                start_node = coord2index[(unsigned short)(intermediate_target[1]/YOFFSET)][(unsigned short)intermediate_target[2]][(unsigned short)intermediate_target[0]];
-            else
-                start_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
+//             if(next_index != target_index)
+//                 start_node = coord2index[(unsigned short)(intermediate_target[1]/YOFFSET)][(unsigned short)intermediate_target[2]][(unsigned short)intermediate_target[0]];
+//             else
+//                 start_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
-            const short final_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
+//             const short final_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
-            short solution_start_event[SOLUTION_LENGTH] = {-1};
-            short solution_event_target[SOLUTION_LENGTH] = {-1};
+//             short solution_start_event[SOLUTION_LENGTH] = {-1};
+//             short solution_event_target[SOLUTION_LENGTH] = {-1};
 
-            // waitingroom for now suspended; if in the future, see the code in take new destination to handle the sending in the
-            // nearest waiting room
-            //try getting inside the event room
-            if(event_node != -1){
-                get_specific_resource = ++specific_resources_counter[agent_type][event_node];
+//             // waitingroom for now suspended; if in the future, see the code in take new destination to handle the sending in the
+//             // nearest waiting room
+//             //try getting inside the event room
+//             if(event_node != -1){
+//                 get_specific_resource = ++specific_resources_counter[agent_type][event_node];
                 
-                if(get_specific_resource <= specific_resources[agent_type][event_node]){
+//                 if(get_specific_resource <= specific_resources[agent_type][event_node]){
 
-                    get_global_resource = ++global_resources_counter[event_node];
+//                     get_global_resource = ++global_resources_counter[event_node];
 
-                    if(get_global_resource <= global_resources[event_node]){
-                        available = true;
-                    }
-                    else {
-                        --global_resources_counter[event_node];
-                        --specific_resources_counter[agent_type][event_node];
-                    }
-                }
-                else {
-                    --specific_resources_counter[agent_type][event_node];
-                }
+//                     if(get_global_resource <= global_resources[event_node]){
+//                         available = true;
+//                     }
+//                     else {
+//                         --global_resources_counter[event_node];
+//                         --specific_resources_counter[agent_type][event_node];
+//                     }
+//                 }
+//                 else {
+//                     --specific_resources_counter[agent_type][event_node];
+//                 }
 
-                // if the initial room is not avaiable because the resources are over, explore the alternatives:
-                if(!available && alternative_resources_type_rand[agent_type][event_node] != -1){
-                    //search another room of the same type and area
-                    if(alternative_resources_area_rand[agent_type][event_node] == area_room_event && alternative_resources_type_rand[agent_type][event_node] == type_room_event){
+//                 // if the initial room is not avaiable because the resources are over, explore the alternatives:
+//                 if(!available && alternative_resources_type_rand[agent_type][event_node] != -1){
+//                     //search another room of the same type and area
+//                     if(alternative_resources_area_rand[agent_type][event_node] == area_room_event && alternative_resources_type_rand[agent_type][event_node] == type_room_event){
 
-                        event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, previous_separation, type_room_event, area_room_event, &available);
-                    }
-                    //search another room of the alternative
-                    else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != env_events_area){
+//                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, previous_separation, type_room_event, area_room_event, &available);
+//                     }
+//                     //search another room of the alternative
+//                     else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != env_events_area){
                         
-                        event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, 0, alternative_resources_type_rand[agent_type][event_node], alternative_resources_area_rand[agent_type][event_node], &available);
-                    }
-                }
+//                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, 0, alternative_resources_type_rand[agent_type][event_node], alternative_resources_area_rand[agent_type][event_node], &available);
+//                     }
+//                 }
 
-                // if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
-                if(available){     
-                    a_star(FLAMEGPU, start_node, event_node, solution_start_event);
-                    a_star(FLAMEGPU, event_node, final_node, solution_event_target);
+//                 // if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
+//                 if(available){     
+//                     a_star(FLAMEGPU, start_node, event_node, solution_start_event);
+//                     a_star(FLAMEGPU, event_node, final_node, solution_event_target);
 
-                    unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, (float) event_distr_firstparam, (float) event_distr_secondparam, true);
+//                     unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, (float) event_distr_firstparam, (float) event_distr_secondparam, true);
                     
-                    unsigned int final_stay;
+//                     unsigned int final_stay;
 
-                    if(event_time_random < (unsigned int) stay_matrix[contacts_id][target_index]){
-                        final_stay = (unsigned int) stay_matrix[contacts_id][target_index] - event_time_random;
-                    }
-                    else{
-                        final_stay = 1;
-                    }
+//                     if(event_time_random < (unsigned int) stay_matrix[contacts_id][target_index]){
+//                         final_stay = (unsigned int) stay_matrix[contacts_id][target_index] - event_time_random;
+//                     }
+//                     else{
+//                         final_stay = 1;
+//                     }
 
-                    update_targets(FLAMEGPU, solution_start_event, &target_index, true, event_time_random);
-                    update_targets(FLAMEGPU, solution_event_target, &target_index, false, final_stay);
+//                     update_targets(FLAMEGPU, solution_start_event, &target_index, true, event_time_random);
+//                     update_targets(FLAMEGPU, solution_event_target, &target_index, false, final_stay);
 
-                    FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 1);
-                    FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, event_node);
+//                     FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 1);
+//                     FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, event_node);
 
-                    auto env_events_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
-                    auto env_events_agentlinked_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
+//                     auto env_events_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
+//                     auto env_events_agentlinked_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
 
-                    int agentlinked = (int) env_events_agentlinked[agent_type][event];
-                    int agentlinked_type = (int) env_events_agentlinked_type[agent_type][event];
-                    // Handle new support, if necessary
-                    if(agentlinked != -1){
-                        if(requested_support == -1){
-                            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
-                            FLAMEGPU->setVariable<short>(REQUESTED_TYPE, agentlinked_type);
+//                     int agentlinked = (int) env_events_agentlinked[agent_type][event];
+//                     int agentlinked_type = (int) env_events_agentlinked_type[agent_type][event];
+//                     // Handle new support, if necessary
+//                     if(agentlinked != -1){
+//                         if(requested_support == -1){
+//                             FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
+//                             FLAMEGPU->setVariable<short>(REQUESTED_TYPE, agentlinked_type);
 
-                            auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
+//                             auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
-                            unsigned int request_id = ++support_requests[agentlinked][0];
+//                             unsigned int request_id = ++support_requests[agentlinked][0];
 
-                            FLAMEGPU->setVariable<int>(REQUEST_ID, (int) request_id);
-                            FLAMEGPU->setVariable<short>(REQUEST_NODE, event_node);
-                            FLAMEGPU->setVariable<int>(REQUEST_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: event_time_random);
+//                             FLAMEGPU->setVariable<int>(REQUEST_ID, (int) request_id);
+//                             FLAMEGPU->setVariable<short>(REQUEST_NODE, event_node);
+//                             FLAMEGPU->setVariable<int>(REQUEST_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: event_time_random);
 
-                            FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
-                            FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
-                            FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
-                            FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
-                            FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
-                            FLAMEGPU->message_out.setVariable<float>(FINAL_X, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, event_node));
-                            FLAMEGPU->message_out.setVariable<float>(FINAL_Y, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, event_node));
-                            FLAMEGPU->message_out.setVariable<float>(FINAL_Z, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, event_node));
-                            FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: event_time_random);
+//                             FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
+//                             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
+//                             FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
+//                             FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
+//                             FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
+//                             FLAMEGPU->message_out.setVariable<float>(FINAL_X, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDX, event_node));
+//                             FLAMEGPU->message_out.setVariable<float>(FINAL_Y, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDY, event_node));
+//                             FLAMEGPU->message_out.setVariable<float>(FINAL_Z, FLAMEGPU->environment.getProperty<unsigned short, V>(INDEX2COORDZ, event_node));
+//                             FLAMEGPU->message_out.setVariable<int>(SUPPORT_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: event_time_random);
 
-                            FLAMEGPU->message_out.setKey(agentlinked);
-                        }
-                        else{
-                            // The agent is already supported in the determined flow; we extend the support to the event
-                            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, 1);
-                            FLAMEGPU->setVariable<short>(SUPPORT_TIME_EVENT, event_time_random);
-                        }
-                    }
+//                             FLAMEGPU->message_out.setKey(agentlinked);
+//                         }
+//                         else{
+//                             // The agent is already supported in the determined flow; we extend the support to the event
+//                             FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, 1);
+//                             FLAMEGPU->setVariable<short>(SUPPORT_TIME_EVENT, event_time_random);
+//                         }
+//                     }
 
-                    if(agent_pos[1] == INVISIBLE_AGENT_Y)
-                        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
-                    else
-                        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+//                     if(agent_pos[1] == INVISIBLE_AGENT_Y)
+//                         printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
+//                     else
+//                         printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
                 
-                    FLAMEGPU->setVariable<int>(CAN_MOVE, 1);
-                    FLAMEGPU->setVariable<int>(SKIP_FLOW, 1);
-                    return ALIVE;
-                }
+//                     FLAMEGPU->setVariable<int>(CAN_MOVE, 1);
+//                     FLAMEGPU->setVariable<int>(SKIP_FLOW, 1);
+//                     return ALIVE;
+//                 }
 
-            }
+//             }
             
-#if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAEvent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-#endif
-            FLAMEGPU->setVariable<int>(CAN_MOVE, 1);
-            return ALIVE;
-        }
-    }
+// #if defined(DEBUG) && !defined(ENSEMBLE)
+//             printf("5,%d,%d,Ending CUDAEvent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+// #endif
+//             FLAMEGPU->setVariable<int>(CAN_MOVE, 1);
+//             return ALIVE;
+//         }
+//     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending CUDAEvent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -515,7 +514,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
         return ALIVE;
     }
 
-//     // Move pedestrian
+    // Move pedestrian
     auto env_flow = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
     auto env_flow_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
     const unsigned short agent_with_a_rate = FLAMEGPU->getVariable<unsigned short>(AGENT_WITH_A_RATE);
@@ -541,46 +540,103 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     const unsigned short flow_index = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX);
     const int room_for_quarantine_index = FLAMEGPU->getVariable<int>(ROOM_FOR_QUARANTINE_INDEX);
 
+    const short arrival_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
-    // Handle the agent exited from the environment
-    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]]) && next_index == target_index && ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1 || ((flow_index - 1) > 0 && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index - 1] == SPAWNROOM) || CHECK_IS_SPAWNROOM(room_for_quarantine_index) || FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))){        
-        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
+    // 2. Check Arrival at Spawnroom
+    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index) {
 
-        if(agent_with_a_rate && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1){
-            counters[COUNTERS_KILLED_AGENTS_WITH_RATE]++;
+        bool is_terminal_exit = ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1 || 
+                                ((flow_index - 1) > 0 && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index - 1] == SPAWNROOM) || 
+                                CHECK_IS_SPAWNROOM(room_for_quarantine_index) || 
+                                FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE));
 
-        if(FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
+        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], disease_state);
 
-            short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
-            auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
-            auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
-            --global_resources_counter[event_node];
-            --specific_resources_counter[FLAMEGPU->getVariable<int>(AGENT_TYPE)][event_node];
-            
-            FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
-            FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
-        }
+        if (is_terminal_exit) {
+
+            if(agent_with_a_rate && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1){
+                counters[COUNTERS_KILLED_AGENTS_WITH_RATE]++;
+
+                if(FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
+
+                    short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
+                    auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+                    auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+                    --global_resources_counter[event_node];
+                    --specific_resources_counter[FLAMEGPU->getVariable<int>(AGENT_TYPE)][event_node];
+                    
+                    FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
+                    FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
+                }
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
             return DEAD;
-        }
+            }
 
-        FLAMEGPU->setVariable<unsigned char>(INIT, 0);
-        FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
-        agent_pos[1] = INVISIBLE_AGENT_Y;
-
-        FLAMEGPU->setVariable<int>(CAN_MOVE, 0);
-
-        if(!agent_with_a_rate && ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1 || ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM)) && !FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))
+            FLAMEGPU->setVariable<unsigned char>(INIT, 0);
+            FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
+            agent_pos[1] = INVISIBLE_AGENT_Y;
+            FLAMEGPU->setVariable<int>(CAN_MOVE, 0);
+                
+            if(!agent_with_a_rate && ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1 || ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM)) && !FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))
             update_flow(FLAMEGPU, false);
 
-        FLAMEGPU->setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 0);
+            FLAMEGPU->setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 0);
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
+
         return ALIVE;
+        } else {
+            // --- NEW MID-FLUX "PARKING" LOGIC ---
+            FLAMEGPU->setVariable<unsigned char>(INIT, 0); // Hide from contagion
+            FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
+            FLAMEGPU->setVariable<int>(CAN_MOVE, 0);
+            
+            return ALIVE; 
+        }
     }
+
+
+    // Handle the agent exited from the environment
+//     if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]]) && next_index == target_index && ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1 || ((flow_index - 1) > 0 && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index - 1] == SPAWNROOM) || CHECK_IS_SPAWNROOM(room_for_quarantine_index) || FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))){        
+//         printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
+
+//         if(agent_with_a_rate && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1){
+//             counters[COUNTERS_KILLED_AGENTS_WITH_RATE]++;
+
+//         if(FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
+
+//             short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
+//             auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+//             auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+//             --global_resources_counter[event_node];
+//             --specific_resources_counter[FLAMEGPU->getVariable<int>(AGENT_TYPE)][event_node];
+            
+//             FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
+//             FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
+//         }
+// #if defined(DEBUG) && !defined(ENSEMBLE)
+//             printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+// #endif
+//             return DEAD;
+//         }
+
+//         FLAMEGPU->setVariable<unsigned char>(INIT, 0);
+//         FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
+//         agent_pos[1] = INVISIBLE_AGENT_Y;
+//         FLAMEGPU->setVariable<int>(CAN_MOVE, 0);
+
+//         if(!agent_with_a_rate && ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1 || ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM)) && !FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE))
+//             update_flow(FLAMEGPU, false);
+
+//         FLAMEGPU->setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 0);
+// #if defined(DEBUG) && !defined(ENSEMBLE)
+//         printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+// #endif
+//         return ALIVE;
+//     } 
 
     bool just_finished_event = false;
     
