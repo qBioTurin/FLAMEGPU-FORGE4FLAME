@@ -142,7 +142,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
         float available_vel = 1.0f;   
         float distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-        float arrival_tolerance = (next_index == target_index) ? 2.0f : 0.01f;
+        float arrival_tolerance = (next_index == target_index) ? 1.0f : 0.2f;
 
         while(distance < available_vel && available_vel > 0.0f){
 
