@@ -9,6 +9,15 @@ import pandas as pd
 from MapEncoding import *
 from itertools import chain
 from collections import Counter
+import hashlib
+
+def create_directories(ensemble, dirname_experiment, random_seed, nrun):
+    """Ensures directories exist, even if we skip compilation."""
+    if ensemble == "ON":
+        for run in range(nrun):    
+            os.system("mkdir -p ../results/" + dirname_experiment + "/seed" + str(random_seed + run))
+    else:
+        os.system("mkdir -p ../results/" + dirname_experiment + "/seed" + str(random_seed))
 
 def distribution(type, types, a, b, flow_time):
 	random_number = 0
@@ -721,12 +730,29 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 									env_flow_area[agent_type_idx][shift_index][i][flow_index] = areas[fa]["ID"]
 									env_flow_agentlinked[agent_type_idx][shift_index][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
 									env_flow_agentlinked_type[agent_type_idx][shift_index][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
-									env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
-									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
+									
+									
+									if ft.upper() == "SPAWNROOM" and k == flow_type.index[-1]:
+										env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions["Deterministic"]
+										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1 * steps_in_a_minute
+										env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = 0
+									else:
+										env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
+										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
+										env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
+									
+									# env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
+									# env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
+									# env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
+									
+									
+									
 									env_activity_type[agent_type_idx][shift_index][i][flow_index] = f.loc["Activity"]
 
 									flow_index = flow_index + 1
+
+
+
 						else:
 							n = 0
 							
@@ -753,9 +779,21 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								env_flow_area[agent_type_idx][shift_index][i][flow_index] = areas[fa]["ID"]
 								env_flow_agentlinked[agent_type_idx][shift_index][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
 								env_flow_agentlinked_type[agent_type_idx][shift_index][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
-								env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
-								env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-								env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
+								
+								if ft.upper() == "SPAWNROOM" and k == determined_flow.index[-1]:
+									env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions["Deterministic"]
+									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1 * steps_in_a_minute
+									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = 0
+								else:
+									env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
+									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
+									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
+								
+								# env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
+								# env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
+								# env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
+								
+								
 								env_activity_type[agent_type_idx][shift_index][i][flow_index] = f.loc["Activity"]
 
 								flow_index = flow_index + 1
@@ -785,17 +823,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		
 							e = e - 1
 						
-						# env_events[agent_type_idx][0] = 0
-						# env_events_area[agent_type_idx][0] = -1
-						# env_events_activity[agent_type_idx][0] = 1.0
-						# env_events_starttime[agent_type_idx][0] = 0
-						# env_events_endtime[agent_type_idx][0] = steps_in_a_day - 1
-						# env_events_agentlinked[agent_type_idx][0] = -1
-						# env_events_agentlinked_type[agent_type_idx][0] = -1
-						# env_events_probability[agent_type_idx][0] = 0
-						# env_events_distr[agent_type_idx][0] = distributions["Deterministic"]
-						# env_events_distr_firstparam[agent_type_idx][0] = 0
-						# env_events_distr_secondparam[agent_type_idx][0] = 0
 
 					if n > 0:
 						total_agents_estimation = total_agents_estimation + n
@@ -879,6 +906,7 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define JUST_EXITED_FROM_QUARANTINE \"just_exited_from_quarantine\"\n")
 		autogenerated_variables_names.write("#define WEEK_DAY_FLOW \"week_day_flow\"\n")
 		autogenerated_variables_names.write("#define IN_AN_EVENT \"in_an_event\"\n")
+		autogenerated_variables_names.write("#define EVENT_ID \"event_id\"\n")
 		autogenerated_variables_names.write("#define ACTUAL_EVENT_NODE \"actual_event_node\"\n")
 		autogenerated_variables_names.write("#define ACTUAL_NODE \"actual_node\"\n")
 		autogenerated_variables_names.write("#define WAITING_ROOM_TIME \"waiting_room_time\"\n")
@@ -1884,13 +1912,48 @@ def main():
 	num_counters = 5
 	y_offset = 10
 
+	path_to_dir = "f4f/" + args.dirname_experiment + "/"
 	files = os.listdir("f4f/" + args.dirname_experiment)
 	json_files = [file for file in files if file.endswith('.json')]
+	json_path = path_to_dir + json_files[0]
+	hash_storage_file = path_to_dir + ".last_compile_hash"
+    
+    # Generate a unique "fingerprint" of the file content
+	with open(json_path, "rb") as f:
+		current_hash = hashlib.md5(f.read()).hexdigest()
+    
+    # Define your output dependencies
+	output_files = ["../src/autogenerated_variables_names.h", "../src/autogenerated_defines.h", "./resources/run_plan_vector.json" if args.ensemble == "ON" else "./resources/configuration_file.xml"]
+	all_outputs_exist = all(os.path.exists(f) and os.path.getsize(f) > 0 for f in output_files)
+
+    # Check if we can skip
+	if os.path.exists(hash_storage_file) and all_outputs_exist:
+		with open(hash_storage_file, "r") as f:
+			if f.read() == current_hash:
+				#JSON unchanged and headers exist. Skipping compilation
+                # We still need to load the JSON briefly to return the seed/prun
+				with open(json_path) as file:
+					WHOLEmodel = json.load(file)
+				
+				seed = int(WHOLEmodel["starting"][0]["seed"])
+				nrun = int(WHOLEmodel["starting"][0]["nrun"])
+				prun = int(WHOLEmodel["starting"][0]["prun"]) if args.ensemble == "ON" else 1
+                
+                # MANDATORY: Create the directories even if we skip compilation
+				create_directories(args.ensemble, args.dirname_experiment, seed, nrun)
+		
+				return seed, prun
+    # --- END OF CACHE CHECK ---
+
+
 	with open("f4f/" + args.dirname_experiment + "/" + json_files[0]) as file:
 		WHOLEmodel = json.load(file)
 
+	nrun = int(WHOLEmodel["starting"][0]["nrun"])
 	seed = int(WHOLEmodel["starting"][0]["seed"])
 	step = int(WHOLEmodel["starting"][0]["step"])
+
+	create_directories(args.ensemble, args.dirname_experiment, seed, nrun)
 
 	rooms_info = obtain_rooms(WHOLEmodel)
 	canvas_dimensions = obtain_canvas_dimension(WHOLEmodel)
@@ -1988,6 +2051,9 @@ def main():
 			autogenerated_defines.write("#endif //_AUTOGENERATED_DEFINES_CUH_\n")
 
 		autogenerated_variables_names.write("#endif //_AUTOGENERATED_VARIABLES_NAMES_CUH_\n")
+
+	with open(hash_storage_file, "w") as f:
+		f.write(current_hash)
 
 	return seed, prun
 

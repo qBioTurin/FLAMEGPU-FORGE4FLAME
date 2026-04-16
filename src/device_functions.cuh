@@ -284,6 +284,7 @@ namespace device_functions {
             //if the agent is already waiting for a node, go for it
             if(FLAMEGPU->getVariable<short>(NODE_WAITING_FOR) != -1){
                 final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
+                *available = true;
             }
             else {
                 auto list_front = messages.begin();
@@ -296,7 +297,7 @@ namespace device_functions {
             if(severity == MINOR){
                 // Move the resources check when the agent reaches the door of the room
                 if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
-                     *available = true;
+                    *available = true;
                     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
                     float min_separation = numeric_limits<float>::max();
@@ -321,7 +322,7 @@ namespace device_functions {
                     FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, OUTSIDE_WAITING_ROOM);
                     final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
-                    // int src = specific_resources_counter[agent_type][final_target];
+                    *available = true;
                 }
                 else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM){
                     // Try getting the resources of the room
@@ -343,7 +344,6 @@ namespace device_functions {
 
                         // Search another room of the same type and area
                         if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
-                            //random = (random + 1) % lenght_rooms;
                             final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, available);
                         }
                         // Search another room of the alternative
@@ -370,10 +370,13 @@ namespace device_functions {
                             int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (j-1), false));
                             final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, available);
                         }
+                        unsigned int  get_specific_resource = --specific_resources_counter[agent_type][final_target];
                     }
                 }
 
                 if(!*available || alternative_resources_type_det[agent_type][final_target] == -1){
+                    *stay = 1;
+                    final_target = start_node;
                     if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM) {
                         ++global_resources_counter[start_node]; 
                         ++specific_resources_counter[agent_type][start_node];

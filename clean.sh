@@ -4,6 +4,9 @@ rm -fr flamegpu2
 rm host_rng_state.txt
 
 cd resources
+cd f4f
+find . -type f -name ".last_compile_hash" -delete
+cd ..
 rm -fr __pycache__
 rm configuration_file.*
 rm MapEncoding.py
