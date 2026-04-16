@@ -11,7 +11,6 @@
       -expdir or --experiment_dir:         directory with the scenario to simulate
       -ob     or --only_build:             build the model without execute it
    	  -v      or --visualisation:          activate the visualisation
-      -cps    or --checkpoint_simulation:  run the model in a simplified version with the aim to obtain a checkpoint
       -g      or --debug:                  execute the simulation with debug
       -c      or --clean:                  clean old files and directories
 
@@ -29,7 +28,6 @@ EXPERIMENT_DIR="None"
 RESULTS_DIR="results"
 ONLY_BUILD="OFF"
 VISUALISATION="OFF"
-CHECKPOINT_SIMULATION="OFF"
 DEBUG="OFF"
 CLEAN="OFF"
 SUBSTITUTE_DIR="OFF"
@@ -152,7 +150,7 @@ SEED="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f1)"
 echo $SEED > results/$EXPERIMENT_DIR/seed.txt
 
 # Build the model
-bash build.sh -cps $CHECKPOINT_SIMULATION -g $DEBUG -v $VISUALISATION
+bash build.sh -g $DEBUG -v $VISUALISATION
 
 if [ $ONLY_BUILD == "OFF" ];
 then

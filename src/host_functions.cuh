@@ -79,8 +79,6 @@ namespace host_functions {
         return values;
     }
 
-
-
     /** 
      * Initialization function.
     */
@@ -117,7 +115,6 @@ namespace host_functions {
 
         printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
 
-        
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
@@ -133,8 +130,11 @@ namespace host_functions {
         // Import a macro properties
         FLAMEGPU->environment.importMacroProperty(COORD2INDEX, string("resources/macro_environment/") + COORD2INDEX + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOM_MATRICES, string("resources/macro_environment/") + ROOM_MATRICES + ".xml");
-        FLAMEGPU->environment.importMacroProperty(ROOM_OBJECTS_X, string("resources/macro_environment/") + ROOM_OBJECTS_X + ".xml");
-        FLAMEGPU->environment.importMacroProperty(ROOM_OBJECTS_Z, string("resources/macro_environment/") + ROOM_OBJECTS_Z + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_HAS_OBJECTS, string("resources/macro_environment/") + ROOMS_HAS_OBJECTS + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_X_OBJECTS, string("resources/macro_environment/") + ROOMS_X_OBJECTS + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_Z_OBJECTS, string("resources/macro_environment/") + ROOMS_Z_OBJECTS + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_LENGTH_OBJECTS, string("resources/macro_environment/") + ROOMS_LENGTH_OBJECTS + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_WIDTH_OBJECTS, string("resources/macro_environment/") + ROOMS_WIDTH_OBJECTS + ".xml");
         FLAMEGPU->environment.importMacroProperty(ADJMATRIX, string("resources/macro_environment/") + ADJMATRIX + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPAWNROOMS_AREAS_IDS, string("resources/macro_environment/") + SPAWNROOMS_AREAS_IDS + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW, string("resources/macro_environment/") + ENV_FLOW + ".xml");
@@ -445,6 +445,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
                         new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, week_day);
                         new_pedestrian.setVariable<unsigned short>(RISK_CLASS, risk_class);
+                        new_pedestrian.setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 1);
 
                         int swab_steps = -1;
                         if((int) env_swab_distr[0][i] != NO_SWAB)
@@ -724,25 +725,6 @@ namespace host_functions {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
-        // Log the environment macro properties
-        // auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
-
-        // string filename;
-
-        // filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/counters.csv";
-        // ofstream counters_file(filename.c_str(), ofstream::app);
-        // counters_file << FLAMEGPU->environment.getProperty<unsigned short>(DAY) << ",";
-        // for(int i = 0; i < NUM_COUNTERS; i++){
-        //     if(i == (NUM_COUNTERS - 1)){
-        //         counters_file << counters[i];
-        //     }
-        //     else{
-        //         counters_file << counters[i] << ",";
-        //     }
-        // }
-        // counters_file << endl;
-        // counters_file.close();
-
         string filename = "results/" + string(EXPERIMENT_NAME) + "/seed" + to_string(FLAMEGPU->environment.getProperty<unsigned int>(SEED)) + "/host_rng_state.txt";
         ofstream rng_state(filename.c_str(), ofstream::out);
         rng_state << host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)];

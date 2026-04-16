@@ -86,6 +86,7 @@ namespace device_functions {
         printf("5,%d,%d,Beginning of findFreeRoomForEventOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
+
         short event_node;
         float min_separation = numeric_limits<float>::max();
         float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
@@ -97,13 +98,12 @@ namespace device_functions {
 
         do {
             // Searching the nearest room related to the event
-            //to add the area
-
+            // To add the area
             float min_separation = numeric_limits<float>::max();
             event_node = -1;
             for(const auto& message: FLAMEGPU->message_in(type_room_event)) {
-
                 const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
+                
                 int area_room = message.getVariable<int>(AREA);
 
                 float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
@@ -120,7 +120,6 @@ namespace device_functions {
                 int get_specific_resource = ++specific_resources_counter[agent_type][event_node];
 
                 if(get_specific_resource <= specific_resources[agent_type][event_node]){
-
                     int get_global_resource = ++global_resources_counter[event_node];
 
                     if(get_global_resource <= global_resources[event_node]){
@@ -155,9 +154,6 @@ namespace device_functions {
 #endif
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
         const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
-
-        int random_iterator = random;
-        unsigned short final_target;
         
         auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
         auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
@@ -166,8 +162,9 @@ namespace device_functions {
         auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
 
         unsigned short random_area = (unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false));
-        final_target = (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
-        
+        unsigned short final_target = (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
+        int random_iterator = random;
+
         auto messages = FLAMEGPU->message_in(flow);
         bool room_resources = false;
         do {
@@ -299,7 +296,6 @@ namespace device_functions {
             if(severity == MINOR){
                 // Move the resources check when the agent reaches the door of the room
                 if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
-                    
                      *available = true;
                     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
@@ -321,40 +317,36 @@ namespace device_functions {
                     
                 }
                 else if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
-                    
-                    //The agent have waited in waiting room and now go to the right flux room
+                    // The agent have waited in waiting room and now go to the right flux room
                     FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, OUTSIDE_WAITING_ROOM);
                     final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
-                    int src = specific_resources_counter[agent_type][final_target];
-                
+                    // int src = specific_resources_counter[agent_type][final_target];
                 }
                 else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM){
-                    
                     // Try getting the resources of the room
                     get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
                     if(get_specific_resource <= specific_resources[agent_type][final_target]){
-
                         get_global_resource = ++global_resources_counter[final_target];
                         if(get_global_resource <= global_resources[final_target]){
-                        *available = true;
+                            *available = true;
                         }
                         else {
-                        get_global_resource = --global_resources_counter[final_target]; 
+                            get_global_resource = --global_resources_counter[final_target]; 
                         } 
                     } 
 
-                    //if the initial room is not avaiable because the resources are over, explore the alternatives:
+                    // If the initial room is not avaiable because the resources are over, explore the alternatives:
                     if(!*available){
                         get_specific_resource = --specific_resources_counter[agent_type][final_target];
 
-                        //search another room of the same type and area
+                        // Search another room of the same type and area
                         if(alternative_resources_area_det[agent_type][final_target] == area && alternative_resources_type_det[agent_type][final_target] == flow){
                             //random = (random + 1) % lenght_rooms;
                             final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, flow, random, lenght_rooms, ward_indeces, available);
                         }
-                        //search another room of the alternative
+                        // Search another room of the alternative
                         else if(alternative_resources_area_det[agent_type][final_target] != area || alternative_resources_type_det[agent_type][final_target] != flow){
                             
                             auto messages = FLAMEGPU->message_in(alternative_resources_type_det[agent_type][final_target]);
@@ -437,7 +429,7 @@ namespace device_functions {
         float z_start = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, start);
         float z_goal = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, goal);
 
-        //Initialize the starting node
+        // Initialize the starting node
         short initial_h = MANHATTAN_DISTANCE(x_start, x_goal, z_start, z_goal);
         openset[start][0] = initial_h;
         openset[start][1] = 0;
@@ -487,7 +479,7 @@ namespace device_functions {
                     solution[i] = -1;
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+                printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
 #endif
                 return;
             }
@@ -528,155 +520,6 @@ namespace device_functions {
         printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
 #endif   
     }
-
-
-   /** 
-     * Find the shortest path between two cells in matrix
-     * TOFINISHNOTALREADYUSED A STAR IN UNA MATRICE
-    */
-    // FLAMEGPU_DEVICE_FUNCTION void a_star_matrix( DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU,  const unsigned short start_idx, const unsigned short goal_idx, short* solution) {
-    //     // ClosedSet: Mappa [Indice Nodo] -> [Indice Padre]
-    //     // Serve sia per sapere se visitato, sia per ricostruire il percorso
-    //     short closedset[GRID_SIZE];
-        
-    //     // OpenSet: Mappa [Indice Nodo] -> {F_Cost, G_Cost, Parent}
-    //     // Usiamo array statici per evitare malloc/new che su GPU non esistono/sono lenti
-    //     short openset[GRID_SIZE][3];
-
-    //     // Inizializzazione rapida a "Vuoto"
-    //     for (unsigned short i = 0; i < GRID_SIZE; ++i) {
-    //         closedset[i] = NOT_PRESENT; 
-    //         openset[i][F_COST] = NOT_PRESENT;
-    //         openset[i][G_COST] = NOT_PRESENT;
-    //         openset[i][PARENT] = NOT_PRESENT;
-    //     }
-
-    //     // Coordinate Start/Goal
-    //     short start_x = start_idx % MAP_DIM_X;
-    //     short start_y = start_idx / MAP_DIM_X;
-    //     short goal_x = goal_idx % MAP_DIM_X;
-    //     short goal_y = goal_idx / MAP_DIM_X;
-
-    //     // Recuperiamo la mappa dall'Environment (Global Read-Only Memory)
-    //     // Assumiamo esista una proprietà macro 'grid_map' contenente 1 (walkable) e 0 (wall)
-    //     auto grid_data = FLAMEGPU->environment.getMacroProperty<unsigned short, GRID_SIZE>("grid_map");
-
-    //     // Check banale: Se start o goal sono muri, esci subito
-    //     if (grid_data[start_idx] == WALL || grid_data[goal_idx] == WALL) {
-    //         solution[0] = -1; 
-    //         return; 
-    //     }
-
-    //     // Inseriamo il nodo di partenza
-    //     short initial_h = CHEBYSHEV_DISTANCE(start_x, goal_x, start_y, goal_y);
-    //     openset[start_idx][F_COST] = initial_h; // G=0, quindi F = H
-    //     openset[start_idx][G_COST] = 0;
-    //     openset[start_idx][PARENT] = STARTING_POINT;
-
-    //     // n_open tiene traccia di quanti nodi ci sono da esplorare
-    //     for(unsigned short n_open = 1; n_open > 0;) {
-
-    //         // 1. Trova il nodo con F_COST minore (Lowest F)
-    //         // Su GPU non abbiamo priority_queue, facciamo una scansione lineare (O(N))
-    //         // Questo è il collo di bottiglia, ma con short array in cache è accettabile.
-    //         short current_idx = NOT_PRESENT;
-    //         short min_f = 32000; // Valore sentinella (MAX_SHORT approx)
-
-    //         for(int i = 0; i < GRID_SIZE; ++i) {
-    //             short f = openset[i][F_COST];
-    //             if (f != NOT_PRESENT) {
-    //                 if (f < min_f) {
-    //                     min_f = f;
-    //                     current_idx = i;
-    //                 }
-    //             }
-    //         }
-
-    //         // Safety break
-    //         if (current_idx == NOT_PRESENT) break;
-
-    //         // Recuperiamo i dati del nodo corrente prima di chiuderlo
-    //         short current_g = openset[current_idx][G_COST];
-    //         short current_parent = openset[current_idx][PARENT];
-
-    //         // 2. Sposta da OpenSet a ClosedSet
-    //         openset[current_idx][F_COST] = NOT_PRESENT; // Rimuovi da open
-    //         openset[current_idx][G_COST] = NOT_PRESENT;
-    //         openset[current_idx][PARENT] = NOT_PRESENT;
-    //         n_open--;
-
-    //         closedset[current_idx] = current_parent; // Segna come visitato
-
-    //         // 3. Controllo vittoria (Siamo arrivati?)
-    //         if (current_idx == goal_idx) {
-    //             // BACKTRACKING DEL PERCORSO
-    //             short temp_path[MAX_MATRIX_SOLUTION_LENGTH];
-    //             short length = 0;
-    //             short backtrack = current_idx;
-
-    //             // Risaliamo la catena dei padri
-    //             while (backtrack != STARTING_POINT && length < MAX_MATRIX_SOLUTION_LENGTH) {
-    //                 temp_path[length++] = backtrack;
-    //                 backtrack = closedset[backtrack]; // Salta al padre
-    //             }
-
-    //             // Invertiamo l'array per averlo da Start -> Goal
-    //             for(unsigned short i = 0, j = length - 1; i < length; ++i, --j){
-    //                 solution[i] = temp_path[j];
-    //             }
-    //             // Riempiamo il resto con -1
-    //             for(unsigned short i = length; i < MAX_MATRIX_SOLUTION_LENGTH; ++i) {
-    //                 solution[i] = -1;
-    //             }
-    //             return; // Fine successo
-    //         }
-
-    //         // 4. Espansione Vicini (8 Direzioni)
-    //         short c_x = current_idx % MAP_DIM_X;
-    //         short c_y = current_idx / MAP_DIM_X;
-
-    //         // Look-up table per le 8 direzioni (dx, dy)
-    //         const short dirs_x[8] = {0, 0, -1, 1, -1, 1, -1, 1};
-    //         const short dirs_y[8] = {-1, 1, 0, 0, -1, -1, 1, 1};
-
-    //         for (int k = 0; k < 8; ++k) {
-    //             short nx = c_x + dirs_x[k];
-    //             short ny = c_y + dirs_y[k];
-
-    //             if (IS_VALID(nx, ny)) {
-    //                 short n_idx = IDX(nx, ny);
-
-    //                 // Se è calpestabile E non è stato già chiuso
-    //                 if (grid_data[n_idx] == WALKABLE && closedset[n_idx] == NOT_PRESENT) {
-                        
-    //                     // Costo movimento: 1 per tutti (Coerente con Chebyshev)
-    //                     short new_g = current_g + 1;
-                        
-    //                     short old_g = openset[n_idx][G_COST];
-    //                     bool is_in_open = (old_g != NOT_PRESENT);
-
-    //                     // Se non è in open OPPURE abbiamo trovato una strada più corta
-    //                     if (!is_in_open || new_g < old_g) {
-                            
-    //                         // Calcolo Euristica
-    //                         short h = CHEBYSHEV_DISTANCE(nx, goal_x, ny, goal_y);
-                            
-    //                         openset[n_idx][F_COST] = new_g + h;
-    //                         openset[n_idx][G_COST] = new_g;
-    //                         openset[n_idx][PARENT] = current_idx;
-
-    //                         if (!is_in_open) {
-    //                             n_open++;
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     // Se arriviamo qui, open set è vuoto e non abbiamo trovato il goal
-    //     solution[0] = -1;
-    // }
 
     /** 
      * Update agent intermediate and final targets.
@@ -1131,7 +974,7 @@ namespace device_functions {
 
         unsigned short identified_bool = FLAMEGPU->getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
-        if(identified_bool != IDENTIFIED && FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT)){
+        if(identified_bool != IDENTIFIED){
             float random_external_screening_first = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
             if(random_external_screening_first < (float) env_external_screening_first[day-1][agent_type]){
                 swab(FLAMEGPU);
@@ -1182,7 +1025,7 @@ namespace device_functions {
 
             contamination_risk = (mask_type != NO_MASK) ? contamination_risk * (1 - contamination_risk_decreased_with_mask): contamination_risk;
 
-            // 0.01 because for now we are not cconsidering symptomatic infected agents (otherwise
+            // 0.01 because for now we are not considering symptomatic infected agents (otherwise
             // it would be 1/2^t where t is the time since the beginning of the symptoms)
             const float p_contact = infected_contact > 0 ? ((contamination_risk * 0.01) / area_around_agent): 0.0f;
 
@@ -1330,7 +1173,7 @@ namespace device_functions {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of outside_contagion for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
-        if(FLAMEGPU->getVariable<int>(DISEASE_STATE) == SUSCEPTIBLE && FLAMEGPU->getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) && FLAMEGPU->getVariable<float>(Y) == INVISIBLE_AGENT_Y){
+        if(FLAMEGPU->getVariable<int>(DISEASE_STATE) == SUSCEPTIBLE && FLAMEGPU->getVariable<float>(Y) == INVISIBLE_AGENT_Y){
             const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
             const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY)-1;
             const float perc_inf = FLAMEGPU->environment.getProperty<float, DAYS + 1>(PERC_INF, day);
@@ -1381,7 +1224,243 @@ namespace device_functions {
         printf("5,%d,%d,Ending outside_contagion for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
     }
-	
+
+    /** 
+     * Find the shortest path between two cells in matrix using A* algorithm.
+    */
+    FLAMEGPU_DEVICE_FUNCTION void a_star_matrix(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, const unsigned short room_id, const unsigned short start_pos[2], const unsigned short goal_pos[2], short* solution) {
+        // ClosedSet: Matrix [z][x] storing parent coordinates encoded as (parent_z * MAX_DIMENSION + parent_x)
+        short closedset[MAX_DIMENSION][MAX_DIMENSION];
+        
+        // OpenSet: Matrix [z][x][3] storing {F_Cost, G_Cost, Parent}
+        short openset[MAX_DIMENSION][MAX_DIMENSION][3];
+
+        // Initialization
+        for (unsigned short z = 0; z < MAX_DIMENSION; ++z) {
+            for (unsigned short x = 0; x < MAX_DIMENSION; ++x) {
+                closedset[z][x] = NOT_PRESENT; 
+                openset[z][x][F_COST] = NOT_PRESENT;
+                openset[z][x][G_COST] = NOT_PRESENT;
+                openset[z][x][PARENT] = NOT_PRESENT;
+            }
+        }
+
+        // Extract coordinates from arrays
+        unsigned short start_x = start_pos[0];
+        unsigned short start_z = start_pos[1];
+        unsigned short goal_x = goal_pos[0];
+        unsigned short goal_z = goal_pos[1];
+
+        // Get grid data from environment
+        auto room_matrix = FLAMEGPU->environment.getMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+
+        // Initialize start node
+        short initial_h = CHEBYSHEV_DISTANCE(start_x, goal_x, start_z, goal_z);
+        openset[start_z][start_x][F_COST] = initial_h;
+        openset[start_z][start_x][G_COST] = 0;
+        openset[start_z][start_x][PARENT] = STARTING_POINT;
+
+        // Main A* loop
+        for(unsigned short n_open = 1; n_open > 0;) {
+            // 1. Find node with lowest F-cost
+            short current_x = NOT_PRESENT;
+            short current_z = NOT_PRESENT;
+            short min_f = -32768;
+
+            for(unsigned short z = 0; z < MAX_DIMENSION; ++z) {
+                for(unsigned short x = 0; x < MAX_DIMENSION; ++x) {
+                    short f = openset[z][x][F_COST];
+                    if (f != NOT_PRESENT && f < min_f) {
+                        min_f = f;
+                        current_x = x;
+                        current_z = z;
+                    }
+                }
+            }
+
+            // Safety break
+            if (current_x == NOT_PRESENT) break;
+
+            // Get current node data
+            short current_g = openset[current_z][current_x][G_COST];
+            short current_parent = openset[current_z][current_x][PARENT];
+
+            // 2. Move from OpenSet to ClosedSet
+            openset[current_z][current_x][F_COST] = NOT_PRESENT;
+            openset[current_z][current_x][G_COST] = NOT_PRESENT;
+            openset[current_z][current_x][PARENT] = NOT_PRESENT;
+            n_open--;
+
+            closedset[current_z][current_x] = current_parent;
+
+            // 3. Check if goal reached
+            if (current_x == goal_x && current_z == goal_z) {
+                // Backtrack to reconstruct full path as coordinates
+                short full_path_x[SOLUTION_LENGTH];
+                short full_path_z[SOLUTION_LENGTH];
+                short length = 0;
+                short curr_x = current_x;
+                short curr_z = current_z;
+
+                while ((curr_x != start_x || curr_z != start_z) && length < SOLUTION_LENGTH) {
+                    full_path_x[length] = curr_x;
+                    full_path_z[length] = curr_z;
+                    length++;
+                    short parent = closedset[curr_z][curr_x];
+                    if (parent == STARTING_POINT) break;
+                    curr_x = parent % MAX_DIMENSION;
+                    curr_z = parent / MAX_DIMENSION;
+                }
+
+                // Add start point if not already there
+                if (length < SOLUTION_LENGTH) {
+                    full_path_x[length] = start_x;
+                    full_path_z[length] = start_z;
+                    length++;
+                }
+
+                // Reverse path from Start -> Goal
+                short reversed_x[SOLUTION_LENGTH];
+                short reversed_z[SOLUTION_LENGTH];
+                for(unsigned short i = 0, j = length - 1; i < length; ++i, --j){
+                    reversed_x[i] = full_path_x[j];
+                    reversed_z[i] = full_path_z[j];
+                }
+
+                // Simplify: keep only waypoints where direction changes
+                unsigned short wp_count = 0;
+                // Start point at relative position (0, 0)
+                solution[wp_count * 2] = 0;
+                solution[wp_count * 2 + 1] = 0;
+                wp_count++;
+
+                // Check for direction changes starting from second point
+                for(unsigned short i = 1; i < length && wp_count < SOLUTION_LENGTH / 2; ++i) {
+                    short curr_x = reversed_x[i];
+                    short curr_z = reversed_z[i];
+                    short prev_x = reversed_x[i - 1];
+                    short prev_z = reversed_z[i - 1];
+                    
+                    // Direction from previous waypoint to current point
+                    short dir_x_to_curr = (curr_x > prev_x) ? 1 : (curr_x < prev_x) ? -1 : 0;
+                    short dir_z_to_curr = (curr_z > prev_z) ? 1 : (curr_z < prev_z) ? -1 : 0;
+
+                    // Check if next point requires direction change
+                    bool is_waypoint = false;
+                    if (i < length - 1) {
+                        short next_x = reversed_x[i + 1];
+                        short next_z = reversed_z[i + 1];
+                        
+                        short dir_x_to_next = (next_x > curr_x) ? 1 : (next_x < curr_x) ? -1 : 0;
+                        short dir_z_to_next = (next_z > curr_z) ? 1 : (next_z < curr_z) ? -1 : 0;
+                        
+                        // It's a waypoint if direction changes
+                        if (dir_x_to_curr != dir_x_to_next || dir_z_to_curr != dir_z_to_next) {
+                            is_waypoint = true;
+                        }
+                    } else {
+                        // Last point is always a waypoint (goal)
+                        is_waypoint = true;
+                    }
+
+                    if (is_waypoint) {
+                        // Store as relative coordinates from start
+                        solution[wp_count * 2] = curr_x - start_x;
+                        solution[wp_count * 2 + 1] = curr_z - start_z;
+                        wp_count++;
+                    }
+                }
+
+                // Fill rest with -1
+                for(unsigned short i = wp_count * 2; i < SOLUTION_LENGTH; ++i) {
+                    solution[i] = -1;
+                }
+                return;
+            }
+
+            // 4. Expand neighbors (4 directions)
+            const short dirs_x[4] = {0, 0, -1, 1};
+            const short dirs_z[4] = {-1, 1, 0, 0};
+
+            for (int k = 0; k < 4; ++k) {
+                short nx = current_x + dirs_x[k];
+                short nz = current_z + dirs_z[k];
+
+                if (nx >= 0 && nx < MAX_DIMENSION && nz >= 0 && nz < MAX_DIMENSION) {
+                    if ((short) room_matrix[room_id][nz][nx] == 1 && closedset[nz][nx] == NOT_PRESENT) {
+                        
+                        short new_g = current_g + 1;
+                        short old_g = openset[nz][nx][G_COST];
+                        bool is_in_open = (old_g != NOT_PRESENT);
+
+                        if (!is_in_open || new_g < old_g) {
+                            short h = CHEBYSHEV_DISTANCE(nx, goal_x, nz, goal_z);
+                            
+                            openset[nz][nx][F_COST] = new_g + h;
+                            openset[nz][nx][G_COST] = new_g;
+                            openset[nz][nx][PARENT] = current_z * MAX_DIMENSION + current_x;
+
+                            if (!is_in_open) {
+                                n_open++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // No path found
+        solution[0] = -1;
+    }
+
+    /** 
+     * Handle room to door logic.
+    */
+    FLAMEGPU_DEVICE_FUNCTION void room2door_logic(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
+        short solution[SOLUTION_LENGTH] = {-1};
+
+        a_star_matrix(FLAMEGPU, room_id, start_pos, goal_pos, solution);
+    }
+
+    /** 
+     * Handle room to room logic (e.g. objects/obstacles, objects resources, path finding, etc.)
+    */
+    FLAMEGPU_DEVICE_FUNCTION void room2room_logic(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
+        
+    }
+
+    /** 
+     * Handle door to room logic (e.g. objects/obstacles, objects resources, path finding, etc.)
+    */
+    FLAMEGPU_DEVICE_FUNCTION void door2room_logic(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
+        // Based on the selected policy (random, closest to the door, farthest from other people, etc.) and
+        // eventually using a probability of staying standing, find an object with an available resource. If
+        // there are none, stay standing.
+        // TO DO
+
+        // If the agent has to stay standing, select at random a position in a cell with a 1, otherwise select
+        // at random a position in a cell inside the selected object (with a negative number from -1).
+        // TO DO
+
+        // Run the path finding algorithm using the matrix associated to the room. The source position is the door
+        // (cell with number 2), while the destination is the random generated position in the previous step.
+        // The path finding algorithms should return the shortest path between the two points, eventually considering
+        // the presence of obstacles (cells with a value of 0).
+        // TO DO
+
+        // Update the targets of the agent mapping the obtained position in the room's matrix to positions on the global
+        // matrix both from the door to the position (with stay equals to how many steps the agent has to stay) and viceversa.
+        // TO DO
+        // update_targets(FLAMEGPU, solution_room_path_from_door, &target_index, true, stay);
+        // update_targets(FLAMEGPU, solution_room_path_to_door, &target_index, false, 0);
+
+        // Save the index of the object selected by the agent to update the resources availability when the agent will exit the room.
+        // TO DO
+    }
+
+    /**
+     * Find the leftmost index in the CDF of the events distribution that is greater than the target.
+     */
     FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) { 
         int left = 0;
         int right = num_events - 1;

@@ -8,7 +8,6 @@
   Build the ABM.
 
   Inputs:
-      -cps or --checkpoint_simulation:  run the model in a simplified version with the aim to obtain a checkpoint
       -v   or --visualisation:          activate the visualisation
       -g   or --debug:                  execute the simulation with debug prints
 
@@ -16,17 +15,11 @@
 '
 
 # Default values for input parameters
-CHECKPOINT_SIMULATION="OFF"
 VISUALISATION="OFF"
 DEBUG="OFF"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -cps|--checkpoint_simulation)
-      CHECKPOINT_SIMULATION="$2"
-      shift
-      shift
-      ;;
     -v|--visualisation)
       VISUALISATION="$2"
       shift
@@ -40,7 +33,6 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
   	  printf "./build.sh - build the ABM\n\n"
   	  printf "Arguments:\n"
-      printf "        -cps or --checkpoint_simulation:  run the model in a simplified version with the aim to obtain a checkpoint (default: OFF; possible values: ON, OFF)\n"
       printf "        -v   or --visualisation:          activate the visualisation (default: OFF; possible values: ON, OFF)\n"
       printf "        -g   or --debug:                  execute the simulation with debug prints (default: OFF; possible values: ON, OFF)\n"
       exit 1
@@ -65,7 +57,7 @@ mkdir -p build && cd build
 
 #-DCMAKE_CUDA_FLAGS="--fdevice-time-trace="
 # Configure CMake from the command line passing configure-time options. 
-cmake .. -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=$COMP_CAP -DFLAMEGPU_SEATBELTS=OFF -DCHECKPOINT=$CHECKPOINT_SIMULATION -DFLAMEGPU_VISUALISATION=$VISUALISATION -DDEBUG=$DEBUG
+cmake .. -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=$COMP_CAP -DFLAMEGPU_SEATBELTS=OFF -DFLAMEGPU_VISUALISATION=$VISUALISATION -DDEBUG=$DEBUG
 
 #  Build the required targets. In this case all targets
 cmake --build . --target all -j8 

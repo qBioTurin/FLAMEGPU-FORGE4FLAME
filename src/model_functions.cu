@@ -15,7 +15,7 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     beingSupported_fn.setMessageOutput("link_message");
     beingSupported_fn.setMessageOutputOptional(true);
 
-    AgentFunctionDescription CUDAInit_fn = pedestrian.newFunction("CUDAInitContagionScreening", CUDAInit);
+    AgentFunctionDescription CUDAInit_fn = pedestrian.newFunction("CUDAInit", CUDAInit);
     CUDAInit_fn.setMessageInput("room_location");
     CUDAInit_fn.setMessageOutput("link_message");
     CUDAInit_fn.setMessageOutputOptional(true);
@@ -43,7 +43,6 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     handleSupportRequest_fn.setMessageOutput("aerosol_counting");
     handleSupportRequest_fn.setMessageOutputOptional(true);
     
-#ifndef CHECKPOINT
     AgentFunctionDescription outputPedestrianLocation_fn = pedestrian.newFunction("outputPedestrianLocation", outputPedestrianLocation);
     outputPedestrianLocation_fn.setFunctionCondition(initCondition);
     outputPedestrianLocation_fn.setMessageOutput("location");
@@ -55,7 +54,7 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription updateQuantaInhaledAndContacts_fn = pedestrian.newFunction("updateQuantaInhaledAndContacts", updateQuantaInhaledAndContacts);
     updateQuantaInhaledAndContacts_fn.setFunctionCondition(initCondition);
     updateQuantaInhaledAndContacts_fn.setMessageInput("location");
-#endif
+
     AgentFunctionDescription waitingInWaitingRoom_fn = pedestrian.newFunction("waitingInWaitingRoom", waitingInWaitingRoom);
     waitingInWaitingRoom_fn.setFunctionCondition(initCondition);
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
@@ -73,11 +72,11 @@ void define_room_functions(AgentDescription& room, string room_type){
         AgentFunctionDescription outputRoomLocation_fn = room.newFunction("outputRoomLocation", outputRoomLocation);
         outputRoomLocation_fn.setFunctionCondition(notInitAndNotFillingroomCondition);
         outputRoomLocation_fn.setMessageOutput("room_location");
-#ifndef CHECKPOINT
+
         AgentFunctionDescription updateQuantaConcentration_fn = room.newFunction("updateQuantaConcentration", updateQuantaConcentration);
         updateQuantaConcentration_fn.setFunctionCondition(initAndNotFillingroomCondition);
         updateQuantaConcentration_fn.setMessageInput("aerosol_counting");
-#endif
+
         AgentFunctionDescription handlingQueueinWaitingRoom_fn = room.newFunction("handlingQueueinWaitingRoom", handlingQueueinWaitingRoom);
         handlingQueueinWaitingRoom_fn.setMessageInput("waiting_room_message");
         handlingQueueinWaitingRoom_fn.setMessageOutput("queue_message");
@@ -197,8 +196,11 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     
     env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
-    env.newMacroProperty<short, V, MAX_OBJECTS, 2>(ROOM_OBJECTS_X);
-    env.newMacroProperty<short, V, MAX_OBJECTS, 2>(ROOM_OBJECTS_Z);
+    env.newMacroProperty<char, V>(ROOMS_HAS_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_X_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_Z_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_LENGTH_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_WIDTH_OBJECTS);
 
     env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
 
@@ -402,6 +404,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned short>(WEEK_DAY_FLOW);
     pedestrian.newVariable<unsigned char>(IN_AN_EVENT);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
+    pedestrian.newVariable<short>(ACTUAL_NODE, -1);
     pedestrian.newVariable<int>(WAITING_ROOM_TIME);
     pedestrian.newVariable<int>(WAITING_ROOM_FLAG);
     pedestrian.newVariable<int>(ENTRY_EXIT_FLAG);
@@ -453,82 +456,55 @@ void define_room(ModelDescription& model){
 
 void define_layers(ModelDescription& model){
     // Define the execution order
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAInit);
     }
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAContagionScreening);
     }
-
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAEvents);
     }
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAMovePedestrian);
     }
-
-
-    // Layer 1.5
     {
         LayerDescription layer = model.newLayer();
         layer.addSubModel(create_smm(model));
     }
-    // Layer 2.5
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(printMoveAgentInfo);
     }
-
-    // Layer 2
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(beingSupported);
     }
-
-    // Layer 3
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(handleSupportRequest);
     }
-
-    // Layer 4
     {
         LayerDescription layer = model.newLayer();
-#ifndef CHECKPOINT
         layer.addAgentFunction(outputPedestrianLocationAerosol);
-#endif
         layer.addAgentFunction("room", "outputRoomLocation");
     }
-
-    // Layer 5
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(outputPedestrianLocation);
-#ifndef CHECKPOINT
         layer.addAgentFunction("room", "updateQuantaConcentration");
-#endif
     }
-    
-    // Layer 6
-    {
+        {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(waitingInWaitingRoom);
     }
-
-    // Layer 7
     {
         LayerDescription layer = model.newLayer();
-#ifndef CHECKPOINT
         layer.addAgentFunction(updateQuantaInhaledAndContacts);
-#endif
         layer.addAgentFunction("room", "handlingQueueinWaitingRoom");
     }
 
