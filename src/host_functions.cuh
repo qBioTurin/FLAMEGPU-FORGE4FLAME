@@ -195,10 +195,10 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(GLOBAL_RESOURCES_COUNTER, string("resources/macro_environment/") + GLOBAL_RESOURCES_COUNTER + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES, string("resources/macro_environment/") + SPECIFIC_RESOURCES + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES_COUNTER, string("resources/macro_environment/") + SPECIFIC_RESOURCES_COUNTER + ".xml"); 
-        FLAMEGPU->environment.importMacroProperty(GLOBAL_RESOURCES_OBJECTS, string("resources/macro_environment/") + GLOBAL_RESOURCES_OBJECTS + ".xml");
-        FLAMEGPU->environment.importMacroProperty(GLOBAL_RESOURCES_OBJECTS_COUNTER, string("resources/macro_environment/") + GLOBAL_RESOURCES_OBJECTS_COUNTER + ".xml");
-        FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES_OBJECTS, string("resources/macro_environment/") + SPECIFIC_RESOURCES_OBJECTS + ".xml");
-        FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES_OBJECTS_COUNTER, string("resources/macro_environment/") + SPECIFIC_RESOURCES_OBJECTS_COUNTER + ".xml"); 
+        FLAMEGPU->environment.importMacroProperty(ROOMS_RESOURCES_GLOBAL_OBJECTS, string("resources/macro_environment/") + ROOMS_RESOURCES_GLOBAL_OBJECTS + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER, string("resources/macro_environment/") + ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_RESOURCES_SPECIFIC_OBJECTS, string("resources/macro_environment/") + ROOMS_RESOURCES_SPECIFIC_OBJECTS + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER, string("resources/macro_environment/") + ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER + ".xml");
         FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_DET + ".xml");
         FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA_DET + ".xml");
         FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_RAND, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_RAND + ".xml");

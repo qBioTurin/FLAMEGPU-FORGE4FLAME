@@ -196,11 +196,11 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     
     env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
-    env.newMacroProperty<char, V>(ROOMS_HAS_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_X_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_Z_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_LENGTH_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_WIDTH_OBJECTS);
+    env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
 
     env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
 
@@ -280,10 +280,10 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
 
-    env.newMacroProperty<int, V, MAX_OBJECTS>(GLOBAL_RESOURCES_OBJECTS);
-    env.newMacroProperty<unsigned int, V, MAX_OBJECTS>(GLOBAL_RESOURCES_OBJECTS_COUNTER);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS>(SPECIFIC_RESOURCES_OBJECTS);
-    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS>(SPECIFIC_RESOURCES_OBJECTS_COUNTER);
+    env.newMacroProperty<int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
+    env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER);
 
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 

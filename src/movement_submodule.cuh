@@ -199,7 +199,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         // if(next_index == target_index - 1){
         //     // The agent is on the door of the room (here we have to implement object/obstacles logic with resources and path finding)
         //     // We can also move here the check for general room's resources, before objects/obstacles logic
-        //     auto room_has_objects = FLAMEGPU->environment.getMacroProperty<char, V>(ROOMS_HAS_OBJECTS);
+        //     auto room_has_objects = FLAMEGPU->environment.getMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
 
         //     const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
 
@@ -286,7 +286,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     FLAMEGPU->setVariable<float>(VELY, agent_vel[1]);
     FLAMEGPU->setVariable<float>(VELZ, agent_vel[2]);
   
-
     if (current_stay > 0) {
         FLAMEGPU->setVariable<float>(VELX, 0.0f);
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
@@ -313,15 +312,15 @@ void define_environment_submodule(ModelDescription &smm) {
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
-    env.newMacroProperty<char, V>(ROOMS_HAS_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_X_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_Z_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_LENGTH_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS>(ROOMS_WIDTH_OBJECTS);
-    env.newMacroProperty<int, V, MAX_OBJECTS>(GLOBAL_RESOURCES_OBJECTS);
-    env.newMacroProperty<unsigned int, V, MAX_OBJECTS>(GLOBAL_RESOURCES_OBJECTS_COUNTER);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS>(SPECIFIC_RESOURCES_OBJECTS);
-    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS>(SPECIFIC_RESOURCES_OBJECTS_COUNTER);
+    env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
+    env.newMacroProperty<int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
+    env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER);
 }
 
 // Define submodel's messages
@@ -407,10 +406,10 @@ SubModelDescription create_smm(ModelDescription &model) {
     smm.SubEnvironment().mapMacroProperty(ROOMS_Z_OBJECTS, ROOMS_Z_OBJECTS);
     smm.SubEnvironment().mapMacroProperty(ROOMS_LENGTH_OBJECTS, ROOMS_LENGTH_OBJECTS);
     smm.SubEnvironment().mapMacroProperty(ROOMS_WIDTH_OBJECTS, ROOMS_WIDTH_OBJECTS);
-    smm.SubEnvironment().mapMacroProperty(GLOBAL_RESOURCES_OBJECTS, GLOBAL_RESOURCES_OBJECTS);
-    smm.SubEnvironment().mapMacroProperty(GLOBAL_RESOURCES_OBJECTS_COUNTER, GLOBAL_RESOURCES_OBJECTS_COUNTER);
-    smm.SubEnvironment().mapMacroProperty(SPECIFIC_RESOURCES_OBJECTS, SPECIFIC_RESOURCES_OBJECTS);
-    smm.SubEnvironment().mapMacroProperty(SPECIFIC_RESOURCES_OBJECTS_COUNTER, SPECIFIC_RESOURCES_OBJECTS_COUNTER);
+    smm.SubEnvironment().mapMacroProperty(ROOMS_RESOURCES_GLOBAL_OBJECTS, ROOMS_RESOURCES_GLOBAL_OBJECTS);
+    smm.SubEnvironment().mapMacroProperty(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER, ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
+    smm.SubEnvironment().mapMacroProperty(ROOMS_RESOURCES_SPECIFIC_OBJECTS, ROOMS_RESOURCES_SPECIFIC_OBJECTS);
+    smm.SubEnvironment().mapMacroProperty(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER, ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER);
 
     SubAgentDescription asmm = smm.bindAgent("pedestrian_submodule", "pedestrian", true, true);
 

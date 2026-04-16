@@ -1422,7 +1422,7 @@ namespace device_functions {
     FLAMEGPU_DEVICE_FUNCTION void room2door_logic(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
         short solution[SOLUTION_LENGTH] = {-1};
 
-        a_star_matrix(FLAMEGPU, room_id, start_pos, goal_pos, solution);
+        // a_star_matrix(FLAMEGPU, room_id, start_pos, goal_pos, solution);
     }
 
     /** 
