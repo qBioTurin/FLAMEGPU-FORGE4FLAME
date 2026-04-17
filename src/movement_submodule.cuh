@@ -176,14 +176,25 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     float intermediate_target[3] = {(float) intermediate_target_x[contacts_id][next_index], (float) intermediate_target_y[contacts_id][next_index], (float) intermediate_target_z[contacts_id][next_index]};
     float available_vel = 1.0f;   
     float distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-    float arrival_tolerance = (next_index == target_index) ? 1.0f : 0.2f;
+    float arrival_tolerance = 0.2f;
+    // float arrival_tolerance = (next_index == target_index) ? 1.0f : 0.2f;
+
+    if (current_stay > 0) {
+        FLAMEGPU->setVariable<float>(VELX, 0.0f);
+        FLAMEGPU->setVariable<float>(VELY, 0.0f);
+        FLAMEGPU->setVariable<float>(VELZ, 0.0f);
+#if defined(DEBUG) && !defined(ENSEMBLE)
+        printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+#endif
+        return ALIVE;
+    }   
 
     while(distance < available_vel && available_vel > 0.0f){
-        if (next_index == target_index && distance <= arrival_tolerance) {
+        if(next_index == target_index && distance <= arrival_tolerance){
             unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
             if (current_stay > 0) {
                 available_vel = 0.0f;
-                break; 
+                break;
             }
         }
 
@@ -231,7 +242,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     agent_vel[2] = (available_vel * (intermediate_target[2] - agent_pos[2]))/std::max(1.0f, distance);
 
     
-    //const float MAX_DODGE = 0.15f; to see if substitute in the future
+    // const float MAX_DODGE = 0.15f; to see if substitute in the future
     const float MAX_DODGE = 1.0f / STEP; 
     const float MAX_DODGE_SQ = MAX_DODGE * MAX_DODGE;
 
@@ -285,16 +296,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     FLAMEGPU->setVariable<float>(VELX, agent_vel[0]);
     FLAMEGPU->setVariable<float>(VELY, agent_vel[1]);
     FLAMEGPU->setVariable<float>(VELZ, agent_vel[2]);
-  
-    if (current_stay > 0) {
-        FLAMEGPU->setVariable<float>(VELX, 0.0f);
-        FLAMEGPU->setVariable<float>(VELY, 0.0f);
-        FLAMEGPU->setVariable<float>(VELZ, 0.0f);
-#if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-#endif
-        return ALIVE;
-    }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
     printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
