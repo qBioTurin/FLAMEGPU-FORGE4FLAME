@@ -734,18 +734,12 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 									
 									if ft.upper() == "SPAWNROOM" and k == flow_type.index[-1]:
 										env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions["Deterministic"]
-										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1 * steps_in_a_minute
+										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1
 										env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = 0
 									else:
 										env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
 										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-										env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
-									
-									# env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
-									# env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-									# env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
-									
-									
+										env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute								
 									
 									env_activity_type[agent_type_idx][shift_index][i][flow_index] = f.loc["Activity"]
 
@@ -782,17 +776,12 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								
 								if ft.upper() == "SPAWNROOM" and k == determined_flow.index[-1]:
 									env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions["Deterministic"]
-									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1 * steps_in_a_minute
+									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1
 									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = 0
 								else:
 									env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
 									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
-								
-								# env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
-								# env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-								# env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
-								
+									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute								
 								
 								env_activity_type[agent_type_idx][shift_index][i][flow_index] = f.loc["Activity"]
 
