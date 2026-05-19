@@ -7,20 +7,20 @@ using namespace flamegpu;
 using namespace std;
 
 namespace device_functions {
-    /** 
+    /**
      * Compare floating points.
     */
     FLAMEGPU_DEVICE_FUNCTION bool compare_float(const double a, const double b, const double epsilon) {
         return fabs(a - b) < epsilon;
     }
 
-    /** 
+    /**
      * Generate a random number using the given RNG, distribution and parameters for pedestrians.
     */
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
-        
+
         if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
             do{
                 random = curand_uniform(&cuda_states[id]);
@@ -34,7 +34,7 @@ namespace device_functions {
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
     }
 
-    /** 
+    /**
      * Generate a random number using the given RNG, distribution and parameters for rooms.
     */
     FLAMEGPU_DEVICE_FUNCTION float cuda_room_rng(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, int b, bool flow_time) {
@@ -53,7 +53,7 @@ namespace device_functions {
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
     }
 
-    /** 
+    /**
      * Generate a random offset inside rooms.
     */
     FLAMEGPU_DEVICE_FUNCTION void generate_offset(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, float* jitter_x, float* jitter_z,  short new_target){
@@ -78,10 +78,10 @@ namespace device_functions {
 #endif
     }
 
- /** 
+ /**
      * Find a room of free resources for an event, searching the nearest
     */
-    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {  
+    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of findFreeRoomForEventOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -108,10 +108,10 @@ namespace device_functions {
 
                 float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
                 if(separation < min_separation && separation > previous_separation && area_room_event == area_room){
-                    min_separation = separation;                    
+                    min_separation = separation;
                     event_node = message.getVariable<short>(GRAPH_NODE);
                 }
-                
+
             }
 
             // Try getting the resources of the room
@@ -138,7 +138,7 @@ namespace device_functions {
                 }
             }
         }
-        while(!*available && event_node != -1);  
+        while(!*available && event_node != -1);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending of findFreeRoomForEventOfTypeAndAre for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -146,10 +146,10 @@ namespace device_functions {
         return event_node;
     }
 
-    /** 
-     * Find a room of free resources 
+    /**
+     * Find a room of free resources
     */
-    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {  
+    FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -158,7 +158,7 @@ namespace device_functions {
 
         int random_iterator = random;
         unsigned short final_target;
-        
+
         auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
         auto global_resources = FLAMEGPU->environment.getMacroProperty<int, V>(GLOBAL_RESOURCES);
         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
@@ -167,7 +167,7 @@ namespace device_functions {
 
         unsigned short random_area = (unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false));
         final_target = (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
-        
+
         auto messages = FLAMEGPU->message_in(flow);
         bool room_resources = false;
         do {
@@ -176,7 +176,7 @@ namespace device_functions {
             for(int i = 0; i < ward_indeces[random_iterator]; i++) list_front++;
 
             final_target = (*list_front).getVariable<short>(GRAPH_NODE);
-        
+
             // Try getting the resources of the room
             unsigned int get_specific_resource = ++specific_resources_counter[agent_type][final_target];
             room_resources = false;
@@ -192,13 +192,13 @@ namespace device_functions {
                     --global_resources_counter[final_target];
                 }
             }
-            
+
             if(!room_resources) {
                 --specific_resources_counter[agent_type][final_target];
                 random_iterator = (random_iterator + 1) % lenght_rooms;
             }
         }
-        while(!*available && random_iterator != random);  
+        while(!*available && random_iterator != random);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -206,17 +206,17 @@ namespace device_functions {
         return final_target;
     }
 
-    /** 
+    /**
      * Take the next destination inside the determined flow of the agent.
     */
-    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int *stay, const short start_node, bool *available, const bool identified = false, const unsigned short severity = MINOR){  
+    FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, int *stay, const short start_node, bool *available, const bool identified = false, const unsigned short severity = MINOR){
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
         unsigned short flow_index = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX) + 1;
         unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
         short final_target;
-        
+
         const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
         const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
@@ -299,7 +299,7 @@ namespace device_functions {
 
             if(severity == MINOR){
                 if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
-                    
+
                     *available = true;
                     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, final_target);
@@ -309,7 +309,7 @@ namespace device_functions {
                         const unsigned short near_agent_pos[3] = {message.getVariable<unsigned short>(X), message.getVariable<unsigned short>(Y), message.getVariable<unsigned short>(Z)};
 
                         float separation = abs(near_agent_pos[0] - agent_pos[0]) + abs(near_agent_pos[1] - agent_pos[1]) + abs(near_agent_pos[2] - agent_pos[2]);
-                        if(separation < min_separation){ 
+                        if(separation < min_separation){
                             min_separation = separation;
                             final_target = message.getVariable<short>(GRAPH_NODE);
                         }
@@ -318,19 +318,19 @@ namespace device_functions {
                     FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, INSIDE_WAITING_ROOM);
                     FLAMEGPU->setVariable<int>(ENTRY_EXIT_FLAG, STAYING_IN_WAITING_ROOM);
                     *stay = 2;
-                    
+
                 }
                 else if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
-                    
+
                     //The agent have waited in waiting room and now go to the right flux room
                     FLAMEGPU->setVariable<int>(WAITING_ROOM_FLAG, OUTSIDE_WAITING_ROOM);
                     final_target = FLAMEGPU->getVariable<short>(NODE_WAITING_FOR);
                     FLAMEGPU->setVariable<short>(NODE_WAITING_FOR, -1);
                     *available = true;
-                
+
                 }
                 else if(alternative_resources_type_det[agent_type][final_target] != WAITINGROOM){
-                    
+
                     // Try getting the resources of the room
                     get_specific_resource = ++specific_resources_counter[agent_type][final_target];
 
@@ -340,9 +340,9 @@ namespace device_functions {
                         if(get_global_resource <= global_resources[final_target]){
                         *available = true;
                         } else {
-                        get_global_resource = --global_resources_counter[final_target]; 
-                        } 
-                    } 
+                        get_global_resource = --global_resources_counter[final_target];
+                        }
+                    }
 
                     //if the initial room is not avaiable because the resources are over, explore the alternatives:
                     if(!*available){
@@ -354,7 +354,7 @@ namespace device_functions {
                         }
                         //search another room of the alternative
                         else if(alternative_resources_area_det[agent_type][final_target] != area || alternative_resources_type_det[agent_type][final_target] != flow){
-                            
+
                             auto messages = FLAMEGPU->message_in(alternative_resources_type_det[agent_type][final_target]);
 
                             unsigned short ward_indeces_alternative[SOLUTION_LENGTH];
@@ -383,7 +383,7 @@ namespace device_functions {
                     *stay = 1;
                     final_target = start_node;
                     if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM) {
-                        ++global_resources_counter[start_node]; 
+                        ++global_resources_counter[start_node];
                         ++specific_resources_counter[agent_type][start_node];
                     }
                 }
@@ -414,11 +414,11 @@ namespace device_functions {
         return final_target;
     }
 
-    /** 
+    /**
      * Find the shortest path between two nodes in the graph.
     */
     template<typename MessageIn, typename MessageOut>
-    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {    
+    FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
 #endif
@@ -426,7 +426,7 @@ namespace device_functions {
         short openset[V][3];
 
         for (unsigned short i = 0; i < V; ++i) {
-            closedset[i] = NOT_PRESENT; 
+            closedset[i] = NOT_PRESENT;
             openset[i][0] = NOT_PRESENT;
             openset[i][1] = NOT_PRESENT;
             openset[i][2] = NOT_PRESENT;
@@ -445,7 +445,7 @@ namespace device_functions {
 
         auto adjmatrix = FLAMEGPU->environment.template getMacroProperty<unsigned short, V, V>(ADJMATRIX);
 
-        // Keep looping WHILE there are elements in the open set 
+        // Keep looping WHILE there are elements in the open set
         for(unsigned short n_open = 1; n_open;) {
             //1a. Identify next node to be expanded!
             short next_vertex = NOT_PRESENT;
@@ -457,8 +457,8 @@ namespace device_functions {
                     }
                 }
             }
-            
-            //1b. Pick the selected node and remove it from the openset 
+
+            //1b. Pick the selected node and remove it from the openset
             short curr_node[3];
             curr_node[0] = openset[next_vertex][0];
             curr_node[1] = openset[next_vertex][1];
@@ -470,7 +470,7 @@ namespace device_functions {
             --n_open;
 
 
-            //2. Check if it matches with the goal 
+            //2. Check if it matches with the goal
             if(next_vertex == goal) {
                 short backward_solution[SOLUTION_LENGTH], length = 0;
 
@@ -478,7 +478,7 @@ namespace device_functions {
 
                 for(short backtrack = closedset[next_vertex]; backtrack != STARTING_POINT; backtrack = closedset[backtrack])
                     backward_solution[length++] = backtrack;
-                
+
                 for(unsigned short i = 0, j = length - 1; i < length; ++i, --j){
                     solution[i] = backward_solution[j];
                 }
@@ -495,20 +495,20 @@ namespace device_functions {
             //3. Check if it is already visited (is it in the closedset?)
             if(closedset[next_vertex] == NOT_PRESENT) {
                 short curr_x = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, next_vertex), curr_z = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, next_vertex);
-                //4. Add each unvisited neighbor of the current node to the openset 
+                //4. Add each unvisited neighbor of the current node to the openset
                 for(unsigned short i = 0; i < V; ++i) {
                     unsigned short we = adjmatrix[i][next_vertex];
                     // Foreach unvisited neighbor
                     if(we > 0 && closedset[i] == NOT_PRESENT) {
                         short new_g = curr_node[G_COST] + we;
                         short g_cost_neighbor = openset[i][G_COST];
-                        /* A new node is added to the open set if 
-                        it not present yet in the openset, 
+                        /* A new node is added to the open set if
+                        it not present yet in the openset,
                         or if the new cost is less than the current present in the openset.  */
-                        bool first_time = g_cost_neighbor == NOT_PRESENT, 
+                        bool first_time = g_cost_neighbor == NOT_PRESENT,
                             not_new_but_interesting = new_g < g_cost_neighbor;
-                        
-                        //If it is the first time, the node is added to the openset and the number of elements is ++increased 
+
+                        //If it is the first time, the node is added to the openset and the number of elements is ++increased
                         if((first_time && ++n_open) || not_new_but_interesting) {
                             // Add new node or replace node in openset estimating f(n)
                             float x_coord_i = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, i);
@@ -526,11 +526,11 @@ namespace device_functions {
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
-#endif   
+#endif
     }
 
 
-   /** 
+   /**
      * Find the shortest path between two cells in matrix
      * TOFINISHNOTALREADYUSED A STAR IN UNA MATRICE
     */
@@ -538,14 +538,14 @@ namespace device_functions {
     //     // ClosedSet: Mappa [Indice Nodo] -> [Indice Padre]
     //     // Serve sia per sapere se visitato, sia per ricostruire il percorso
     //     short closedset[GRID_SIZE];
-        
+
     //     // OpenSet: Mappa [Indice Nodo] -> {F_Cost, G_Cost, Parent}
     //     // Usiamo array statici per evitare malloc/new che su GPU non esistono/sono lenti
     //     short openset[GRID_SIZE][3];
 
     //     // Inizializzazione rapida a "Vuoto"
     //     for (unsigned short i = 0; i < GRID_SIZE; ++i) {
-    //         closedset[i] = NOT_PRESENT; 
+    //         closedset[i] = NOT_PRESENT;
     //         openset[i][F_COST] = NOT_PRESENT;
     //         openset[i][G_COST] = NOT_PRESENT;
     //         openset[i][PARENT] = NOT_PRESENT;
@@ -563,8 +563,8 @@ namespace device_functions {
 
     //     // Check banale: Se start o goal sono muri, esci subito
     //     if (grid_data[start_idx] == WALL || grid_data[goal_idx] == WALL) {
-    //         solution[0] = -1; 
-    //         return; 
+    //         solution[0] = -1;
+    //         return;
     //     }
 
     //     // Inseriamo il nodo di partenza
@@ -648,19 +648,19 @@ namespace device_functions {
 
     //                 // Se è calpestabile E non è stato già chiuso
     //                 if (grid_data[n_idx] == WALKABLE && closedset[n_idx] == NOT_PRESENT) {
-                        
+
     //                     // Costo movimento: 1 per tutti (Coerente con Chebyshev)
     //                     short new_g = current_g + 1;
-                        
+
     //                     short old_g = openset[n_idx][G_COST];
     //                     bool is_in_open = (old_g != NOT_PRESENT);
 
     //                     // Se non è in open OPPURE abbiamo trovato una strada più corta
     //                     if (!is_in_open || new_g < old_g) {
-                            
+
     //                         // Calcolo Euristica
     //                         short h = CHEBYSHEV_DISTANCE(nx, goal_x, ny, goal_y);
-                            
+
     //                         openset[n_idx][F_COST] = new_g + h;
     //                         openset[n_idx][G_COST] = new_g;
     //                         openset[n_idx][PARENT] = current_idx;
@@ -678,14 +678,14 @@ namespace device_functions {
     //     solution[0] = -1;
     // }
 
-    /** 
+    /**
      * Update agent intermediate and final targets.
     */
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void update_targets(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, short* new_targets, unsigned short *target_index, const bool clean, const int stay) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
-#endif       
+#endif
         auto intermediate_target_x = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
         auto intermediate_target_y = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
         auto intermediate_target_z = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
@@ -699,7 +699,7 @@ namespace device_functions {
             const unsigned short next_index = FLAMEGPU->template getVariable<unsigned short>(NEXT_INDEX);
 
             stay_matrix[contacts_id][*target_index].exchange(0);
-            
+
             if(next_index != *target_index){
                 *target_index = (next_index + 1) % SOLUTION_LENGTH;
             }
@@ -717,7 +717,7 @@ namespace device_functions {
 
             float x = FLAMEGPU->environment.template getProperty<float, V>(NODE_X, new_targets[i]);
             float z = FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, new_targets[i]);
-            
+
             new_target_x = x + jitter_x;
             new_target_y = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDY, new_targets[i]);
             new_target_z = z + jitter_z;
@@ -725,9 +725,9 @@ namespace device_functions {
             intermediate_target_x[contacts_id][*target_index].exchange(new_target_x);
             intermediate_target_y[contacts_id][*target_index].exchange(new_target_y);
             intermediate_target_z[contacts_id][*target_index].exchange(new_target_z);
-            
+
             *target_index = (*target_index + 1) % SOLUTION_LENGTH;
-            
+
             ++i;
         }
 
@@ -739,7 +739,7 @@ namespace device_functions {
 #endif
     }
 
-    /** 
+    /**
      * Update agent's flow for the next day in which the agent will enter in the environment.
     */
     FLAMEGPU_DEVICE_FUNCTION void update_flow(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, const bool quarantine){
@@ -758,7 +758,7 @@ namespace device_functions {
         auto env_flow_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
         auto env_flow_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
         auto env_hours_schedule = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
-        
+
         unsigned short entry_time_index = FLAMEGPU->getVariable<unsigned short>(ENTRY_TIME_INDEX) + 1;
         unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
         unsigned short empty_days;
@@ -767,7 +767,7 @@ namespace device_functions {
         if((int) env_hours_schedule[agent_type][agent_subtype][week_day_flow][2 * entry_time_index] == 0 || quarantine){
             entry_time_index = 0;
             week_day_flow = (week_day_flow + 1) % DAYS_IN_A_WEEK;
-            
+
             empty_days = 0;
             while((int) env_flow[agent_type][agent_subtype][week_day_flow][0] == -1){
                 empty_days++;
@@ -818,7 +818,7 @@ namespace device_functions {
         unsigned short severity = FLAMEGPU->getVariable<unsigned short>(SEVERITY);
         unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         bool already_in_quarantine = quarantine > 0;
-        
+
         quarantine = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_days_distr[day-1][agent_type], contacts_id, (float) env_quarantine_days_distr_firstparam[day-1][agent_type], (float) env_quarantine_days_distr_secondparam[day-1][agent_type], true);
         FLAMEGPU->setVariable<unsigned short>(QUARANTINE, quarantine);
 
@@ -828,7 +828,7 @@ namespace device_functions {
 
         const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
         const unsigned short agent_with_a_rate = FLAMEGPU->getVariable<unsigned short>(AGENT_WITH_A_RATE);
-        
+
         stay_matrix[contacts_id][target_index].exchange(0);
 
         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
@@ -839,7 +839,7 @@ namespace device_functions {
             const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
 
             if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM){
-                --global_resources_counter[start_node]; 
+                --global_resources_counter[start_node];
                 --specific_resources_counter[agent_type][start_node];
             }
 
@@ -870,7 +870,7 @@ namespace device_functions {
             short solution_start_quarantine[SOLUTION_LENGTH] = {-1};
 
             a_star(FLAMEGPU, start_node, quarantine_node, solution_start_quarantine);
-            
+
             update_targets(FLAMEGPU, solution_start_quarantine, &target_index, false, quarantine * STEPS_IN_A_DAY);
 
             counters[AGENTS_IN_QUARANTINE]++;
@@ -885,13 +885,13 @@ namespace device_functions {
             int swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_QUARANTINE_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[day-1][agent_type], contacts_id, (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_firstparam[day-1][agent_type]), (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_secondparam[day-1][agent_type]), true));
             FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
         }
-        
+
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending put_in_quarantine for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
     }
 
-    /** 
+    /**
      * Make a swab to the agent and handle quarantine.
     */
     FLAMEGPU_DEVICE_FUNCTION void swab(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
@@ -997,7 +997,7 @@ namespace device_functions {
 #endif
     }
 
-    /** 
+    /**
      * The agent exits from quarantine.
     */
     FLAMEGPU_DEVICE_FUNCTION void exit_from_quarantine(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
@@ -1084,7 +1084,7 @@ namespace device_functions {
 #endif
     }
 
-    /** 
+    /**
      * Handle internal screening.
     */
     FLAMEGPU_DEVICE_FUNCTION void screening(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
@@ -1114,7 +1114,7 @@ namespace device_functions {
 #endif
     }
 
-    /** 
+    /**
      * Handle external screening.
     */
     FLAMEGPU_DEVICE_FUNCTION void external_screening(DeviceAPI<MessageBucket, MessageBucket> *FLAMEGPU){
@@ -1151,7 +1151,7 @@ namespace device_functions {
 #endif
     }
 
-    /** 
+    /**
      * Handle contagion processes.
     */
     FLAMEGPU_DEVICE_FUNCTION flamegpu::AGENT_STATUS contagion_processes(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
@@ -1219,7 +1219,7 @@ namespace device_functions {
 
         FLAMEGPU->setVariable<float>(QUANTA_INHALED, 0.0f);
         FLAMEGPU->setVariable<unsigned char>(INFECTED_CONTACT, 0);
-        
+
         FLAMEGPU->setVariable<int>(DISEASE_STATE, disease_state);
         FLAMEGPU->setVariable<unsigned short>(INCUBATION_DAYS, incubation_days);
         FLAMEGPU->setVariable<unsigned short>(INFECTION_DAYS, infection_days);
@@ -1232,7 +1232,7 @@ namespace device_functions {
         return ALIVE;
     }
 
-/** 
+/**
      * Update disease state.
     */
     FLAMEGPU_DEVICE_FUNCTION flamegpu::AGENT_STATUS update_infection(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
@@ -1302,7 +1302,7 @@ namespace device_functions {
             }
         }
 #endif
-        
+
         FLAMEGPU->setVariable<int>(DISEASE_STATE, disease_state);
         FLAMEGPU->setVariable<unsigned short>(INCUBATION_DAYS, incubation_days);
         FLAMEGPU->setVariable<unsigned short>(INFECTION_DAYS, infection_days);
@@ -1323,7 +1323,7 @@ namespace device_functions {
         return ALIVE;
     }
 
-    /** 
+    /**
      * Handle outside contagion.
     */
     FLAMEGPU_DEVICE_FUNCTION void outside_contagion(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
@@ -1345,7 +1345,7 @@ namespace device_functions {
                 counters[NUM_INFECTED_OUTSIDE]++;
 
                 if(FLAMEGPU->getVariable<unsigned short>(AGENT_WITH_A_RATE) == AGENT_WITHOUT_RATE){
-                    
+
 #ifdef INCUBATION
                 FLAMEGPU->setVariable<int>(DISEASE_STATE, EXPOSED);
 
@@ -1357,14 +1357,14 @@ namespace device_functions {
 
                 unsigned short infection_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INFECTION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), true));
 #endif
-    
+
                 }
                 else{
                 FLAMEGPU->setVariable<int>(DISEASE_STATE, INFECTED);
 
                 unsigned short infection_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INFECTION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), true));
-            } 
-                
+            }
+
 #ifdef FATALITY
                 unsigned short fatality_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FATALITY_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), true));
                 FLAMEGPU->setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
@@ -1375,14 +1375,14 @@ namespace device_functions {
                     printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
                 else
                     printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
-            } 
+            }
         }
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending outside_contagion for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
     }
-	
-    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) { 
+
+    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) {
         int left = 0;
         int right = num_events - 1;
 

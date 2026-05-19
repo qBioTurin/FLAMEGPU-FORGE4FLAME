@@ -561,10 +561,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                                 FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE);
 
 
-        // printf("DEBUG-SKY, Run:%d, Step:%d, Agent:%d, FlowIdx:%d, NextFlowVal:%d. Entering Spawnroom logic. Terminal? %d\n",
-        // FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, flow_index,
-        // (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index], is_terminal_exit);
-         printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], disease_state);
+        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, agent_type, agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], disease_state);
 
         if (is_terminal_exit) {
 
@@ -604,9 +601,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
         return ALIVE;
         } else {
 
-       //     printf("DEBUG-PARKED, Run:%d, Step:%d, Agent:%d. Mid-flux parking triggered. FlowIdx: %d\n",
-         //  FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, flow_index);
-            // --- NEW MID-FLUX "PARKING" LOGIC ---
+         // --- NEW MID-FLUX "PARKING" LOGIC ---
             FLAMEGPU->setVariable<unsigned char>(INIT, 0); // Hide from contagion
             FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
             FLAMEGPU->setVariable<int>(CAN_MOVE, 0);
@@ -734,12 +729,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
                 FLAMEGPU->message_out.setKey(agentlinked);
             }
-
-            // ADD THIS:
-            // if (start_node == final_node || final_node == -1) {
-            //     printf("DEBUG-ASTAR, Run:%d, Step:%d, Agent:%d, FlowIdx:%d, StartNode:%d, FinalNode:%d. Invalid Path!\n",
-            //         FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, flow_index, start_node, final_node);
-            // }
 
             if (start_node != final_node) {
                 a_star(FLAMEGPU, start_node, final_node, solution);

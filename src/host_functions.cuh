@@ -13,7 +13,7 @@ using namespace std;
 using namespace pugi;
 
 namespace host_functions {
-    unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) { 
+    unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) {
         int left = 0;
         int right = num_events - 1;
 
@@ -41,14 +41,14 @@ namespace host_functions {
         return left;
     }
 
-    /** 
+    /**
      * Compare floating points.
     */
     bool compare_float(const double a, const double b, const double epsilon) {
         return fabs(a - b) < epsilon;
     }
 
-    /** 
+    /**
      * Generate a random number using the given RNG, distribution and parameters for host.
     */
     float cuda_host_rng(HostAPI* FLAMEGPU, unsigned short distribution_id, int type, float a, float b, bool flow_time) {
@@ -81,10 +81,10 @@ namespace host_functions {
 
 
 
-    /** 
+    /**
      * Initialization function.
     */
-    FLAMEGPU_INIT_FUNCTION(initFunction){        
+    FLAMEGPU_INIT_FUNCTION(initFunction){
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
@@ -112,18 +112,18 @@ namespace host_functions {
             rng_state >> host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)];
             rng_state.close();
         }
-        
+
         fflush(stdout);
 
         printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
 
-        
+
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
 
-    /** 
+    /**
      * Import macro properties from XML files.
     */
     FLAMEGPU_INIT_FUNCTION(macroPropertyIO) {
@@ -191,7 +191,7 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(GLOBAL_RESOURCES, string("resources/macro_environment/") + GLOBAL_RESOURCES + ".xml");
         FLAMEGPU->environment.importMacroProperty(GLOBAL_RESOURCES_COUNTER, string("resources/macro_environment/") + GLOBAL_RESOURCES_COUNTER + ".xml");
         FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES, string("resources/macro_environment/") + SPECIFIC_RESOURCES + ".xml");
-        FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES_COUNTER, string("resources/macro_environment/") + SPECIFIC_RESOURCES_COUNTER + ".xml"); 
+        FLAMEGPU->environment.importMacroProperty(SPECIFIC_RESOURCES_COUNTER, string("resources/macro_environment/") + SPECIFIC_RESOURCES_COUNTER + ".xml");
         FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_DET + ".xml");
         FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_AREA_DET, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_AREA_DET + ".xml");
         FLAMEGPU->environment.importMacroProperty(ALTERNATIVE_RESOURCES_TYPE_RAND, string("resources/macro_environment/") + ALTERNATIVE_RESOURCES_TYPE_RAND + ".xml");
@@ -199,14 +199,14 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_PEDESTRIAN, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_PEDESTRIAN + ".xml");
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_ROOM, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_ROOM + ".xml");
 
-        
+
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
     }
 
-    /** 
+    /**
      * Generate pedestrians with time window as entry type.
     */
     FLAMEGPU_INIT_FUNCTION(generateAgents) {
@@ -308,7 +308,7 @@ namespace host_functions {
             // unsigned short entry_time_index = 0;
             unsigned short empty_days = 0;
             unsigned short weekday_agent = week_day;
-            
+
             bool schedule_found = false;
             // while((int) env_flow[agent_type][agent_subtype][weekday_agent][entry_time_index] != -1 && !schedule_found){
             if((int) env_hours_schedule[agent_type][agent_subtype][weekday_agent][0] >= START_STEP_TIME)
@@ -331,7 +331,7 @@ namespace host_functions {
             unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
 
             int new_agent_state = SUSCEPTIBLE;
-            
+
             float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
             float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
             unsigned short vaccination_end_of_immunization_days = 0;
@@ -398,7 +398,7 @@ namespace host_functions {
 
                     for(int j = 0; j < random_agent; j++){
                         int new_agent_state = SUSCEPTIBLE;
-                        
+
                         HostAgentAPI pedestrian = FLAMEGPU->agent("pedestrian");
 
                         unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (float) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][0], false))]);
@@ -515,7 +515,7 @@ namespace host_functions {
 #endif
     }
 
-    /** 
+    /**
      * Update the simulation day and log.
     */
     FLAMEGPU_STEP_FUNCTION(updateDayAndLog) {
@@ -538,13 +538,13 @@ namespace host_functions {
         if(FLAMEGPU->getStepCounter() && !((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY)){
             unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY) + 1;
             unsigned short week_day = (FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY) + 1) % DAYS_IN_A_WEEK;
-            
+
             FLAMEGPU->environment.setProperty<unsigned short>(DAY, day);
             FLAMEGPU->environment.setProperty<unsigned short>(WEEK_DAY, week_day);
 
             if(day <= DAYS)
                 printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
-           
+
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
             string filename;
@@ -570,7 +570,7 @@ namespace host_functions {
 #endif
     }
 
-    /** 
+    /**
      * Generate pedestrians with daily rate as entry type.
     */
     FLAMEGPU_STEP_FUNCTION(birth) {
@@ -582,7 +582,7 @@ namespace host_functions {
 #endif
             const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
             const unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
-            
+
             short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID);
 
             auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
@@ -690,7 +690,7 @@ namespace host_functions {
         }
     }
 
-    /** 
+    /**
      * End of simulation condition.
     */
     FLAMEGPU_EXIT_CONDITION(endOfSimulation){
@@ -710,7 +710,7 @@ namespace host_functions {
         return CONTINUE;
     }
 
-    /** 
+    /**
      * End the simulation logging some information.
     */
     FLAMEGPU_EXIT_FUNCTION(exitFunction){
