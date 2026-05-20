@@ -271,8 +271,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     // If an agent is waiting for a support agent or an agent is supporting another agent, we skip the rest of the code
     if((requested_support != -1 && currently_supported == -1 && on_the_way_to_support == -1) ||
        (requested_support == -1 && on_the_way_to_support == -1 && currently_supported != -1)){
-  //      printf("DEBUG-DEADLOCK, Run:%d, Step:%d, Agent:%d, req_sup:%d, curr_sup:%d, on_way:%d. Stuck waiting!\n",
-    //       FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, requested_support, currently_supported, on_the_way_to_support);
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending CUDaEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -366,7 +364,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             // nearest waiting room
             //try getting inside the event room
             if(event_node != -1){
-            //    printf("Agent %d is trying to attend event %d in node %d\n", contacts_id, event, event_node);
                 get_specific_resource = ++specific_resources_counter[agent_type][event_node];
 
                 if(get_specific_resource <= specific_resources[agent_type][event_node]){
@@ -401,7 +398,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
                 // if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
                 if(available){
-          //          printf("Agent %d will attend event %d in node %d\n", contacts_id, event, event_node);
+                    // if(agent_type == PATIENT_UROLOGY){
+                    //     printf("patient urology %d is trying to attend event %d in node %d\n", contacts_id, event, event_node);
+                    // }
 
                     // 1. Path to the event
                     if (start_node != event_node) {
@@ -409,7 +408,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                     } else {
                         // Agent is already in the event room! Just stay here.
                         solution_start_event[0] = start_node;
-                        for(int i = 1; i < SOLUTION_LENGTH; i++) {
+                        solution_start_event[1] = -1;
+                        for(int i = 2; i < SOLUTION_LENGTH; i++) {
                             solution_start_event[i] = -1;
                         }
                     }
@@ -420,7 +420,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                     } else {
                         // Event room IS the final destination.
                         solution_event_target[0] = event_node;
-                        for(int i = 1; i < SOLUTION_LENGTH; i++) {
+                        solution_event_target[1] = event_node;
+                        for(int i = 2; i < SOLUTION_LENGTH; i++) {
                             solution_event_target[i] = -1;
                         }
                     }
@@ -552,11 +553,11 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     const short arrival_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
     // 2. Check Arrival at Spawnroom
-    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index) {
+    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index && flow_index > 1) {
 
 
         bool is_terminal_exit = ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1 &&
-                                ((flow_index - 1) > 0 && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index - 1] == SPAWNROOM)) ||
+                                (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index - 1] == SPAWNROOM)) ||
                                 CHECK_IS_SPAWNROOM(room_for_quarantine_index) ||
                                 FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE);
 
@@ -578,6 +579,10 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
                     FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
                     FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
+                    // if (agent_type == PATIENT_UROLOGY) {
+                    //     printf("DEBUG-LEAK: [RELEASE-DEATH] Run:%d, Step:%d, Agent:%d, Node:%d. KILLED!\n",
+                    //     FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, event_node);
+                    // }
                 }
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending CUDAInitContagionScreeningEventsAndMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
@@ -606,8 +611,24 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
             FLAMEGPU->setVariable<int>(CAN_MOVE, 0);
 
-            FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
-            FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
+            if (FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1) {
+                short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
+
+                // if (agent_type == PATIENT_UROLOGY) {
+                //     printf("DEBUG-LEAK: [PARKING-LEAK!] Run:%d, Step:%d, Agent:%d parked without releasing node %d!\n",
+                //     FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, event_node);
+                // }
+
+                // LE RISORSE VANNO DECREMENTATE ANCHE QUI!
+                auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
+                auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+                --global_resources_counter[event_node];
+                --specific_resources_counter[agent_type][event_node];
+
+
+                FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
+                FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
+            }
 
             return ALIVE;
         }
@@ -632,6 +653,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
         if(next_index == target_index && !stay && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 1 && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
 
+
+
             FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 2);
             just_finished_event = true;
             short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
@@ -639,6 +662,10 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             --specific_resources_counter[agent_type][event_node];
             FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
             FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, -1);
+            // if (agent_type == PATIENT_UROLOGY) {
+            //     printf("DEBUG-LEAK: [RELEASE-NORMAL] Run:%d, Step:%d, Agent:%d (Uro), Node:%d\n",
+            //     FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), contacts_id, event_node);
+            // }
         }
 
 
@@ -736,7 +763,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                 // If they are already there, the solution is just the current node,
                 // and the rest of the array remains -1
                 solution[0] = start_node;
-                for(int i = 1; i < SOLUTION_LENGTH; i++) {
+                solution[1] = start_node;
+                for(int i = 2; i < SOLUTION_LENGTH; i++) {
                     solution[i] = -1;
                 }
             }
