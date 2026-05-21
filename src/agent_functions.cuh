@@ -323,7 +323,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
         }
         env_events_cdf[0] = 1.0f;
 
-        int event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
+        // int event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
+        int event = -1;
 
         if(event != -1) {
 
@@ -557,9 +558,11 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     const short arrival_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
     // 2. Check Arrival at Spawnroom
-    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index && flow_index > 2) {
+    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index && flow_index > 1) {
 
-        printf("flow index dentro l'if %d\n", flow_index);
+        if(agent_type == PATIENT_DAYONCOLOGY){
+            printf("flow index dentro l'if %d, id %d\n", flow_index, contacts_id);
+        }
 
         bool is_terminal_exit = ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] == -1 &&
                                 (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM) ||
@@ -571,7 +574,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
         if (is_terminal_exit) {
 
-            printf("Agent %d of type %d exited the system from spawnroom at step %d\n", contacts_id, agent_type, FLAMEGPU->getStepCounter());
+            if(agent_type == PATIENT_DAYONCOLOGY){
+                printf("Agent %d of type %d exited the system from spawnroom at step %d\n", contacts_id, agent_type, FLAMEGPU->getStepCounter());
+            }
 
             if(agent_with_a_rate && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == -1){
                 counters[COUNTERS_KILLED_AGENTS_WITH_RATE]++;
@@ -663,9 +668,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
         }
 
         if(next_index == target_index && !stay && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 1 && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
-
-
-
             FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 2);
             just_finished_event = true;
             short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
@@ -685,8 +687,12 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                 printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
             else
                 printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+       
         if(!stay && next_index == target_index && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] != -1){
             if(!FLAMEGPU->getVariable<unsigned char>(INIT) && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] != SPAWNROOM){
+                if(agent_type == PATIENT_DAYONCOLOGY){
+                    printf("SCENDO id %d step %d e flow index %d\n", contacts_id, FLAMEGPU->getStepCounter(), flow_index);
+                }
                 FLAMEGPU->setVariable<unsigned char>(INIT, 1);
 
                 unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index]][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (unsigned short) spawnrooms_areas_ids[(int) env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index]][0], false))]);

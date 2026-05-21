@@ -140,6 +140,6 @@ for input_file in *.csv; do
     fi
 done
 
-rm simulation.csv
+# rm simulation.csv
 
 cd ../..
