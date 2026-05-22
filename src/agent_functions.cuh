@@ -326,7 +326,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
         int event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
 
         if(event != -1) {
-
             short event_node = -1;
             float min_separation = numeric_limits<float>::max();
             float previous_separation = 0;
@@ -390,12 +389,10 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                 if(!available && alternative_resources_type_rand[agent_type][event_node] != -1){
                     //search another room of the same type and area
                     if(alternative_resources_area_rand[agent_type][event_node] == area_room_event && alternative_resources_type_rand[agent_type][event_node] == type_room_event){
-
                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, previous_separation, type_room_event, area_room_event, &available);
                     }
                     //search another room of the alternative
                     else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != env_events_area){
-
                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, 0, alternative_resources_type_rand[agent_type][event_node], alternative_resources_area_rand[agent_type][event_node], &available);
                     }
                 }
@@ -545,8 +542,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     const short arrival_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
     // 2. Check Arrival at Spawnroom
-    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index && flow_index > 1 && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM) {
-        bool is_terminal_exit = (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] == -1 ||
+    if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index && flow_index > 1) {
+        bool is_terminal_exit = ((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] == -1 &&
+                                 (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM) ||
                                 CHECK_IS_SPAWNROOM(room_for_quarantine_index) ||
                                 FLAMEGPU->getVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE);
 
@@ -587,10 +585,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 #endif
 
             return ALIVE;
-        } else { // if((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] == SPAWNROOM){
+        } else if((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] == SPAWNROOM){
 
-         // --- NEW MID-FLUX "PARKING" LOGIC ---
-            FLAMEGPU->setVariable<unsigned char>(INIT, 0); // Hide from contagion
+            FLAMEGPU->setVariable<unsigned char>(INIT, 0);
             FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
             FLAMEGPU->setVariable<int>(CAN_MOVE, 0);
 
@@ -624,7 +621,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
             FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, -1);
         }
-
 
         if(!stay)
             if(agent_pos[1] == INVISIBLE_AGENT_Y)
@@ -681,9 +677,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
             bool available = false;
             const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node, &available);
-            // unsigned short flow_index_new = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX);
+            unsigned short flow_index_new = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX);
             // if(agent_type == DOCTOR_OPHTALMOLOGY){
-            //     printf("STAY del nuovo nodo %d della flow %d id %d step %d e flow index %d, available %d\n", flow_stay, (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index_new], contacts_id, FLAMEGPU->getStepCounter(), flow_index_new, available ? 1: 0);
+            printf("STAY del nuovo nodo %d della flow %d id %d step %d e flow index %d, available %d\n", flow_stay, (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index_new], contacts_id, FLAMEGPU->getStepCounter(), flow_index_new, available ? 1: 0);
             // }
             // Handle agent linked with an other agent
             auto env_flow_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
