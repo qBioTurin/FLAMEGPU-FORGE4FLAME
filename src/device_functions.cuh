@@ -734,6 +734,11 @@ namespace device_functions {
         stay_matrix[contacts_id][*target_index].exchange(stay);
         FLAMEGPU->template setVariable<unsigned short>(TARGET_INDEX, *target_index);
 
+        // printf("DEBUG-TARGETS: Agente %d -> Ha assegnato STAY=%d all'indice array [%d]. Coord(X:%f, Z:%f)\n",
+        //        contacts_id, stay, *target_index,
+        //        (float)intermediate_target_x[contacts_id][*target_index],
+        //        (float)intermediate_target_z[contacts_id][*target_index]);
+
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
 #endif

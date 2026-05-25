@@ -15,11 +15,11 @@ using namespace std;
 FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
     if (!FLAMEGPU->getVariable<int>(CAN_MOVE)) {
         return ALIVE;
-    } 
+    }
 
     const float PI = 3.14159265f;
-    const float RAD_PERCEPTION= 45.0f * (PI / 180.0f); 
-    
+    const float RAD_PERCEPTION= 45.0f * (PI / 180.0f);
+
     const float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
     float agent_vel[3] = {FLAMEGPU->getVariable<float>(VELX), FLAMEGPU->getVariable<float>(VELY), FLAMEGPU->getVariable<float>(VELZ)};
 
@@ -50,11 +50,11 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
             float to_agent_z = diff[2] / separation;
 
             float dot_product = agent_vel[0] * to_agent_x + agent_vel[2] * to_agent_z;
-  
+
             if (dot_product < -1.0f) dot_product = -1.0f;
             if (dot_product > 1.0f) dot_product = 1.0f;
             float ang = acosf(dot_product);
-            
+
             // STEER
             if ( ang < RAD_PERCEPTION || ang > (PI - RAD_PERCEPTION)) {
                 float steer_scalar = powf(I_SCALER / separation, 1.25f) * STEER_WEIGHT;
@@ -66,7 +66,7 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
             // AVOID
             float avoid_scalar = powf(I_SCALER / separation, 2.0f) * AVOID_WEIGHT;
             avoid_velocity[0] += to_agent_x * avoid_scalar;
-            avoid_velocity[1] += 0.0f; 
+            avoid_velocity[1] += 0.0f;
             avoid_velocity[2] += to_agent_z * avoid_scalar;
         }
     }
@@ -90,9 +90,9 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
      if (!FLAMEGPU->getVariable<int>(CAN_MOVE)) {
         FLAMEGPU->setVariable<float>(VELX, 0.0f);
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
-        FLAMEGPU->setVariable<float>(VELZ, 0.0f); 
-    } 
-    
+        FLAMEGPU->setVariable<float>(VELZ, 0.0f);
+    }
+
     FLAMEGPU->message_out.setVariable<id_t>(ID, FLAMEGPU->getID());
     FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, FLAMEGPU->getVariable<short>(CONTACTS_ID));
     FLAMEGPU->message_out.setLocation(
@@ -115,9 +115,11 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
-    
+
     if (current_stay > 0) {
-        FLAMEGPU->setVariable<float>(VELX, 0.0f);
+        //  printf("DEBUG-FREEZE: Agente %d, Step %d. Si ferma al nodo %d (Indice %d) per %d step. TargetIndex era: %d\n",
+        //            contacts_id, FLAMEGPU->getStepCounter(), next_index, next_index, current_stay, target_index);
+        // FLAMEGPU->setVariable<float>(VELX, 0.0f);
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
         FLAMEGPU->setVariable<float>(VELZ, 0.0f);
 
@@ -134,18 +136,12 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     float intermediate_target[3] = {(float) intermediate_target_x[contacts_id][next_index], (float) intermediate_target_y[contacts_id][next_index], (float) intermediate_target_z[contacts_id][next_index]};
     unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
 
-    float available_vel = 1.0f;   
+    float available_vel = 1.0f;
     float distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-    float arrival_tolerance = (next_index == target_index) ? 1.0f : 0.2f;
+    //float arrival_tolerance = (next_index == target_index) ? 1.0f : 0.2f;
+   // float arrival_tolerance = 0.5f;
 
-    while(distance < available_vel && available_vel > 0.0f){
-        if (next_index == target_index && distance <= arrival_tolerance) {
-            unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
-            if (current_stay > 0) {
-                available_vel = 0.0f;
-                break; 
-            }
-        }
+    while(distance < available_vel && available_vel > 0.0f) {
 
         agent_pos[0] = intermediate_target[0];
         agent_pos[1] = intermediate_target[1];
@@ -156,29 +152,25 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         FLAMEGPU->setVariable<unsigned short>(NEXT_INDEX, next_index);
         stay = (unsigned int) stay_matrix[contacts_id][next_index];
 
-        if(next_index != target_index && !stay){
-            intermediate_target[0] = (float) intermediate_target_x[contacts_id][next_index];
-            intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
-            intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
-            distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
+        if(next_index == target_index || stay > 0) {
+            available_vel = 0.0f;
+            break;
         }
-        else {
-            arrival_tolerance = 1.0f;
-        }
+        intermediate_target[0] = (float) intermediate_target_x[contacts_id][next_index];
+        intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
+        intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
+        distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
 
-        if (next_index == target_index && distance <= arrival_tolerance) {
-            available_vel = 0.0f; 
-        }
     }
-    
+
     // Update velocity
     agent_vel[0] = (available_vel * (intermediate_target[0] - agent_pos[0]))/std::max(1.0f, distance);
     agent_vel[1] = (available_vel * (intermediate_target[1] - agent_pos[1]))/std::max(1.0f, distance);
     agent_vel[2] = (available_vel * (intermediate_target[2] - agent_pos[2]))/std::max(1.0f, distance);
 
-    
+
     //const float MAX_DODGE = 0.15f; to see if substitute in the future
-    const float MAX_DODGE = 1.0f / STEP; 
+    const float MAX_DODGE = 1.0f / STEP;
     const float MAX_DODGE_SQ = MAX_DODGE * MAX_DODGE;
 
     if (available_vel == 0.0f) {
@@ -197,8 +189,8 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     //Eventually logic to avoid wall? In the future
 
     float proposed_position[3] = {
-        agent_pos[0] + agent_vel[0] + agent_steer[0], 
-        agent_pos[1] + agent_vel[1], 
+        agent_pos[0] + agent_vel[0] + agent_steer[0],
+        agent_pos[1] + agent_vel[1],
         agent_pos[2] + agent_vel[2] + agent_steer[2]
     };
 
@@ -211,14 +203,14 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
     //graphical trick
     float final_speed = sqrtf(agent_vel[0]*agent_vel[0] + agent_vel[2]*agent_vel[2]);
-    if (final_speed > 0.051f) { 
+    if (final_speed > 0.051f) {
         agent_vel[0] /= final_speed; // Keep heading for view cone
         agent_vel[1] /= final_speed;
         agent_vel[2] /= final_speed;
     } else {
         // The agent has arrived and is just micro-shuffling due to crowd avoidance.
         // FORCE velocity to 0 so they stop drifting and the legs stop animating!
-        agent_vel[0] = 0.0f; 
+        agent_vel[0] = 0.0f;
         agent_vel[1] = 0.0f;
         agent_vel[2] = 0.0f;
     }
@@ -292,7 +284,7 @@ void define_agent_submodule(ModelDescription &smm) {
 }
 
 void define_layer_submodule(ModelDescription &smm) {
-    {   
+    {
         LayerDescription layer = smm.newLayer();
         layer.addAgentFunction(outputPedestrianLocationSub);
     }

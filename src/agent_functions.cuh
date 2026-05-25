@@ -399,6 +399,11 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
                 // if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
                 if(available){
+
+                    for(int i = 0; i < SOLUTION_LENGTH; i++) {
+                        solution_start_event[i] = -1;
+                        solution_event_target[i] = -1;
+                    }
                     // 1. Path to the event
                     if (start_node != event_node) {
                         a_star(FLAMEGPU, start_node, event_node, solution_start_event);
@@ -406,7 +411,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                         // Agent is already in the event room! Just stay here.
                         solution_start_event[0] = start_node;
                         solution_start_event[1] = start_node;
-                        printf("Agent id %d is already in the event room %d, step %d\n", contacts_id, event_node, FLAMEGPU->getStepCounter());
+                    //    printf("Agent id %d is already in the event room %d, step %d\n", contacts_id, event_node, FLAMEGPU->getStepCounter());
                     }
 
                     // 2. Path from the event to the final destination
@@ -416,8 +421,17 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                         // Event room IS the final destination.
                         solution_event_target[0] = event_node;
                         solution_event_target[1] = event_node;
-                        printf("Agent id %d is already in the final room %d, step %d\n", contacts_id, final_node, FLAMEGPU->getStepCounter());
+                        //    printf("Agent id %d is already in the final room %d, step %d\n", contacts_id, final_node, FLAMEGPU->getStepCounter());
                     }
+
+                        // if (solution_start_event[0] == -1) {
+                        //     printf("DEBUG-FAIL: Path 1 (Andata) fallito! Agente: %d, Da: %d A: %d\n",
+                        //            contacts_id, start_node, event_node);
+                        // }
+                        // if (solution_event_target[0] == -1) {
+                        //     printf("DEBUG-FAIL: Path 2 (Ritorno) fallito! Agente: %d, Da: %d A: %d\n",
+                        //            contacts_id, event_node, final_node);
+                        // }
 
                     unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, (float) event_distr_firstparam, (float) event_distr_secondparam, true);
 
@@ -430,39 +444,50 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                         final_stay = 1;
                     }
 
+                //   printf("DEBUG-EVENT-1: Agente %d va all'evento (Nodo %d). Stay richiesto: %d step.\n",
+                //            contacts_id, event_node, event_time_random);
+
                     update_targets(FLAMEGPU, solution_start_event, &target_index, true, event_time_random);
+
+                    // STAMPA PRIMA DI SCRIVERE IL RITORNO
+                    // printf("DEBUG-EVENT-2: Agente %d scrive il ritorno. In quale indice array inizierà a scrivere? Indice: %d\n",
+                    //        contacts_id, target_index);
+
                     update_targets(FLAMEGPU, solution_event_target, &target_index, false, final_stay);
 
-                    if(contacts_id >= 150 && contacts_id < 160){
-                        printf("id %d: ", contacts_id);
-                        for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
-                            printf("Stay[%d] = %d, ", init_i, (unsigned int) stay_matrix[contacts_id][init_i]);
-                        }
-                        printf("Stay[%d] = %d\n", target_index, (unsigned int) stay_matrix[contacts_id][target_index]);
+                    // update_targets(FLAMEGPU, solution_start_event, &target_index, true, event_time_random);
+                    // update_targets(FLAMEGPU, solution_event_target, &target_index, false, final_stay);
 
-                        printf("id %d: ", contacts_id);
-                        for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
-                            printf("intermediate_target_x[%d] = %f, ", init_i, (float) intermediate_target_x[contacts_id][init_i]);
-                        }
-                        printf("intermediate_target_x[%d] = %f\n", target_index, (float) intermediate_target_x[contacts_id][target_index]);
+                    // if(contacts_id >= 150 && contacts_id < 160){
+                    //     printf("id %d: ", contacts_id);
+                    //     for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
+                    //         printf("Stay[%d] = %d, ", init_i, (unsigned int) stay_matrix[contacts_id][init_i]);
+                    //     }
+                    //     printf("Stay[%d] = %d\n", target_index, (unsigned int) stay_matrix[contacts_id][target_index]);
 
-                        printf("id %d: ", contacts_id);
-                        for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
-                            printf("intermediate_target_y[%d] = %f, ", init_i, (float) intermediate_target_y[contacts_id][init_i]);
-                        }
-                        printf("intermediate_target_y[%d] = %f\n", target_index, (float) intermediate_target_y[contacts_id][target_index]);
+                    //     printf("id %d: ", contacts_id);
+                    //     for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
+                    //         printf("intermediate_target_x[%d] = %f, ", init_i, (float) intermediate_target_x[contacts_id][init_i]);
+                    //     }
+                    //     printf("intermediate_target_x[%d] = %f\n", target_index, (float) intermediate_target_x[contacts_id][target_index]);
 
-                        printf("id %d: ", contacts_id);
-                        for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
-                            printf("intermediate_target_z[%d] = %f, ", init_i, (float) intermediate_target_z[contacts_id][init_i]);
-                        }
-                        printf("intermediate_target_z[%d] = %f\n", target_index, (float) intermediate_target_z[contacts_id][target_index]);
-                    }
+                    //     printf("id %d: ", contacts_id);
+                    //     for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
+                    //         printf("intermediate_target_y[%d] = %f, ", init_i, (float) intermediate_target_y[contacts_id][init_i]);
+                    //     }
+                    //     printf("intermediate_target_y[%d] = %f\n", target_index, (float) intermediate_target_y[contacts_id][target_index]);
+
+                    //     printf("id %d: ", contacts_id);
+                    //     for(int init_i = next_index; init_i != target_index; init_i = (init_i + 1) % SOLUTION_LENGTH){
+                    //         printf("intermediate_target_z[%d] = %f, ", init_i, (float) intermediate_target_z[contacts_id][init_i]);
+                    //     }
+                    //     printf("intermediate_target_z[%d] = %f\n", target_index, (float) intermediate_target_z[contacts_id][target_index]);
+                    // }
 
                     FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 1);
                     FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, event_node);
 
-                    printf("STAY del nuovo nodo %d id %d step %d available %d node %d\n", event_node, contacts_id, FLAMEGPU->getStepCounter(), available ? 1: 0, (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+                //    printf("STAY del nuovo nodo %d id %d step %d available %d node %d\n", event_node, contacts_id, FLAMEGPU->getStepCounter(), available ? 1: 0, (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
 
                     auto env_events_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
                     auto env_events_agentlinked_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
@@ -614,7 +639,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 #endif
 
             return ALIVE;
-        } else if((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index + 1] == SPAWNROOM){
+        } else if((int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] == SPAWNROOM){
 
             FLAMEGPU->setVariable<unsigned char>(INIT, 0);
             FLAMEGPU->setVariable<float>(Y, INVISIBLE_AGENT_Y);
@@ -655,7 +680,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
             else
                 printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
-       
+
         if(!stay && next_index == target_index && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] != -1){
             if(!FLAMEGPU->getVariable<unsigned char>(INIT)){
                 FLAMEGPU->setVariable<unsigned char>(INIT, 1);
@@ -699,7 +724,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
                 printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
-#endif  
+#endif
                 return DEAD;
             }
 
@@ -707,7 +732,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node, &available);
             // unsigned short flow_index_new = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX);
             // printf("STAY del nuovo nodo %d della flow %d id %d step %d e flow index %d, available %d\n", flow_stay, (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index_new], contacts_id, FLAMEGPU->getStepCounter(), flow_index_new, available ? 1: 0);
-            
+
             // Handle agent linked with an other agent
             auto env_flow_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
             auto env_flow_agentlinked_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TYPE);
@@ -1050,6 +1075,12 @@ FLAMEGPU_AGENT_FUNCTION(printMoveAgentInfo, MessageNone, MessageNone) {
     else{
         if((short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]] == -1){
             printf("SONO FERMO NEL CORRIDOIO id %d, step %d\n", FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getStepCounter());
+            unsigned short next_idx = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
+            auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+            unsigned int current_stay = (unsigned int) stay_matrix[FLAMEGPU->getVariable<short>(CONTACTS_ID)][next_idx];
+
+            // printf("DEBUG-CORRIDOIO: Agente %d bloccato! Step %d. Indice corrente [%d] ha STAY=%d. Coord attuali(X:%f, Z:%f)\n",
+            //        FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getStepCounter(), next_idx, current_stay, agent_pos[0], agent_pos[2]);
         }
     }
 
