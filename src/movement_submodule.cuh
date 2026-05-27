@@ -13,7 +13,7 @@ using namespace std;
 //AGENT FUNCTIONS
 
 FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
-    if (!FLAMEGPU->getVariable<int>(CAN_MOVE)) {
+    if (!FLAMEGPU->getVariable<int>(CAN_MOVE) || FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
         return ALIVE;
     }
 
@@ -87,7 +87,7 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
 }
 
 FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial3D) {
-     if (!FLAMEGPU->getVariable<int>(CAN_MOVE)) {
+     if (!FLAMEGPU->getVariable<int>(CAN_MOVE) || FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
         FLAMEGPU->setVariable<float>(VELX, 0.0f);
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
         FLAMEGPU->setVariable<float>(VELZ, 0.0f);
@@ -105,7 +105,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
 }
 
 FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
-    if (!FLAMEGPU->getVariable<int>(CAN_MOVE)) {
+    if (!FLAMEGPU->getVariable<int>(CAN_MOVE) || FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
         return ALIVE;
     }
 
@@ -117,9 +117,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
 
     if (current_stay > 0) {
-        //  printf("DEBUG-FREEZE: Agente %d, Step %d. Si ferma al nodo %d (Indice %d) per %d step. TargetIndex era: %d\n",
-        //            contacts_id, FLAMEGPU->getStepCounter(), next_index, next_index, current_stay, target_index);
-        // FLAMEGPU->setVariable<float>(VELX, 0.0f);
+        FLAMEGPU->setVariable<float>(VELX, 0.0f);
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
         FLAMEGPU->setVariable<float>(VELZ, 0.0f);
 
@@ -138,11 +136,8 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
     float available_vel = 1.0f;
     float distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-    //float arrival_tolerance = (next_index == target_index) ? 1.0f : 0.2f;
-   // float arrival_tolerance = 0.5f;
 
     while(distance < available_vel && available_vel > 0.0f) {
-
         agent_pos[0] = intermediate_target[0];
         agent_pos[1] = intermediate_target[1];
         agent_pos[2] = intermediate_target[2];
@@ -160,7 +155,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
         intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
         distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-
     }
 
     // Update velocity
@@ -268,6 +262,7 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<float>(STEER_Y);
     pedestrian_sm.newVariable<float>(STEER_Z);
     pedestrian_sm.newVariable<int>(CAN_MOVE);
+    pedestrian_sm.newVariable<int>(SKIP_FLOW);
     pedestrian_sm.newVariable<short>(CONTACTS_ID, -1);
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian_sm.newVariable<unsigned short>(NEXT_INDEX);
