@@ -245,12 +245,12 @@ namespace device_functions {
 
         FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, flow_index);
 
-        // const bool isValidFlow = flow != -1 && flow != SPAWNROOM;
+        const bool isValidFlow = flow != -1 && flow != SPAWNROOM;
         if(env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index] != -1)
             *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index], contacts_id, (float) env_flow_distr_firstparam[agent_type][agent_subtype][week_day_flow][flow_index], (float) env_flow_distr_secondparam[agent_type][agent_subtype][week_day_flow][flow_index], true);
 
         unsigned short j = 0;
-        if(flow != SPAWNROOM || (severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM)){
+        if(isValidFlow || (severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM)){
             auto messages = FLAMEGPU->message_in(flow);
             int area = flow_area;
 
@@ -390,9 +390,9 @@ namespace device_functions {
         }
         else{
             unsigned short spawnroom_area = flow_area;
-            // if(flow == -1){
-            //     spawnroom_area = env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index];
-            // }
+            if(flow == -1){
+                spawnroom_area = env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index];
+            }
 
             final_target = (unsigned short) spawnrooms_areas_ids[spawnroom_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[spawnroom_area][0], false))];
         }
@@ -531,7 +531,6 @@ namespace device_functions {
 
    /**
      * Find the shortest path between two cells in matrix
-     * TOFINISHNOTALREADYUSED A STAR IN UNA MATRICE
     */
     // FLAMEGPU_DEVICE_FUNCTION void a_star_matrix( DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU,  const unsigned short start_idx, const unsigned short goal_idx, short* solution) {
     //     // ClosedSet: Mappa [Indice Nodo] -> [Indice Padre]
@@ -732,11 +731,6 @@ namespace device_functions {
 
         stay_matrix[contacts_id][*target_index].exchange(stay);
         FLAMEGPU->template setVariable<unsigned short>(TARGET_INDEX, *target_index);
-
-        // printf("DEBUG-TARGETS: Agente %d -> Ha assegnato STAY=%d all'indice array [%d]. Coord(X:%f, Z:%f)\n",
-        //        contacts_id, stay, *target_index,
-        //        (float)intermediate_target_x[contacts_id][*target_index],
-        //        (float)intermediate_target_z[contacts_id][*target_index]);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
