@@ -209,6 +209,8 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TYPE);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
@@ -224,6 +226,8 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
     env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ACTIVITY_TYPE);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
@@ -320,7 +324,6 @@ void define_pedestrian_messages(ModelDescription& model){
     link_message.newVariable<float>(FINAL_Z);
     link_message.newVariable<int>(SUPPORT_TIME);
     link_message.setBounds(0, NUMBER_OF_AGENTS_TYPES + TOTAL_AGENTS_ESTIMATION);
-    link_message.setPersistent(true);
 }
 
 // Define model's agents room messages
@@ -408,6 +411,8 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<int>(REQUEST_ID, -1);
     pedestrian.newVariable<short>(REQUEST_NODE, -1);
     pedestrian.newVariable<int>(REQUEST_TIME, -1);
+    pedestrian.newVariable<int>(REQUEST_WAITING_TIME, -1);
+    pedestrian.newVariable<int>(REQUEST_WAITING_TIME_BEHAVE, -1);
     pedestrian.newVariable<unsigned short>(RISK_CLASS);
 
     define_pedestrian_functions(pedestrian);

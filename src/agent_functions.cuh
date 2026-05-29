@@ -263,7 +263,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
     // If an agent is waiting for a support agent, send the initial support message
     if(requested_support != -1 && currently_supported == -1 && on_the_way_to_support == -1 && FLAMEGPU->getVariable<short>(REQUEST_NODE) != -1){
-        printf("[TEMP_DEBUG] Agent with id %d is waiting for support from an agent with type %d\n", contacts_id, requested_support);
         FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
         FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, FLAMEGPU->getVariable<int>(REQUEST_ID));
         FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
@@ -366,9 +365,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             short solution_start_event[SOLUTION_LENGTH] = {-1};
             short solution_event_target[SOLUTION_LENGTH] = {-1};
 
-            // waitingroom for now suspended; if in the future, see the code in take new destination to handle the sending in the
-            // nearest waiting room
-            //try getting inside the event room
+            // Try getting inside the event room
             if(event_node != -1){
                 get_specific_resource = ++specific_resources_counter[agent_type][event_node];
 
@@ -388,24 +385,21 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                     --specific_resources_counter[agent_type][event_node];
                 }
 
-                // if the initial room is not avaiable because the resources are over, explore the alternatives:
+                // If the initial room is not avaiable because the resources are over, explore the alternatives:
                 if(!available && alternative_resources_type_rand[agent_type][event_node] != -1){
-                    //search another room of the same type and area
+                    // Search another room of the same type and area
                     if(alternative_resources_area_rand[agent_type][event_node] == area_room_event && alternative_resources_type_rand[agent_type][event_node] == type_room_event){
                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, previous_separation, type_room_event, area_room_event, &available);
                     }
-                    //search another room of the alternative
+                    // Search another room of the alternative
                     else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != env_events_area){
                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, 0, alternative_resources_type_rand[agent_type][event_node], alternative_resources_area_rand[agent_type][event_node], &available);
                     }
                 }
 
-                // if the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
+                // If the event node is avaiable and the alternative is not skip, then go for the event. Othervise, do nothing
                 if(available){
-                    // 1. Path to the event
                     a_star(FLAMEGPU, start_node, event_node, solution_start_event);
-
-                    // 2. Path from the event to the final destination
                     a_star(FLAMEGPU, event_node, final_node, solution_event_target);
 
                     unsigned int event_time_random = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_EVENT_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], event_distr, contacts_id, (float) event_distr_firstparam, (float) event_distr_secondparam, true);
@@ -427,6 +421,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
                     auto env_events_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
                     auto env_events_agentlinked_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
+                    auto env_events_agentlinked_timeout = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT);
+                    auto env_events_agentlinked_timeout_behave = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE);
 
                     int agentlinked = (int) env_events_agentlinked[agent_type][event];
                     int agentlinked_type = (int) env_events_agentlinked_type[agent_type][event];
@@ -444,6 +440,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                             FLAMEGPU->setVariable<int>(REQUEST_ID, (int) request_id);
                             FLAMEGPU->setVariable<short>(REQUEST_NODE, event_node);
                             FLAMEGPU->setVariable<int>(REQUEST_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: event_time_random);
+                            FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, env_events_agentlinked_timeout[agent_type][event]);
+                            FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME_BEHAVE, env_events_agentlinked_timeout_behave[agent_type][event]);
 
                             FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
                             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
@@ -527,7 +525,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
     const int agent_subtype = FLAMEGPU->getVariable<int>(AGENT_SUBTYPE);
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
-    unsigned short flow_index = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX);
+    const unsigned short flow_index = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX);
     const int room_for_quarantine_index = FLAMEGPU->getVariable<int>(ROOM_FOR_QUARANTINE_INDEX);
 
     const short arrival_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
@@ -663,6 +661,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             // Handle agent linked with an other agent
             auto env_flow_agentlinked = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
             auto env_flow_agentlinked_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TYPE);
+            auto env_flow_agentlinked_timeout = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT);
+            auto env_flow_agentlinked_timeout_behave = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE);
 
             // Handle new support, if necessary
             int agentlinked = (int) env_flow_agentlinked[agent_type][agent_subtype][week_day_flow][flow_index + 1];
@@ -678,6 +678,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 FLAMEGPU->setVariable<int>(REQUEST_ID, (int) request_id);
                 FLAMEGPU->setVariable<short>(REQUEST_NODE, final_node);
                 FLAMEGPU->setVariable<int>(REQUEST_TIME, agentlinked_type == ACCOMPANIMENT_ONLY ? 0: flow_stay);
+                FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, env_flow_agentlinked_timeout[agent_type][agent_subtype][week_day_flow][flow_index + 1]);
+                FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME_BEHAVE, env_flow_agentlinked_timeout_behave[agent_type][agent_subtype][week_day_flow][flow_index + 1]);
 
                 FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
                 FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
@@ -836,7 +838,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             }
 
             if(!found){
-                --support_requests[agent_type][1];
+                printf("[TEMP_DEBUG] Agent with type %d and id %d has skipped the support for an agent due to the timeout \n", agent_type, contacts_id);
 #if defined(DEBUG) && !defined(ENSEMBLE)
                 printf("5,%d,%d,Ending handleSupportRequest for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
@@ -928,8 +930,59 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageBucket) {
             FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
 
             FLAMEGPU->setVariable<int>(REQUEST_ID, -1);
-            FLAMEGPU->setVariable<short>(REQUEST_NODE, -1);
             FLAMEGPU->setVariable<int>(REQUEST_TIME, -1);
+            FLAMEGPU->setVariable<short>(REQUEST_NODE, -1);
+        }
+        else{
+            int request_waiting_time = FLAMEGPU->getVariable<int>(REQUEST_WAITING_TIME);
+            int request_waiting_time_behave = FLAMEGPU->getVariable<int>(REQUEST_WAITING_TIME_BEHAVE);
+
+            if(request_waiting_time <= 0){
+                printf("[TEMP_DEBUG] Agent with id %d has not been supported by an agent with type %d due to the timeout \n", contacts_id, requested_support);
+                FLAMEGPU->setVariable<int>(REQUEST_ID, -1);
+                FLAMEGPU->setVariable<int>(REQUEST_TIME, -1);
+                FLAMEGPU->setVariable<short>(REQUEST_NODE, -1);
+                FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, -1);
+                FLAMEGPU->setVariable<short>(REQUESTED_TYPE, -1);
+
+                FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, -1);
+
+                // For PROCEED_ALONE we have nothing to do
+                if(request_waiting_time_behave == SKIP_PIECE_OF_FLOW){
+                    const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
+                    const short target_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
+
+                    short solution[SOLUTION_LENGTH] = {-1};
+
+                    a_star(FLAMEGPU, target_node, target_node, solution);
+                    update_targets(FLAMEGPU, solution, &target_index, true, 1);
+                }
+                else{
+                    if(request_waiting_time_behave == SKIP_EVENT){
+                        auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
+                        auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
+                        auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
+
+                        const float intermediate_target[3] = {(float) intermediate_target_x[contacts_id][next_index], (float) intermediate_target_y[contacts_id][next_index], (float) intermediate_target_z[contacts_id][next_index]};
+                        const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
+                        const short start_node = coord2index[(unsigned short)(intermediate_target[1]/YOFFSET)][(unsigned short)(intermediate_target[2])][(unsigned short)(intermediate_target[0])];
+                        const short target_node = coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
+
+                        short solution[SOLUTION_LENGTH] = {-1};
+
+                        a_star(FLAMEGPU, start_node, target_node, solution);
+                        update_targets(FLAMEGPU, solution, &target_index, true, stay_matrix[contacts_id][target_index]);
+
+                        FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
+                        FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
+                    }
+                }
+
+                FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME_BEHAVE, -1);
+            }
+            else{
+                FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, request_waiting_time - 1);
+            }
         }
     }
 

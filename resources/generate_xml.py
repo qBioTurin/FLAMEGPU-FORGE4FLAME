@@ -503,6 +503,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		env_flow_area = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
 		env_flow_agentlinked = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
 		env_flow_agentlinked_type = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
+		env_flow_agentlinked_timeout = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
+		env_flow_agentlinked_timeout_behave = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
 		env_flow_distr = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
 		env_flow_distr_firstparam = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
 		env_flow_distr_secondparam = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
@@ -520,6 +522,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		env_events_endtime = np.full((total_number_of_agents_types, event_length), steps_in_a_day-1, dtype=int)
 		env_events_agentlinked = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
 		env_events_agentlinked_type = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
+		env_events_agentlinked_timeout = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
+		env_events_agentlinked_timeout_behave = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
 		env_events_distr = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
 		env_events_distr_firstparam = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
 		env_events_distr_secondparam = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
@@ -574,6 +578,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		days_of_a_week = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
 		agentlinked_types = {"None": -1, "Accompaniment only": 0, "Accompaniment and stay": 1}
+		agentlinked_timeout_behave_det = {"None": -1, "Proceed alone": 0, "Skip this piece of the flow": 1}
+		agentlinked_timeout_behave_rand = {"None": -1, "Proceed alone": 0, "Skip the event": 2}
 
 		total_agents_estimation = 0
 		agent_names = {}
@@ -631,29 +637,21 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 									env_flow_area[agent_type_idx][shift_index][i][flow_index] = areas[fa]["ID"]
 									env_flow_agentlinked[agent_type_idx][shift_index][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
 									env_flow_agentlinked_type[agent_type_idx][shift_index][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
+									env_flow_agentlinked_timeout[agent_type_idx][shift_index][i][flow_index] = int(f.loc["AgentLinkedTimeout"]) if f.loc["AgentLinkedTimeout"] != "None" else -1
+									env_flow_agentlinked_timeout_behave[agent_type_idx][shift_index][i][flow_index] = agentlinked_timeout_behave_det[f.loc["AgentLinkedTimeoutBehave"]]
 
-
-									if ft.upper() == "SPAWNROOM" and k == flow_type.index[-1]:
+									if ft.upper() == "SPAWNROOM" and (k == flow_type.index[-1] or k == flow_type.index[0]):
 										env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions["Deterministic"]
-										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1 * steps_in_a_minute
+										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1
 										env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = 0
 									else:
 										env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
 										env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
 										env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
 
-									# env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
-									# env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-									# env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
-
-
-
 									env_activity_type[agent_type_idx][shift_index][i][flow_index] = f.loc["Activity"]
 
 									flow_index = flow_index + 1
-
-
-
 						else:
 							n = 0
 
@@ -680,20 +678,17 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 								env_flow_area[agent_type_idx][shift_index][i][flow_index] = areas[fa]["ID"]
 								env_flow_agentlinked[agent_type_idx][shift_index][i][flow_index] = agent_names[f.loc["AgentLinked"]]["ID"]
 								env_flow_agentlinked_type[agent_type_idx][shift_index][i][flow_index] = agentlinked_types[f.loc["AgentLinkedType"]]
+								env_flow_agentlinked_timeout[agent_type_idx][shift_index][i][flow_index] = int(f.loc["AgentLinkedTimeout"]) if f.loc["AgentLinkedTimeout"] != "None" else -1
+								env_flow_agentlinked_timeout_behave[agent_type_idx][shift_index][i][flow_index] = agentlinked_timeout_behave_det[f.loc["AgentLinkedTimeoutBehave"]]
 
-								if ft.upper() == "SPAWNROOM" and k == determined_flow.index[-1]:
+								if ft.upper() == "SPAWNROOM" and (k == determined_flow.index[-1] or k == determined_flow.index[0]):
 									env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions["Deterministic"]
-									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1 * steps_in_a_minute
+									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = 1
 									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = 0
 								else:
 									env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
 									env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
 									env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
-
-								# env_flow_distr[agent_type_idx][shift_index][i][flow_index] = distributions[f.loc["Dist"]]
-								# env_flow_distr_firstparam[agent_type_idx][shift_index][i][flow_index] = int(a) * steps_in_a_minute
-								# env_flow_distr_secondparam[agent_type_idx][shift_index][i][flow_index] = int(b) * steps_in_a_minute
-
 
 								env_activity_type[agent_type_idx][shift_index][i][flow_index] = f.loc["Activity"]
 
@@ -718,6 +713,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							env_events_endtime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute
 							env_events_agentlinked[agent_type_idx][e] = agent_names[rf["AgentLinked"]]["ID"]
 							env_events_agentlinked_type[agent_type_idx][e] = agentlinked_types[rf["AgentLinkedType"]]
+							env_events_agentlinked_timeout[agent_type_idx][e] = int(rf["AgentLinkedTimeout"]) if rf["AgentLinkedTimeout"] != "None" else -1
+							env_events_agentlinked_timeout_behave[agent_type_idx][e] = agentlinked_timeout_behave_rand[rf["AgentLinkedTimeoutBehave"]]
 							env_events_distr[agent_type_idx][e] = distributions[rf["Dist"]]
 							env_events_distr_firstparam[agent_type_idx][e] = int(a) * steps_in_a_minute
 							env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
@@ -822,6 +819,8 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 		autogenerated_variables_names.write("#define ON_THE_WAY_TO_SUPPORT \"on_the_way_to_support\"\n")
 		autogenerated_variables_names.write("#define REQUEST_NODE \"request_node\"\n")
 		autogenerated_variables_names.write("#define REQUEST_TIME \"request_time\"\n\n")
+		autogenerated_variables_names.write("#define REQUEST_WAITING_TIME \"request_waiting_time\"\n\n")
+		autogenerated_variables_names.write("#define REQUEST_WAITING_TIME_BEHAVE \"request_waiting_time_behave\"\n\n")
 		autogenerated_variables_names.write("#define RISK_CLASS \"risk_class\"\n\n")
 
 		autogenerated_variables_names.write("#define QUANTA_CONCENTRATION \"quanta_concentration\"\n\n")
@@ -989,6 +988,26 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 			file.write("</ENV_FLOW_AGENTLINKED_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_FLOW_AGENTLINKED_TYPE \"ENV_FLOW_AGENTLINKED_TYPE\"\n")
 
+		with open(macro_environment_dir + "ENV_FLOW_AGENTLINKED_TIMEOUT.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_FLOW_AGENTLINKED_TIMEOUT>")
+			for k in range(total_number_of_agents_types):
+				for x in range(max_number_of_agents_subtype):
+					for i in range(days_in_a_week):
+						for j in range(flow_length):
+							file.write(str(env_flow_agentlinked_timeout[k][x][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (x == max_number_of_agents_subtype - 1) and (k == total_number_of_agents_types - 1)) else ","))
+			file.write("</ENV_FLOW_AGENTLINKED_TIMEOUT></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_FLOW_AGENTLINKED_TIMEOUT \"ENV_FLOW_AGENTLINKED_TIMEOUT\"\n")
+
+		with open(macro_environment_dir + "ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE>")
+			for k in range(total_number_of_agents_types):
+				for x in range(max_number_of_agents_subtype):
+					for i in range(days_in_a_week):
+						for j in range(flow_length):
+							file.write(str(env_flow_agentlinked_timeout_behave[k][x][i][j]) + ("" if((i == days_in_a_week - 1) and (j == flow_length - 1) and (x == max_number_of_agents_subtype - 1) and (k == total_number_of_agents_types - 1)) else ","))
+			file.write("</ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE \"ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE\"\n")
+
 		with open(macro_environment_dir + "ENV_FLOW_DISTR.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_FLOW_DISTR>")
 			for k in range(total_number_of_agents_types):
@@ -1129,6 +1148,22 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 					file.write(str(env_events_agentlinked_type[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
 			file.write("</ENV_EVENTS_AGENTLINKED_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_EVENTS_AGENTLINKED_TYPE \"ENV_EVENTS_AGENTLINKED_TYPE\"\n")
+
+		with open(macro_environment_dir + "ENV_EVENTS_AGENTLINKED_TIMEOUT.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_EVENTS_AGENTLINKED_TIMEOUT>")
+			for k in range(total_number_of_agents_types):
+				for j in range(event_length):
+					file.write(str(env_events_agentlinked_timeout[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+			file.write("</ENV_EVENTS_AGENTLINKED_TIMEOUT></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_EVENTS_AGENTLINKED_TIMEOUT \"ENV_EVENTS_AGENTLINKED_TIMEOUT\"\n")
+
+		with open(macro_environment_dir + "ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE.xml", "w") as file:
+			file.write("<states><macro_environment><ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE>")
+			for k in range(total_number_of_agents_types):
+				for j in range(event_length):
+					file.write(str(env_events_agentlinked_timeout_behave[k][j]) + ("" if((j == event_length - 1) and (k == total_number_of_agents_types - 1)) else ","))
+			file.write("</ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE></macro_environment></states>\n")
+		autogenerated_variables_names.write("#define ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE \"ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE\"\n")
 
 		with open(macro_environment_dir + "ENV_EVENTS_DISTR.xml", "w") as file:
 			file.write("<states><macro_environment><ENV_EVENTS_DISTR>")
@@ -1709,6 +1744,10 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 
 		autogenerated_defines.write("#define ACCOMPANIMENT_ONLY 0\n")
 		autogenerated_defines.write("#define ACCOMPANIMENT_AND_STAY 1\n\n")
+
+		autogenerated_defines.write("#define PROCEED_ALONE 0\n")
+		autogenerated_defines.write("#define SKIP_PIECE_OF_FLOW 1\n\n")
+		autogenerated_defines.write("#define SKIP_EVENT 2\n\n")
 
 		autogenerated_defines.write("#define NUM_COUNTERS " + str(num_counters) + "\n")
 		autogenerated_defines.write("#define COUNTERS_CREATED_AGENTS_WITH_RATE 0\n")

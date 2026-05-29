@@ -245,12 +245,12 @@ namespace device_functions {
 
         FLAMEGPU->setVariable<unsigned short>(FLOW_INDEX, flow_index);
 
-        const bool isValidFlow = flow != -1 && flow != SPAWNROOM;
+        // const bool isValidFlow = flow != -1 && flow != SPAWNROOM;
         if(env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index] != -1)
             *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index], contacts_id, (float) env_flow_distr_firstparam[agent_type][agent_subtype][week_day_flow][flow_index], (float) env_flow_distr_secondparam[agent_type][agent_subtype][week_day_flow][flow_index], true);
 
         unsigned short j = 0;
-        if(isValidFlow || (severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM)){
+        if(flow != SPAWNROOM || (severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM)){
             auto messages = FLAMEGPU->message_in(flow);
             int area = flow_area;
 
@@ -390,9 +390,9 @@ namespace device_functions {
         }
         else{
             unsigned short spawnroom_area = flow_area;
-            if(flow == -1){
-                spawnroom_area = env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index];
-            }
+            // if(flow == -1){
+            //     spawnroom_area = env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index];
+            // }
 
             final_target = (unsigned short) spawnrooms_areas_ids[spawnroom_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[spawnroom_area][0], false))];
         }
@@ -696,7 +696,7 @@ namespace device_functions {
         if(clean){
             const unsigned short next_index = FLAMEGPU->template getVariable<unsigned short>(NEXT_INDEX);
 
-            stay_matrix[contacts_id][*target_index].exchange(0);
+            // stay_matrix[contacts_id][*target_index].exchange(0);
 
             if(next_index != *target_index){
                 *target_index = (next_index + 1) % SOLUTION_LENGTH;
@@ -723,6 +723,8 @@ namespace device_functions {
             intermediate_target_x[contacts_id][*target_index].exchange(new_target_x);
             intermediate_target_y[contacts_id][*target_index].exchange(new_target_y);
             intermediate_target_z[contacts_id][*target_index].exchange(new_target_z);
+
+            stay_matrix[contacts_id][*target_index].exchange(0);
 
             *target_index = (*target_index + 1) % SOLUTION_LENGTH;
 

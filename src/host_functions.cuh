@@ -138,6 +138,8 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AREA, string("resources/macro_environment/") + ENV_FLOW_AREA + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AGENTLINKED, string("resources/macro_environment/") + ENV_FLOW_AGENTLINKED + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AGENTLINKED_TYPE, string("resources/macro_environment/") + ENV_FLOW_AGENTLINKED_TYPE + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AGENTLINKED_TIMEOUT, string("resources/macro_environment/") + ENV_FLOW_AGENTLINKED_TIMEOUT + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE, string("resources/macro_environment/") + ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_DISTR, string("resources/macro_environment/") + ENV_FLOW_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_FLOW_DISTR_FIRSTPARAM + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_FLOW_DISTR_SECONDPARAM, string("resources/macro_environment/") + ENV_FLOW_DISTR_SECONDPARAM + ".xml");
@@ -153,6 +155,8 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_ENDTIME, string("resources/macro_environment/") + ENV_EVENTS_ENDTIME + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED, string("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED_TYPE, string("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED_TYPE + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED_TIMEOUT, string("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED_TIMEOUT + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE, string("resources/macro_environment/") + ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_ACTIVITY_TYPE, string("resources/macro_environment/") + ENV_EVENTS_ACTIVITY_TYPE + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_DISTR, string("resources/macro_environment/") + ENV_EVENTS_DISTR + ".xml");
         FLAMEGPU->environment.importMacroProperty(ENV_EVENTS_DISTR_FIRSTPARAM, string("resources/macro_environment/") + ENV_EVENTS_DISTR_FIRSTPARAM + ".xml");
