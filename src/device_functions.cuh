@@ -1176,7 +1176,7 @@ namespace device_functions {
 
             const float contamination_risk_decreased_with_mask = FLAMEGPU->environment.getProperty<float>(CONTAMINATION_RISK_DECREASED_WITH_MASK);
             const float virus_variant_factor = FLAMEGPU->environment.getProperty<float>(VIRUS_VARIANT_FACTOR);
-            const float area_around_agent = M_PI * (DIAMETER / 2) * (DIAMETER / 2);
+            const float area_around_agent = M_PI * RADIUS * RADIUS;
 
             const int mask_type = FLAMEGPU->getVariable<int>(MASK_TYPE);
 

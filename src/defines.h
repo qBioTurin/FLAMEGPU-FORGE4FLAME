@@ -38,8 +38,6 @@
 #define IDX(x, y) ((y) * MAP_DIM_X + (x))
 #define IS_VALID(x, y) ((x) >= 0 && (x) < MAP_DIM_X && (y) >= 0 && (y) < MAP_DIM_Y)
 
-#define DIAMETER 2.1f
-
 #define MIN_DISTANCE 1e-10f
 
 #define MIN_DISTANCE_STEER 1e-4f

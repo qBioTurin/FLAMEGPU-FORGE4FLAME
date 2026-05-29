@@ -1329,7 +1329,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
         float z_diff = near_agent_pos[2] - agent_pos[2];
         const float separation = sqrt(x_diff*x_diff + y_diff*y_diff + z_diff*z_diff);
 
-        if (separation > 0.0f && separation < (DIAMETER / 2) && node == message.getVariable<short>(GRAPH_NODE)){
+        if (separation > 0.0f && separation < RADIUS && node == message.getVariable<short>(GRAPH_NODE)){
             // Count contact inside the MacroProperty (each step)
             auto contacts_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES_PLUS_1, NUMBER_OF_AGENTS_TYPES_PLUS_1>(CONTACTS_MATRIX);
             contacts_matrix[agent_type][message_agent_type]++;

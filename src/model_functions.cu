@@ -295,7 +295,7 @@ void define_pedestrian_messages(ModelDescription& model){
     pedestrian_message.newVariable<int>(DISEASE_STATE);
     pedestrian_message.newVariable<int>(AGENT_TYPE);
     pedestrian_message.newVariable<short>(GRAPH_NODE);
-    pedestrian_message.setRadius(DIAMETER / 2);
+    pedestrian_message.setRadius(RADIUS);
     pedestrian_message.setMin(0, 0, 0);
     pedestrian_message.setMax(ENV_DIM_X, ENV_DIM_Y, ENV_DIM_Z);
 
