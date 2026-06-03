@@ -699,8 +699,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							if rf["Room"] == "Do nothing":
 									continue
 
-
-
 							room = rf["Room"].strip().split("-")
 
 							a, b = parse_distribution(rf["Time"], rf["Dist"])
@@ -720,7 +718,6 @@ def generate_xml(input_file, random_seed, rooms, areas, pedestrian_names, agents
 							env_events_distr_secondparam[agent_type_idx][e] = int(b) * steps_in_a_minute
 
 							e = e - 1
-
 
 					if n > 0:
 						total_agents_estimation = total_agents_estimation + n

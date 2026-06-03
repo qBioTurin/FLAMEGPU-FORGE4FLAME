@@ -10,21 +10,13 @@ using namespace host_functions;
 
 // Define model's agents pedestrian functions
 void define_pedestrian_functions(AgentDescription& pedestrian){
-    AgentFunctionDescription beingSupported_fn = pedestrian.newFunction("beingSupported", beingSupported);
-    beingSupported_fn.setFunctionCondition(initCondition);
-    beingSupported_fn.setMessageOutput("link_message");
-    beingSupported_fn.setMessageOutputOptional(true);
-
-    AgentFunctionDescription CUDAInit_fn = pedestrian.newFunction("CUDAInitContagionScreening", CUDAInit);
+    AgentFunctionDescription CUDAInit_fn = pedestrian.newFunction("CUDAInit", CUDAInit);
     CUDAInit_fn.setMessageInput("room_location");
-    CUDAInit_fn.setMessageOutput("link_message");
     CUDAInit_fn.setMessageOutputOptional(true);
 
     AgentFunctionDescription CUDAContagionScreening_fn = pedestrian.newFunction("CUDAContagionScreening", CUDAContagionScreening);
     CUDAContagionScreening_fn.setMessageInput("room_location");
-    CUDAContagionScreening_fn.setMessageOutput("link_message");
     CUDAContagionScreening_fn.setMessageOutputOptional(true);
-
 
     AgentFunctionDescription CUDAEvents_fn = pedestrian.newFunction("CUDAEvents", CUDAEvents);
     CUDAEvents_fn.setMessageInput("room_location");
@@ -40,8 +32,19 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
     handleSupportRequest_fn.setFunctionCondition(initCondition);
     handleSupportRequest_fn.setMessageInput("link_message");
-    handleSupportRequest_fn.setMessageOutput("aerosol_counting");
-    handleSupportRequest_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription waitingForSupport_fn = pedestrian.newFunction("waitingForSupport", waitingForSupport);
+    waitingForSupport_fn.setFunctionCondition(initCondition);
+    waitingForSupport_fn.setMessageInput("link_message");
+
+    AgentFunctionDescription beingSupported_fn = pedestrian.newFunction("beingSupported", beingSupported);
+    beingSupported_fn.setFunctionCondition(initCondition);
+    beingSupported_fn.setMessageOutput("link_message");
+    beingSupported_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription supportAgent_fn = pedestrian.newFunction("supportAgent", supportAgent);
+    supportAgent_fn.setFunctionCondition(initCondition);
+    supportAgent_fn.setMessageInput("link_message");
     
 #ifndef CHECKPOINT
     AgentFunctionDescription outputPedestrianLocation_fn = pedestrian.newFunction("outputPedestrianLocation", outputPedestrianLocation);
@@ -64,7 +67,6 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
 
     AgentFunctionDescription printMoveAgentInfo_fn = pedestrian.newFunction("printMoveAgentInfo", printMoveAgentInfo);
     printMoveAgentInfo_fn.setFunctionCondition(initCondition);
-    printMoveAgentInfo_fn.setMessageOutputOptional(true);
 }
 
 // Define model's agents room functions
@@ -450,53 +452,46 @@ void define_room(ModelDescription& model){
 
 void define_layers(ModelDescription& model){
     // Define the execution order
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAInit);
     }
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAContagionScreening);
     }
-
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAEvents);
     }
-
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAMovePedestrian);
     }
-
-
-    // Layer 1.5
     {
         LayerDescription layer = model.newLayer();
         layer.addSubModel(create_smm(model));
     }
-    // Layer 2.5
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(printMoveAgentInfo);
     }
-
-    // Layer 2
-    {
-        LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(beingSupported);
-    }
-
-    // Layer 3
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(handleSupportRequest);
     }
-
-    // Layer 4
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(waitingForSupport);
+    }
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(beingSupported);
+    }
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(supportAgent);
+    }
     {
         LayerDescription layer = model.newLayer();
 #ifndef CHECKPOINT
@@ -504,8 +499,6 @@ void define_layers(ModelDescription& model){
 #endif
         layer.addAgentFunction("room", "outputRoomLocation");
     }
-
-    // Layer 5
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(outputPedestrianLocation);
@@ -513,15 +506,11 @@ void define_layers(ModelDescription& model){
         layer.addAgentFunction("room", "updateQuantaConcentration");
 #endif
     }
-    
-    // Layer 6
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(waitingInWaitingRoom);
     }
-
-    // Layer 7
-    {
+{
         LayerDescription layer = model.newLayer();
 #ifndef CHECKPOINT
         layer.addAgentFunction(updateQuantaInhaledAndContacts);
