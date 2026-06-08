@@ -162,14 +162,14 @@ namespace device_functions {
         int random_iterator = random;
         unsigned short final_target;
 
-        auto spawnrooms_areas_ids = FLAMEGPU->environment.template getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
+        // auto spawnrooms_areas_ids = FLAMEGPU->environment.template getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
         auto global_resources = FLAMEGPU->environment.template getMacroProperty<int, V>(GLOBAL_RESOURCES);
         auto global_resources_counter = FLAMEGPU->environment.template getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
         auto specific_resources = FLAMEGPU->environment.template getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
         auto specific_resources_counter = FLAMEGPU->environment.template getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
 
-        unsigned short random_area = (unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false));
-        final_target = (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
+        // unsigned short random_area = (unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false));
+        // final_target = (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
 
         auto messages = FLAMEGPU->message_in(flow);
         bool room_resources = false;
@@ -249,12 +249,11 @@ namespace device_functions {
 
         FLAMEGPU->template setVariable<unsigned short>(FLOW_INDEX, flow_index);
 
-        // const bool isValidFlow = flow != -1 && flow != SPAWNROOM;
         if(env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index] != -1)
             *stay = (unsigned int) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FLOW_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], env_flow_distr[agent_type][agent_subtype][week_day_flow][flow_index], contacts_id, (float) env_flow_distr_firstparam[agent_type][agent_subtype][week_day_flow][flow_index], (float) env_flow_distr_secondparam[agent_type][agent_subtype][week_day_flow][flow_index], true);
 
         unsigned short j = 0;
-        if(flow != SPAWNROOM || (severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM)){
+        if((flow != SPAWNROOM && !identified) || (severity == MAJOR && (int) env_room_for_quarantine_type[day-1][agent_type] != SPAWNROOM)){
             auto messages = FLAMEGPU->message_in(flow);
             int area = flow_area;
 
@@ -279,8 +278,6 @@ namespace device_functions {
                 k++;
             }
 
-            const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
-
             int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (j-1), false));
             int random_iterator = random;
             int lenght_rooms = j;
@@ -302,8 +299,8 @@ namespace device_functions {
 
             if(severity == MINOR){
                 if(alternative_resources_type_det[agent_type][final_target] == WAITINGROOM && FLAMEGPU->template getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM){
-
                     *available = true;
+
                     float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
                     FLAMEGPU->template setVariable<short>(NODE_WAITING_FOR, final_target);
                     float min_separation = numeric_limits<float>::max();
@@ -341,9 +338,9 @@ namespace device_functions {
 
                         get_global_resource = ++global_resources_counter[final_target];
                         if(get_global_resource <= global_resources[final_target]){
-                        *available = true;
+                            *available = true;
                         } else {
-                        get_global_resource = --global_resources_counter[final_target];
+                            get_global_resource = --global_resources_counter[final_target];
                         }
                     }
 
@@ -393,12 +390,35 @@ namespace device_functions {
             }
         }
         else{
-            unsigned short spawnroom_area = flow_area;
-            // if(flow == -1){
-            //     spawnroom_area = env_flow_area[agent_type][agent_subtype][week_day_flow][flow_index];
-            // }
+            unsigned short spawnroom_area;
 
-            final_target = (unsigned short) spawnrooms_areas_ids[spawnroom_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[spawnroom_area][0], false))];
+            if(identified){
+                if(!(FLAMEGPU->template getVariable<unsigned char>(INIT))){
+                    const float final_target_coordinates[3] = {FLAMEGPU->template getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->template getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->template getVariable<float, 3>(FINAL_TARGET, 2)};
+
+                    auto coord2index = FLAMEGPU->environment.template getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+
+                    final_target = (short) coord2index[(unsigned short)(final_target_coordinates[1]/YOFFSET)][(unsigned short)final_target_coordinates[2]][(unsigned short)final_target_coordinates[0]];
+                }
+                else{
+                    int spawnrooms_areas[NUM_AREAS] = {-1};
+                    unsigned short num_spawnrooms_areas = 0;
+
+                    for(unsigned int area = 0; area < NUM_AREAS; ++area){
+                        if(spawnrooms_areas_ids[area][0] > 0){
+                            spawnrooms_areas[num_spawnrooms_areas] = area;
+                            num_spawnrooms_areas++;
+                        }
+                    }
+
+                    spawnroom_area = spawnrooms_areas[(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (num_spawnrooms_areas-1), false))];
+                    final_target = (unsigned short) spawnrooms_areas_ids[spawnroom_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[spawnroom_area][0], false))];
+                }
+            }
+            else{
+                spawnroom_area = flow_area;
+                final_target = (unsigned short) spawnrooms_areas_ids[spawnroom_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[spawnroom_area][0], false))];
+            }
         }
 
         FLAMEGPU->template setVariable<float, 3>(FINAL_TARGET, 0, FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, final_target));
@@ -850,7 +870,8 @@ namespace device_functions {
                 --specific_resources_counter[agent_type][start_node];
             }
 
-            const short quarantine_node = take_new_destination_flow(FLAMEGPU, &stay, start_node, NULL, identified_bool, severity);
+            bool available = false;
+            const short quarantine_node = take_new_destination_flow(FLAMEGPU, &stay, start_node, &available, identified_bool, severity);
 
             auto counters = FLAMEGPU->environment.template getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
             auto spawnrooms_areas_ids = FLAMEGPU->environment.template getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
@@ -858,12 +879,22 @@ namespace device_functions {
             if(!CHECK_IS_SPAWNROOM(quarantine_node) && !FLAMEGPU->template getVariable<unsigned char>(INIT)){
                 FLAMEGPU->template setVariable<unsigned char>(INIT, 1);
 
-                unsigned short random_area = (unsigned short) cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false);
-                unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (unsigned short) spawnrooms_areas_ids[random_area][0], false))]);
+                int spawnrooms_areas[NUM_AREAS] = {-1};
+                unsigned short num_spawnrooms_areas = 0;
 
-                float x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
-                float y = FLAMEGPU->environment.template getProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, spawnroom_id);
-                float z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM), FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM + 1), false);
+                for(unsigned int area = 0; area < NUM_AREAS; ++area){
+                    if(spawnrooms_areas_ids[area][0] > 0){
+                        spawnrooms_areas[num_spawnrooms_areas] = area;
+                        num_spawnrooms_areas++;
+                    }
+                }
+
+                unsigned short random_area = spawnrooms_areas[(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (num_spawnrooms_areas-1), false))];
+                unsigned short extern_node =  (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
+
+                float x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, extern_node * 2), FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (extern_node * 2) + 1), false);
+                float y = FLAMEGPU->environment.template getProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, extern_node);
+                float z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_OFFSET_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (extern_node * 2) + 2 * NUM_SPAWNROOM), FLAMEGPU->environment.template getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (extern_node * 2) + 2 * NUM_SPAWNROOM + 1), false);
 
                 FLAMEGPU->template setVariable<float>(X, x);
                 FLAMEGPU->template setVariable<float>(Y, y);
@@ -882,8 +913,9 @@ namespace device_functions {
 
             counters[AGENTS_IN_QUARANTINE]++;
         }
-        else
+        else{
             stay_matrix[contacts_id][target_index].exchange(quarantine * STEPS_IN_A_DAY);
+        }
 
         if(agent_with_a_rate)
             FLAMEGPU->template setVariable<unsigned short>(FLOW_INDEX, 0);
@@ -1038,7 +1070,17 @@ namespace device_functions {
         FLAMEGPU->template setVariable<unsigned short>(QUARANTINE, 0);
         FLAMEGPU->template setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
 
-        unsigned short random_area = (unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false));
+        int spawnrooms_areas[NUM_AREAS] = {-1};
+        unsigned short num_spawnrooms_areas = 0;
+
+        for(unsigned int area = 0; area < NUM_AREAS; ++area){
+            if(spawnrooms_areas_ids[area][0] > 0){
+                spawnrooms_areas[num_spawnrooms_areas] = area;
+                num_spawnrooms_areas++;
+            }
+        }
+
+        unsigned short random_area = spawnrooms_areas[(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (num_spawnrooms_areas-1), false))];
         unsigned short extern_node =  (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
 
         a_star(FLAMEGPU, quarantine_node, extern_node, solution_quarantine_extern);
@@ -1046,6 +1088,7 @@ namespace device_functions {
         if(!agent_with_a_rate){
             if(!CHECK_IS_SPAWNROOM(quarantine_node))
                 update_targets(FLAMEGPU, solution_quarantine_extern, &target_index, false, 1);
+
             update_flow(FLAMEGPU, true);
         }
         else{
@@ -1359,25 +1402,21 @@ namespace device_functions {
                 counters[NUM_INFECTED_OUTSIDE]++;
 
                 if(FLAMEGPU->template getVariable<unsigned short>(AGENT_WITH_A_RATE) == AGENT_WITHOUT_RATE){
-
 #ifdef INCUBATION
-                FLAMEGPU->template setVariable<int>(DISEASE_STATE, EXPOSED);
+                    FLAMEGPU->template setVariable<int>(DISEASE_STATE, EXPOSED);
 
-                unsigned short incubation_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INCUBATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INCUBATION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INCUBATION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INCUBATION_DAYS, risk_class * 2 + 1), true));
-
-                FLAMEGPU->template setVariable<unsigned short>(INCUBATION_DAYS, incubation_days);
+                    unsigned short incubation_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INCUBATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INCUBATION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INCUBATION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INCUBATION_DAYS, risk_class * 2 + 1), true));
+                    FLAMEGPU->template setVariable<unsigned short>(INCUBATION_DAYS, incubation_days);
 #else
-                FLAMEGPU->template setVariable<int>(DISEASE_STATE, INFECTED);
-
-                unsigned short infection_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INFECTION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), true));
+                    FLAMEGPU->template setVariable<int>(DISEASE_STATE, INFECTED);
+                    unsigned short infection_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INFECTION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), true));
 #endif
 
                 }
                 else{
-                FLAMEGPU->template setVariable<int>(DISEASE_STATE, INFECTED);
-
-                unsigned short infection_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INFECTION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), true));
-            }
+                    FLAMEGPU->template setVariable<int>(DISEASE_STATE, INFECTED);
+                    unsigned short infection_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_INFECTION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), true));
+                }
 
 #ifdef FATALITY
                 unsigned short fatality_days = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_FATALITY_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, risk_class), contacts_id, (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.template getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), true));
