@@ -296,18 +296,18 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
        (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] != SPAWNROOM &&
        (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]] != -1 &&
        on_the_way_to_support == -1){
-        float random = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
+        double random = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f, false);
 
         auto env_events = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
         auto env_events_area = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
         auto env_events_starttime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
         auto env_events_endtime = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
-        auto env_events_probability = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
+        auto env_events_probability = FLAMEGPU->environment.getMacroProperty<double, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
         auto env_events_distr = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
         auto env_events_distr_firstparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
         auto env_events_distr_secondparam = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
 
-        float env_events_cdf[EVENT_LENGTH + 1] = {0.0f};
+        double env_events_cdf[EVENT_LENGTH + 1] = {0.0f};
         int env_events_mapping[EVENT_LENGTH + 1] = {-1};
 
         int step = (FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_DAY;
@@ -328,9 +328,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
         for(int j = num_events; j > 1; j--){
             if(j == num_events)
-                env_events_cdf[j-1] = (float) env_events_probability[agent_type][env_events_mapping[j-1]];
+                env_events_cdf[j-1] = (double) env_events_probability[agent_type][env_events_mapping[j-1]];
             else
-                env_events_cdf[j-1] = env_events_cdf[j] + (float) env_events_probability[agent_type][env_events_mapping[j-1]];
+                env_events_cdf[j-1] = env_events_cdf[j] + (double) env_events_probability[agent_type][env_events_mapping[j-1]];
         }
         env_events_cdf[0] = 1.0f;
 
@@ -1105,7 +1105,7 @@ FLAMEGPU_AGENT_FUNCTION(printMoveAgentInfo, MessageNone, MessageNone) {
         FLAMEGPU->setVariable<float>(ANIMATE, agent_animate);
     }
 
-    if(!compare_float(agent_pos[0], prev_x, 1e-10) || !compare_float(agent_pos[1], prev_y, 1e-10) || !compare_float(agent_pos[2], prev_z, 1e-10)){
+    if(!compare_double(agent_pos[0], prev_x, 1e-10) || !compare_double(agent_pos[1], prev_y, 1e-10) || !compare_double(agent_pos[2], prev_z, 1e-10)){
         printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
     }
 
@@ -1237,7 +1237,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaConcentration, MessageBucket, MessageNone) {
     rooms_quanta_concentration[node].exchange(new_concentration);
 
     if(!((FLAMEGPU->getStepCounter() + START_STEP_TIME) % STEPS_IN_A_HOUR)){
-        if(!compare_float((float) new_concentration, 0.0f, 1e-10f))
+        if(!compare_double((float) new_concentration, 0.0f, 1e-10f))
             printf("3,%d,%d,%.10f,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), (float) new_concentration, node);
 
         FLAMEGPU->setVariable<float>(QUANTA_CONCENTRATION, FLAMEGPU->getVariable<float>(QUANTA_CONCENTRATION) + new_concentration);

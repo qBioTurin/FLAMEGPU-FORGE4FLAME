@@ -44,7 +44,7 @@ namespace host_functions {
     /**
      * Compare floating points.
     */
-    bool compare_float(const double a, const double b, const double epsilon) {
+    bool compare_double(const double a, const double b, const double epsilon) {
         return fabs(a - b) < epsilon;
     }
 
@@ -54,10 +54,10 @@ namespace host_functions {
     float cuda_host_rng(HostAPI* FLAMEGPU, unsigned short distribution_id, int type, float a, float b, bool flow_time) {
         float random = (type == TRUNCATED_POSITIVE_NORMAL) ? normal_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]): uniform_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]);
 
-        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
+        if(type == EXPONENTIAL && compare_double((double) random, 1.0f, 1e-10f)){
             do{
                 random = uniform_distr(host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)]);
-            }while(compare_float((double) random, 1.0f, 1e-10f));
+            }while(compare_double((double) random, 1.0f, 1e-10f));
         }
         const float event_time_random = DISTRIBUTION(type, random, a, b);
 

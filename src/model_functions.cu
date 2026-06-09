@@ -224,7 +224,7 @@ void define_environment(ModelDescription& model){
     
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
-    env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
+    env.newMacroProperty<double, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);

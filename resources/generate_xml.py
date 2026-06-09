@@ -516,7 +516,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 
 		env_events = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
 		env_events_area = np.full((total_number_of_agents_types, event_length), -1, dtype=int)
-		env_events_probability = np.zeros((total_number_of_agents_types, event_length), dtype=float)
+		env_events_probability = np.zeros((total_number_of_agents_types, event_length), dtype=np.float64)
 		env_events_activity = np.zeros((total_number_of_agents_types, event_length), dtype=float)
 		env_events_starttime = np.full((total_number_of_agents_types, event_length), 0, dtype=int)
 		env_events_endtime = np.full((total_number_of_agents_types, event_length), steps_in_a_day-1, dtype=int)
@@ -706,29 +706,28 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 							steps_in_a_week = steps_in_a_day * days_in_a_week
 
 							weight, unit_measure = rf["Weight"].split(" ")
-							if abs(float(weight) - 1.0) < 1e-10:
-								weight = float(weight) - 1e-10
-							else:
-								weight = float(weight)
+							weight = np.float64(weight)
+							if abs(weight - np.float64(1.0)) < np.float64(1e-10):
+								weight = weight - np.float64(1e-10)
 
 							if "second" in unit_measure:
-								weight = 1 - (1 - weight) ** step
+								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), np.float64(step))
 
 							if "minute" in unit_measure:
-								weight = 1 - (1 - weight) ** (1 / (steps_in_a_minute / step))
+								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_minute) / np.float64(step))))
 
 							if "hour" in unit_measure:
-								weight = 1 - (1 - weight) ** (1 / (steps_in_a_hour / step))
+								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_hour) / np.float64(step))))
 
 							if "day" in unit_measure:
-								weight = 1 - (1 - weight) ** (1 / (steps_in_a_day / step))
+								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_day) / np.float64(step))))
 
 							if "week" in unit_measure:
-								weight = 1 - (1 - weight) ** (1 / (steps_in_a_week / step))
+								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_week) / np.float64(step))))
 
 							env_events[agent_type_idx][e] = MapEncoding.to_value(room[0].upper())
 							env_events_area[agent_type_idx][e] = areas[room[1]]["ID"]
-							env_events_probability[agent_type_idx][e] = float(weight)
+							env_events_probability[agent_type_idx][e] = weight
 							env_events_activity[agent_type_idx][e] = rf["Activity"]
 							env_events_starttime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[0].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[0].split(":")[1]) * steps_in_a_minute
 							env_events_endtime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute

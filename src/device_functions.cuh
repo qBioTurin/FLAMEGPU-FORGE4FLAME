@@ -10,7 +10,7 @@ namespace device_functions {
     /**
      * Compare floating points.
     */
-    FLAMEGPU_DEVICE_FUNCTION bool compare_float(const double a, const double b, const double epsilon) {
+    FLAMEGPU_DEVICE_FUNCTION bool compare_double(const double a, const double b, const double epsilon) {
         return fabs(a - b) < epsilon;
     }
 
@@ -18,15 +18,15 @@ namespace device_functions {
      * Generate a random number using the given RNG, distribution and parameters for pedestrians.
     */
     template<typename MessageIn, typename MessageOut>
-    FLAMEGPU_DEVICE_FUNCTION float cuda_pedestrian_rng(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, float b, bool flow_time) {
-        float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
+    FLAMEGPU_DEVICE_FUNCTION double cuda_pedestrian_rng(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, double a, double b, bool flow_time) {
+        double random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
 
-        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
+        if(type == EXPONENTIAL && compare_double((double) random, 1.0f, 1e-10f)){
             do{
                 random = curand_uniform(&cuda_states[id]);
-            }while(compare_float((double) random, 1.0f, 1e-10f));
+            }while(compare_double((double) random, 1.0f, 1e-10f));
         }
-        const float event_time_random = DISTRIBUTION(type, random, a, b);
+        const double event_time_random = DISTRIBUTION(type, random, a, b);
 
         auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
         cuda_rng_offsets_pedestrian[FLAMEGPU->template getVariable<short>(CONTACTS_ID)]++;
@@ -37,15 +37,15 @@ namespace device_functions {
     /**
      * Generate a random number using the given RNG, distribution and parameters for rooms.
     */
-    FLAMEGPU_DEVICE_FUNCTION float cuda_room_rng(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, float a, int b, bool flow_time) {
-        float random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
+    FLAMEGPU_DEVICE_FUNCTION double cuda_room_rng(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, double a, double b, bool flow_time) {
+        double random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
 
-        if(type == EXPONENTIAL && compare_float((double) random, 1.0f, 1e-10f)){
+        if(type == EXPONENTIAL && compare_double((double) random, 1.0f, 1e-10f)){
             do{
                 random = curand_uniform(&cuda_states[id]);
-            }while(compare_float((double) random, 1.0f, 1e-10f));
+            }while(compare_double((double) random, 1.0f, 1e-10f));
         }
-        const float event_time_random = DISTRIBUTION(type, random, a, b);
+        const double event_time_random = DISTRIBUTION(type, random, a, b);
 
         auto cuda_rng_offsets_room = FLAMEGPU->environment.template getMacroProperty<unsigned int, NUM_ROOMS>(CUDA_RNG_OFFSETS_ROOM);
         cuda_rng_offsets_room[FLAMEGPU->getID()]++;
@@ -63,7 +63,7 @@ namespace device_functions {
 #endif
         const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
         const float yaw = FLAMEGPU->environment.template getProperty<float, V>(NODE_YAW, new_target);
-        const bool yaw_condition = compare_float(yaw, M_PI/2, 0.5f) || compare_float(yaw, 2*M_PI - M_PI/2, 0.5f);
+        const bool yaw_condition = compare_double(yaw, M_PI/2, 0.5f) || compare_double(yaw, 2*M_PI - M_PI/2, 0.5f);
 
         float length = FLAMEGPU->environment.template getProperty<float, V>(NODE_LENGTH, new_target);
         float width = FLAMEGPU->environment.template getProperty<float, V>(NODE_WIDTH, new_target);
@@ -1435,7 +1435,7 @@ namespace device_functions {
 #endif
     }
 
-    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) {
+    FLAMEGPU_DEVICE_FUNCTION unsigned char findLeftmostIndex(const double target, const double *env_events_cdf, const short num_events) {
         int left = 0;
         int right = num_events - 1;
 
@@ -1448,8 +1448,8 @@ namespace device_functions {
         while (left <= right) {
             int mid = left + (right - left) / 2;
 
-            float upper = env_events_cdf[mid];
-            float lower = env_events_cdf[mid + 1];
+            double upper = env_events_cdf[mid];
+            double lower = env_events_cdf[mid + 1];
 
             if (target <= upper && target > lower) {
                 return mid;
