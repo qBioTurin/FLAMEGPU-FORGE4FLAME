@@ -703,34 +703,34 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 
 							a, b = parse_distribution(rf["Time"], rf["Dist"])
 
-							steps_in_a_week = steps_in_a_day * days_in_a_week
+							entry_time = int(rf["TimeSlot"].split("-")[0].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[0].split(":")[1]) * steps_in_a_minute
+							exit_time = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute
 
-							weight, unit_measure = rf["Weight"].split(" ")
-							weight = np.float64(weight)
-							if abs(weight - np.float64(1.0)) < np.float64(1e-10):
-								weight = weight - np.float64(1e-10)
-
-							if "second" in unit_measure:
-								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), np.float64(step))
-
+							if int(rf["TimeSlot"].split("-")[1].split(":")[0]) == 23 and int(rf["TimeSlot"].split("-")[1].split(":")[1]) == 59:
+								exit_time = exit_time - steps_in_a_minute
+							
+							# To fix, this is not correct
+							times, unit_measure = rf["Times"].split(" ")
+							times = np.float64(times)
+							weight = np.float64(0.0)
 							if "minute" in unit_measure:
-								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_minute) / np.float64(step))))
+								weight = times / np.float64(steps_in_a_minute)
 
 							if "hour" in unit_measure:
-								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_hour) / np.float64(step))))
+								weight = times / (np.float64(steps_in_a_minute) * np.float64(steps_in_a_minute))
 
 							if "day" in unit_measure:
-								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_day) / np.float64(step))))
+								weight = times / np.float64(exit_time - entry_time)
 
 							if "week" in unit_measure:
-								weight = np.float64(1.0) - np.power((np.float64(1.0) - weight), (np.float64(1.0) / (np.float64(steps_in_a_week) / np.float64(step))))
+								weight = times / (np.float64(exit_time - entry_time) * np.float64(days_in_a_week))
 
 							env_events[agent_type_idx][e] = MapEncoding.to_value(room[0].upper())
 							env_events_area[agent_type_idx][e] = areas[room[1]]["ID"]
 							env_events_probability[agent_type_idx][e] = weight
 							env_events_activity[agent_type_idx][e] = rf["Activity"]
-							env_events_starttime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[0].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[0].split(":")[1]) * steps_in_a_minute
-							env_events_endtime[agent_type_idx][e] = int(rf["TimeSlot"].split("-")[1].split(":")[0]) * steps_in_a_hour + int(rf["TimeSlot"].split("-")[1].split(":")[1]) * steps_in_a_minute
+							env_events_starttime[agent_type_idx][e] = entry_time
+							env_events_endtime[agent_type_idx][e] = exit_time
 							env_events_agentlinked[agent_type_idx][e] = agent_names[rf["AgentLinked"]]["ID"]
 							env_events_agentlinked_type[agent_type_idx][e] = agentlinked_types[rf["AgentLinkedType"]]
 							env_events_agentlinked_timeout[agent_type_idx][e] = int(rf["AgentLinkedTimeout"]) if rf["AgentLinkedTimeout"] != "None" else -1
