@@ -337,7 +337,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
         int event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
 
         if(event != -1) {
-            printf("[TEMP_DEBUG] Agent with id %d and type %d is going to the bathroom.\n", contacts_id, agent_type);
             short event_node = -1;
             float min_separation = numeric_limits<float>::max();
             float previous_separation = 0;
