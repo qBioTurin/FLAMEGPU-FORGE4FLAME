@@ -10,7 +10,6 @@
   Inputs:
       -expdir or --experiment_dir:          directory with the scenario to simulate
       -e      or --ensemble:                run with ensemble
-      -cps    or --checkpoint_simulation:   run the model in a simplified version with the aim to obtain a checkpoint
 
   Authors: Daniele Baccega, Irene Terrone, Simone Pernice
 '
@@ -18,17 +17,11 @@
 # Default values for input parameters
 EXPERIMENT_DIR="None"
 ENSEMBLE="OFF"
-CHECKPOINT_SIMULATION="OFF"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -expdir|--experiment_dir)
       EXPERIMENT_DIR="$2"
-      shift
-      shift
-      ;;
-    -cps|--checkpoint_simulation)
-      CHECKPOINT_SIMULATION="$2"
       shift
       shift
       ;;
@@ -42,7 +35,6 @@ while [[ $# -gt 0 ]]; do
   	  printf "Arguments:\n"
       printf "        -expdir or --experiment_dir:          directory with the scenario to simulate\n"
       printf "        -e      or --ensemble:                run with ensemble (default: OFF; possible values: ON, OFF)\n"
-      printf "        -cps    or --checkpoint_simulation:   run the model in a simplified version with the aim to obtain a checkpoint (default: OFF; possible values: ON, OFF)"
       exit 1
       ;;
     -*|--*)
@@ -69,7 +61,7 @@ fi
 # Generate the XML file
 cd resources
 python3 CreateMapEncoding.py -dirname_experiment $EXPERIMENT_DIR
-python3 generate_xml.py -dirname_experiment $EXPERIMENT_DIR -ensemble $ENSEMBLE -checkpoint $CHECKPOINT_SIMULATION
+python3 generate_xml.py -dirname_experiment $EXPERIMENT_DIR -ensemble $ENSEMBLE
 cd ..
 
 awk 'NR > 1 {

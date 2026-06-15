@@ -46,7 +46,6 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     supportAgent_fn.setFunctionCondition(initCondition);
     supportAgent_fn.setMessageInput("link_message");
     
-#ifndef CHECKPOINT
     AgentFunctionDescription outputPedestrianLocation_fn = pedestrian.newFunction("outputPedestrianLocation", outputPedestrianLocation);
     outputPedestrianLocation_fn.setFunctionCondition(initCondition);
     outputPedestrianLocation_fn.setMessageOutput("location");
@@ -58,7 +57,7 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription updateQuantaInhaledAndContacts_fn = pedestrian.newFunction("updateQuantaInhaledAndContacts", updateQuantaInhaledAndContacts);
     updateQuantaInhaledAndContacts_fn.setFunctionCondition(initCondition);
     updateQuantaInhaledAndContacts_fn.setMessageInput("location");
-#endif
+
     AgentFunctionDescription waitingInWaitingRoom_fn = pedestrian.newFunction("waitingInWaitingRoom", waitingInWaitingRoom);
     waitingInWaitingRoom_fn.setFunctionCondition(initCondition);
     waitingInWaitingRoom_fn.setMessageInput("queue_message");
@@ -75,11 +74,11 @@ void define_room_functions(AgentDescription& room, string room_type){
         AgentFunctionDescription outputRoomLocation_fn = room.newFunction("outputRoomLocation", outputRoomLocation);
         outputRoomLocation_fn.setFunctionCondition(notInitAndNotFillingroomCondition);
         outputRoomLocation_fn.setMessageOutput("room_location");
-#ifndef CHECKPOINT
+
         AgentFunctionDescription updateQuantaConcentration_fn = room.newFunction("updateQuantaConcentration", updateQuantaConcentration);
         updateQuantaConcentration_fn.setFunctionCondition(initAndNotFillingroomCondition);
         updateQuantaConcentration_fn.setMessageInput("aerosol_counting");
-#endif
+
         AgentFunctionDescription handlingQueueinWaitingRoom_fn = room.newFunction("handlingQueueinWaitingRoom", handlingQueueinWaitingRoom);
         handlingQueueinWaitingRoom_fn.setMessageInput("waiting_room_message");
         handlingQueueinWaitingRoom_fn.setMessageOutput("queue_message");
@@ -197,6 +196,13 @@ void define_environment(ModelDescription& model){
     
 
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+    
+    env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+    env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
+    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
 
     env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
 
@@ -279,6 +285,11 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_DET);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
+
+    env.newMacroProperty<int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
+    env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
+    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER);
 
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
@@ -399,6 +410,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned char>(IN_AN_EVENT);
     pedestrian.newVariable<int>(EVENT_ID);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
+    pedestrian.newVariable<short>(ACTUAL_NODE, -1);
     pedestrian.newVariable<int>(WAITING_ROOM_TIME);
     pedestrian.newVariable<int>(WAITING_ROOM_FLAG);
     pedestrian.newVariable<int>(ENTRY_EXIT_FLAG);
@@ -494,27 +506,21 @@ void define_layers(ModelDescription& model){
     }
     {
         LayerDescription layer = model.newLayer();
-#ifndef CHECKPOINT
         layer.addAgentFunction(outputPedestrianLocationAerosol);
-#endif
         layer.addAgentFunction("room", "outputRoomLocation");
     }
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(outputPedestrianLocation);
-#ifndef CHECKPOINT
         layer.addAgentFunction("room", "updateQuantaConcentration");
-#endif
     }
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(waitingInWaitingRoom);
     }
-{
+    {
         LayerDescription layer = model.newLayer();
-#ifndef CHECKPOINT
         layer.addAgentFunction(updateQuantaInhaledAndContacts);
-#endif
         layer.addAgentFunction("room", "handlingQueueinWaitingRoom");
     }
 

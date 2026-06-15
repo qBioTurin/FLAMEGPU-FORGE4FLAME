@@ -8,7 +8,6 @@
   Build the ABM.
 
   Inputs:
-      -cps or --checkpoint_simulation:  run the model in a simplified version with the aim to obtain a checkpoint
       -v   or --visualisation:          activate the visualisation
       -g   or --debug:                  execute the simulation with debug prints
 
@@ -16,17 +15,11 @@
 '
 
 # Default values for input parameters
-CHECKPOINT_SIMULATION="OFF"
 VISUALISATION="OFF"
 DEBUG="OFF"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -cps|--checkpoint_simulation)
-      CHECKPOINT_SIMULATION="$2"
-      shift
-      shift
-      ;;
     -v|--visualisation)
       VISUALISATION="$2"
       shift
@@ -40,7 +33,6 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
   	  printf "./build.sh - build the ABM\n\n"
   	  printf "Arguments:\n"
-      printf "        -cps or --checkpoint_simulation:  run the model in a simplified version with the aim to obtain a checkpoint (default: OFF; possible values: ON, OFF)\n"
       printf "        -v   or --visualisation:          activate the visualisation (default: OFF; possible values: ON, OFF)\n"
       printf "        -g   or --debug:                  execute the simulation with debug prints (default: OFF; possible values: ON, OFF)\n"
       exit 1
