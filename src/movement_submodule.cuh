@@ -22,7 +22,7 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
     printf("5,%d,%d,Beginning avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
-    if (!FLAMEGPU->getVariable<int>(CAN_MOVE) || FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
+    if (!FLAMEGPU->getVariable<char>(CAN_MOVE) || FLAMEGPU->getVariable<char>(SKIP_FLOW)) {
         #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
         #endif
@@ -113,7 +113,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
 #if defined(DEBUG) && !defined(ENSEMBLE)
     printf("5,%d,%d,Beginning outputPedestrianLocationSub for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
-     if (!FLAMEGPU->getVariable<int>(CAN_MOVE) || FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
+     if (!FLAMEGPU->getVariable<char>(CAN_MOVE) || FLAMEGPU->getVariable<char>(SKIP_FLOW)) {
         FLAMEGPU->setVariable<float>(VELX, 0.0f);
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
         FLAMEGPU->setVariable<float>(VELZ, 0.0f);
@@ -145,7 +145,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
     printf("5,%d,%d,Beginning move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
 #endif
-    if(!FLAMEGPU->getVariable<int>(CAN_MOVE) || FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
+    if(!FLAMEGPU->getVariable<char>(CAN_MOVE) || FLAMEGPU->getVariable<char>(SKIP_FLOW)) {
         #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
         #endif
@@ -202,9 +202,11 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
         distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
 
-        // if(next_index == target_index - 1){
-        //     // The agent is on the door of the room (here we have to implement object/obstacles logic with resources and path finding)
-        //     // We can also move here the check for general room's resources, before objects/obstacles logic
+        // if(next_index == (target_index - 1)){
+        //     // The agent is on the door of the room source or destination:
+        //     // - Source: we have to run A* from source room's door to destination room's door
+        //     // - Destination: we have to implement object/obstacles logic with resources and path finding
+        //     // For future: We can also move here the check for general room's resources, before objects/obstacles logic
         //     auto room_has_objects = FLAMEGPU->environment.getMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
 
         //     const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
@@ -299,9 +301,9 @@ void define_environment_submodule(ModelDescription &smm) {
     env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
     env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
     env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
-    env.newMacroProperty<int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
+    env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
     env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER);
 }
 
@@ -325,15 +327,15 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<float>(Y);
     pedestrian_sm.newVariable<float>(Z);
     pedestrian_sm.newVariable<float>(ANIMATE);
-    pedestrian_sm.newVariable<int>(ANIMATE_DIR, 1);
+    pedestrian_sm.newVariable<char>(ANIMATE_DIR, 1);
     pedestrian_sm.newVariable<float>(VELX);
     pedestrian_sm.newVariable<float>(VELY);
     pedestrian_sm.newVariable<float>(VELZ);
     pedestrian_sm.newVariable<float>(STEER_X);
     pedestrian_sm.newVariable<float>(STEER_Y);
     pedestrian_sm.newVariable<float>(STEER_Z);
-    pedestrian_sm.newVariable<int>(CAN_MOVE);
-    pedestrian_sm.newVariable<int>(SKIP_FLOW);
+    pedestrian_sm.newVariable<char>(CAN_MOVE);
+    pedestrian_sm.newVariable<char>(SKIP_FLOW);
     pedestrian_sm.newVariable<float, 3>(FINAL_TARGET);
     pedestrian_sm.newVariable<short>(CONTACTS_ID, -1);
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);

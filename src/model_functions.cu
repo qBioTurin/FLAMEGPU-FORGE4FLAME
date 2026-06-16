@@ -213,39 +213,39 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TYPE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TYPE);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT);
+    env.newMacroProperty<unsigned char, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED_TIMEOUT_BEHAVE);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_DISTR_SECONDPARAM);
     env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_ACTIVITY_TYPE);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_HOURS_SCHEDULE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR_SECONDPARAM);
     
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
     env.newMacroProperty<double, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_STARTTIME);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ENDTIME);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT);
+    env.newMacroProperty<unsigned char, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TIMEOUT_BEHAVE);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AGENTLINKED_TYPE);
     env.newMacroProperty<float, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_ACTIVITY_TYPE);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_DISTR_SECONDPARAM);
 
     env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_VENTILATION);
     env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_STERILISATION);
     env.newMacroProperty<float, DAYS, NUM_AREAS, NUM_ROOMS_TYPES>(ENV_AIR);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
+    env.newMacroProperty<unsigned short, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_TYPE);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_MASK_FRACTION);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_FRACTION);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_EFFICACY);
@@ -254,41 +254,41 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_VACCINATION_END_OF_IMMUNIZATION_DISTR_SECONDPARAM);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_SENSITIVITY);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_SPECIFICITY);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
+    env.newMacroProperty<short, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
+    env.newMacroProperty<short, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
     env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SENSITIVITY);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SPECIFICITY);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
+    env.newMacroProperty<short, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_TYPE);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_AREA);
+    env.newMacroProperty<short, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_TYPE);
+    env.newMacroProperty<short, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_AREA);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_SECOND);
 
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(INITIAL_INFECTED);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(NUMBER_OF_AGENTS_BY_TYPE);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES_PLUS_1>(INITIAL_INFECTED);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES_PLUS_1>(NUMBER_OF_AGENTS_BY_TYPE);
 
     env.newMacroProperty<unsigned int, DISEASE_STATES>(COMPARTMENTAL_MODEL);
 
     env.newMacroProperty<float, V>(ROOMS_QUANTA_CONCENTRATION);
 
-    env.newMacroProperty<int, V>(GLOBAL_RESOURCES);
+    env.newMacroProperty<unsigned int, V>(GLOBAL_RESOURCES);
     env.newMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_DET);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_DET);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_DET);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_DET);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_AREA_RAND);
+    env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, V>(ALTERNATIVE_RESOURCES_TYPE_RAND);
 
-    env.newMacroProperty<int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
+    env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
     env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
-    env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
+    env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER);
 
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
@@ -305,8 +305,8 @@ void define_pedestrian_messages(ModelDescription& model){
     MessageSpatial3D::Description pedestrian_message = model.newMessage<MessageSpatial3D>("location");
     pedestrian_message.newVariable<id_t>(ID);
     pedestrian_message.newVariable<short>(CONTACTS_ID);
-    pedestrian_message.newVariable<int>(DISEASE_STATE);
-    pedestrian_message.newVariable<int>(AGENT_TYPE);
+    pedestrian_message.newVariable<unsigned char>(DISEASE_STATE);
+    pedestrian_message.newVariable<short>(AGENT_TYPE);
     pedestrian_message.newVariable<short>(GRAPH_NODE);
     pedestrian_message.setRadius(RADIUS);
     pedestrian_message.setMin(0, 0, 0);
@@ -314,8 +314,8 @@ void define_pedestrian_messages(ModelDescription& model){
 
     // Aerosol counting message
     MessageBucket::Description aerosol_message = model.newMessage<MessageBucket>("aerosol_counting");
-    aerosol_message.newVariable<int>(DISEASE_STATE);
-    aerosol_message.newVariable<int>(MASK_TYPE);
+    aerosol_message.newVariable<unsigned char>(DISEASE_STATE);
+    aerosol_message.newVariable<unsigned char>(MASK_TYPE);
     aerosol_message.newVariable<float>(ACTIVITY_TYPE);
     aerosol_message.setBounds(-1, V);
 
@@ -347,15 +347,15 @@ void define_room_messages(ModelDescription& model){
     room_message.newVariable<unsigned short>(Y);
     room_message.newVariable<unsigned short>(Z);
     room_message.newVariable<short>(GRAPH_NODE);
-    room_message.newVariable<int>(AREA);
+    room_message.newVariable<short>(AREA);
     room_message.setBounds(0, NUM_ROOMS_TYPES);
     room_message.setPersistent(true);
 
     // Handle resources message
     MessageBucket::Description waiting_room_message = model.newMessage<MessageBucket>("waiting_room_message");
     waiting_room_message.newVariable<short>(CONTACTS_ID);
-    waiting_room_message.newVariable<int>(WAITING_ROOM_TIME);
-    waiting_room_message.newVariable<int>(AGENT_TYPE);
+    waiting_room_message.newVariable<short>(WAITING_ROOM_TIME);
+    waiting_room_message.newVariable<short>(AGENT_TYPE);
     waiting_room_message.setPersistent(true);
     waiting_room_message.setBounds(0, V); 
 }
@@ -379,8 +379,8 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<float>(X_PREV);
     pedestrian.newVariable<float>(Y_PREV);
     pedestrian.newVariable<float>(Z_PREV);
-    pedestrian.newVariable<int>(CAN_MOVE);
-    pedestrian.newVariable<int>(SKIP_FLOW);
+    pedestrian.newVariable<char>(CAN_MOVE);
+    pedestrian.newVariable<char>(SKIP_FLOW);
     pedestrian.newVariable<float>(QUANTA_INHALED);
     pedestrian.newVariable<float, 3>(FINAL_TARGET);
     pedestrian.newVariable<unsigned short>(NEXT_INDEX);
@@ -392,32 +392,32 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS);
     pedestrian.newVariable<unsigned char>(INIT);
     pedestrian.newVariable<unsigned char>(INFECTED_CONTACT);
-    pedestrian.newVariable<short>(ANIMATE_DIR, 1);
+    pedestrian.newVariable<char>(ANIMATE_DIR, 1);
     pedestrian.newVariable<short>(CONTACTS_ID, -1);
-    pedestrian.newVariable<int>(DISEASE_STATE);
-    pedestrian.newVariable<int>(MASK_TYPE, NO_MASK);
+    pedestrian.newVariable<unsigned char>(DISEASE_STATE);
+    pedestrian.newVariable<unsigned char>(MASK_TYPE, NO_MASK);
     pedestrian.newVariable<int>(ROOM_FOR_QUARANTINE_INDEX, -1);
-    pedestrian.newVariable<int>(AGENT_TYPE, -1);
-    pedestrian.newVariable<int>(AGENT_SUBTYPE, -1);
-    pedestrian.newVariable<unsigned short>(AGENT_WITH_A_RATE, AGENT_WITHOUT_RATE);
-    pedestrian.newVariable<unsigned short>(SEVERITY, MINOR);
-    pedestrian.newVariable<unsigned short>(QUARANTINE);
-    pedestrian.newVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
+    pedestrian.newVariable<short>(AGENT_TYPE, -1);
+    pedestrian.newVariable<short>(AGENT_SUBTYPE, -1);
+    pedestrian.newVariable<unsigned char>(AGENT_WITH_A_RATE, AGENT_WITHOUT_RATE);
+    pedestrian.newVariable<unsigned char>(SEVERITY, MINOR);
+    pedestrian.newVariable<unsigned char>(QUARANTINE);
+    pedestrian.newVariable<unsigned char>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
     pedestrian.newVariable<int>(SWAB_STEPS);
-    pedestrian.newVariable<unsigned short>(ENTRY_TIME_INDEX);
-    pedestrian.newVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE);
-    pedestrian.newVariable<unsigned short>(WEEK_DAY_FLOW);
+    pedestrian.newVariable<unsigned char>(ENTRY_TIME_INDEX);
+    pedestrian.newVariable<unsigned char>(JUST_EXITED_FROM_QUARANTINE);
+    pedestrian.newVariable<unsigned char>(WEEK_DAY_FLOW);
     pedestrian.newVariable<unsigned char>(IN_AN_EVENT);
-    pedestrian.newVariable<int>(EVENT_ID);
+    pedestrian.newVariable<short>(EVENT_ID);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
     pedestrian.newVariable<short>(ACTUAL_NODE, -1);
-    pedestrian.newVariable<int>(WAITING_ROOM_TIME);
-    pedestrian.newVariable<int>(WAITING_ROOM_FLAG);
-    pedestrian.newVariable<int>(ENTRY_EXIT_FLAG);
+    pedestrian.newVariable<short>(WAITING_ROOM_TIME);
+    pedestrian.newVariable<unsigned char>(WAITING_ROOM_FLAG);
+    pedestrian.newVariable<unsigned char>(ENTRY_EXIT_FLAG);
     pedestrian.newVariable<short>(NODE_WAITING_FOR, -1);
-    pedestrian.newVariable<unsigned short>(EXITED_FROM_ENVIRONMENT);
+    pedestrian.newVariable<unsigned char>(EXITED_FROM_ENVIRONMENT);
     pedestrian.newVariable<short>(REQUESTED_SUPPORT, -1);
-    pedestrian.newVariable<short>(REQUESTED_TYPE, -1);
+    pedestrian.newVariable<char>(REQUESTED_TYPE, -1);
     pedestrian.newVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, -1);
     pedestrian.newVariable<short>(SUPPORT_TIME_EVENT, -1);
     pedestrian.newVariable<short>(CURRENTLY_SUPPORTED, -1);
@@ -427,7 +427,8 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<int>(REQUEST_TIME, -1);
     pedestrian.newVariable<int>(REQUEST_WAITING_TIME, -1);
     pedestrian.newVariable<int>(REQUEST_WAITING_TIME_BEHAVE, -1);
-    pedestrian.newVariable<unsigned short>(RISK_CLASS);
+    pedestrian.newVariable<unsigned char>(RISK_CLASS);
+    pedestrian.newVariable<unsigned char>(MOVEMENT_PHASE);
 
     define_pedestrian_functions(pedestrian);
 }
@@ -448,8 +449,8 @@ void define_room(ModelDescription& model){
             room.newVariable<float>(HEIGHT_OBJ, 0.0f);
             room.newVariable<float>(YAW, 0.0f);
             room.newVariable<unsigned char>(INIT_ROOM, 0);
-            room.newVariable<int>(AREA, -1);
-            room.newVariable<int>(TYPE, -1);
+            room.newVariable<short>(AREA, -1);
+            room.newVariable<short>(TYPE, -1);
             room.newVariable<int>(COLOR_ID, 0);
             room.newVariable<float>(VOLUME, 0.0f);
             room.newVariable<float>(QUANTA_CONCENTRATION, 0.0f);
