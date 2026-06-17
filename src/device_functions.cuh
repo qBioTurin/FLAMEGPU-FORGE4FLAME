@@ -1282,7 +1282,8 @@ namespace device_functions {
     /** 
      * Find the shortest path between two cells in matrix using A* algorithm.
     */
-    FLAMEGPU_DEVICE_FUNCTION void a_star_matrix(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU, const unsigned short room_id, const unsigned short start_pos[2], const unsigned short goal_pos[2], short* solution) {
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION void a_star_matrix(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, const unsigned short room_id, const unsigned short start_pos[2], const unsigned short goal_pos[2], short* solution) {
         // ClosedSet: Matrix [z][x] storing parent coordinates encoded as (parent_z * MAX_DIMENSION + parent_x)
         short closedset[MAX_DIMENSION][MAX_DIMENSION];
         
@@ -1306,7 +1307,7 @@ namespace device_functions {
         unsigned short goal_z = goal_pos[1];
 
         // Get grid data from environment
-        auto room_matrix = FLAMEGPU->environment.getMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+        auto room_matrix = FLAMEGPU->environment.template getMacroProperty<float, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
 
         // Initialize start node
         short initial_h = CHEBYSHEV_DISTANCE(start_x, goal_x, start_z, goal_z);
@@ -1470,7 +1471,8 @@ namespace device_functions {
     /** 
      * Handle room to door logic.
     */
-    FLAMEGPU_DEVICE_FUNCTION void room2door_logic(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION short room2door_logic(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU){
         short solution[SOLUTION_LENGTH] = {-1};
 
         // a_star_matrix(FLAMEGPU, room_id, start_pos, goal_pos, solution);
@@ -1479,14 +1481,16 @@ namespace device_functions {
     /** 
      * Handle room to room logic (e.g. objects/obstacles, objects resources, path finding, etc.)
     */
-    FLAMEGPU_DEVICE_FUNCTION void room2room_logic(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION void room2room_logic(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU){
         
     }
 
     /** 
      * Handle door to room logic (e.g. objects/obstacles, objects resources, path finding, etc.)
     */
-    FLAMEGPU_DEVICE_FUNCTION void door2room_logic(DeviceAPI<MessageBucket, MessageBucket>* FLAMEGPU){
+    template<typename MessageIn, typename MessageOut>
+    FLAMEGPU_DEVICE_FUNCTION void door2room_logic(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU){
         // Based on the selected policy (random, closest to the door, farthest from other people, etc.) and
         // eventually using a probability of staying standing, find an object with an available resource. If
         // there are none, stay standing.

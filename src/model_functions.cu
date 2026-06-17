@@ -198,11 +198,12 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     
     env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+    env.newMacroProperty<float, V, 2>(ROOM_DOORS_POSITION);
     env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
 
     env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
 

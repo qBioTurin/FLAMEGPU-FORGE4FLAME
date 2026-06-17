@@ -202,21 +202,21 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
         distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
 
-        // if(next_index == (target_index - 1)){
-        //     // The agent is on the door of the room source or destination:
-        //     // - Source: we have to run A* from source room's door to destination room's door
-        //     // - Destination: we have to implement object/obstacles logic with resources and path finding
-        //     // For future: We can also move here the check for general room's resources, before objects/obstacles logic
-        //     auto room_has_objects = FLAMEGPU->environment.getMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
+        if(next_index == (target_index - 1)){
+            // The agent is on the door of the room source or destination:
+            // - Source: we have to run A* from source room's door to destination room's door
+            // - Destination: we have to implement object/obstacles logic with resources and path finding
+            // For future: We can also move here the check for general room's resources, before objects/obstacles logic
+            auto room_has_objects = FLAMEGPU->environment.getMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
 
-        //     const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
+            const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
 
-        //     short room_index = (short) coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
+            short room_index = (short) coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
 
-        //     if((char) room_has_objects[room_index]){
-        //         inside_room_logic(FLAMEGPU);
-        //     }
-        // }
+            if((char) room_has_objects[room_index]){
+                inside_room_logic(FLAMEGPU);
+            }
+        }
     }
 
     // Update velocity
@@ -296,11 +296,13 @@ void define_environment_submodule(ModelDescription &smm) {
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+    env.newMacroProperty<float, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+    env.newMacroProperty<float, V, 2>(ROOM_DOORS_POSITION);
     env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
-    env.newMacroProperty<short, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_LENGTH_OBJECTS);
+    env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_WIDTH_OBJECTS);
     env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
     env.newMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
     env.newMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);

@@ -681,9 +681,11 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 return DEAD;
             }
 
-            bool available = false;
+            const short final_node = room2door_logic(FLAMEGPU);
 
-            const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node, &available);
+            // bool available = false;
+
+            // const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node, &available);
 
             // Handle agent linked with an other agent
             auto env_flow_agentlinked = FLAMEGPU->environment.getMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
