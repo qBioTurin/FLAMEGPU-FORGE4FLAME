@@ -412,6 +412,8 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<short>(EVENT_ID);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
     pedestrian.newVariable<short>(ACTUAL_NODE, -1);
+    pedestrian.newVariable<short>(ACTUAL_NODE_STAY, -1);
+    pedestrian.newVariable<short>(ACTUAL_NODE_OBJECT, -1);
     pedestrian.newVariable<short>(WAITING_ROOM_TIME);
     pedestrian.newVariable<unsigned char>(WAITING_ROOM_FLAG);
     pedestrian.newVariable<unsigned char>(ENTRY_EXIT_FLAG);

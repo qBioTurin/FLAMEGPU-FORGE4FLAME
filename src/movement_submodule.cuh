@@ -160,7 +160,9 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+    auto room_doors_position = FLAMEGPU->environment.getMacroProperty<float, V, 2>(ROOM_DOORS_POSITION);
 
+    unsigned char movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     unsigned int current_stay = (unsigned int) stay_matrix[contacts_id][next_index];
@@ -193,30 +195,24 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         FLAMEGPU->setVariable<unsigned short>(NEXT_INDEX, next_index);
         stay = (unsigned int) stay_matrix[contacts_id][next_index];
 
+        if(next_index == target_index && stay == 0) {
+            if(movement_phase == ROOM2DOOR){
+                room2room_logic(FLAMEGPU);
+            }
+            else if(movement_phase == ROOM2ROOM){
+                door2room_logic(FLAMEGPU);
+            }
+        }
+
         if(next_index == target_index || stay > 0) {
             available_vel = 0.0f;
             break;
         }
+
         intermediate_target[0] = (float) intermediate_target_x[contacts_id][next_index];
         intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
         intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
         distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
-
-        if(next_index == (target_index - 1)){
-            // The agent is on the door of the room source or destination:
-            // - Source: we have to run A* from source room's door to destination room's door
-            // - Destination: we have to implement object/obstacles logic with resources and path finding
-            // For future: We can also move here the check for general room's resources, before objects/obstacles logic
-            auto room_has_objects = FLAMEGPU->environment.getMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
-
-            const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
-
-            short room_index = (short) coord2index[(unsigned short)(final_target[1]/YOFFSET)][(unsigned short)final_target[2]][(unsigned short)final_target[0]];
-
-            if((char) room_has_objects[room_index]){
-                inside_room_logic(FLAMEGPU);
-            }
-        }
     }
 
     // Update velocity
@@ -342,6 +338,10 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<short>(CONTACTS_ID, -1);
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian_sm.newVariable<unsigned short>(NEXT_INDEX);
+    pedestrian_sm.newVariable<short>(ACTUAL_NODE);
+    pedestrian_sm.newVariable<short>(ACTUAL_NODE_STAY);
+    pedestrian_sm.newVariable<short>(ACTUAL_NODE_OBJECT);
+    pedestrian_sm.newVariable<unsigned char>(MOVEMENT_PHASE);
 
     AgentFunctionDescription output_location = smm.Agent("pedestrian_submodule").newFunction("outputPedestrianLocationSub", outputPedestrianLocationSub);
     output_location.setMessageOutput("location_submodule");

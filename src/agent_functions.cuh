@@ -553,7 +553,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
     unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
     int disease_state = FLAMEGPU->getVariable<unsigned char>(DISEASE_STATE);
-    short solution[SOLUTION_LENGTH] = {-1};
+    // short solution[SOLUTION_LENGTH] = {-1};
 
     // 2. Check Arrival at Spawnroom
     if(FLAMEGPU->getVariable<unsigned char>(INIT) && CHECK_IS_SPAWNROOM(arrival_node) && next_index == target_index && (flow_index > 1 || FLAMEGPU->getVariable<unsigned char>(JUST_EXITED_FROM_QUARANTINE) || CHECK_IS_SPAWNROOM(room_for_quarantine_index))) {
@@ -667,6 +667,18 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 --specific_resources_counter[agent_type][start_node];
             }
 
+            short actual_node = FLAMEGPU->getVariable<short>(ACTUAL_NODE);
+            short actual_node_object = FLAMEGPU->getVariable<short>(ACTUAL_NODE_OBJECT);
+
+            if(actual_node_object != -1){
+                --rooms_resources_global_objects_counter[agent_type][actual_node][actual_node_object];
+                --rooms_resources_specific_objects_counter[agent_type][actual_node][actual_node_object];
+
+                FLAMEGPU->setVariable<short>(ACTUAL_NODE, -1);
+                FLAMEGPU->setVariable<short>(ACTUAL_NODE_STAY, -1);
+                FLAMEGPU->setVariable<short>(ACTUAL_NODE_OBJECT, -1);
+            }
+
             if (FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 2 && !just_finished_event) {
                 FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
             }
@@ -681,11 +693,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 return DEAD;
             }
 
-            const short final_node = room2door_logic(FLAMEGPU);
+            bool available = false;
 
-            // bool available = false;
-
-            // const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node, &available);
+            const short final_node = take_new_destination_flow(FLAMEGPU, &flow_stay, start_node, &available);
 
             // Handle agent linked with an other agent
             auto env_flow_agentlinked = FLAMEGPU->environment.getMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AGENTLINKED);
@@ -723,8 +733,10 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 FLAMEGPU->message_out.setKey(agentlinked);
             }
 
-            a_star(FLAMEGPU, start_node, final_node, solution);
-            update_targets(FLAMEGPU, solution, &target_index, false, flow_stay);
+            FLAMEGPU->setVariable<short>(ACTUAL_NODE, final_node);
+            FLAMEGPU->setVariable<short>(ACTUAL_NODE_STAY, flow_stay);
+
+            room2door_logic(FLAMEGPU, start_node);
 
             FLAMEGPU->setVariable<char>(CAN_MOVE, 1);
             FLAMEGPU->setVariable<char>(SKIP_FLOW, 1);
