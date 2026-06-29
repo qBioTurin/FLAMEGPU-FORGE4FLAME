@@ -45,7 +45,7 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription supportAgent_fn = pedestrian.newFunction("supportAgent", supportAgent);
     supportAgent_fn.setFunctionCondition(initCondition);
     supportAgent_fn.setMessageInput("link_message");
-    
+
 #ifndef CHECKPOINT
     AgentFunctionDescription outputPedestrianLocation_fn = pedestrian.newFunction("outputPedestrianLocation", outputPedestrianLocation);
     outputPedestrianLocation_fn.setFunctionCondition(initCondition);
@@ -100,9 +100,9 @@ void visualise_pedestrians(visualiser::ModelVis& vis){
 
     // Pedestrian agents
     visualiser::AgentVis ped_agt = vis.addAgent("pedestrian");
-    
+
     ped_agt.setKeyFrameModel(visualiser::Stock::Models::PEDESTRIAN, ANIMATE);
-    
+
     ped_agt.setModelScale(1.0f);
     ped_agt.setForwardXVariable(VELX);
     ped_agt.setForwardZVariable(VELZ);
@@ -128,7 +128,7 @@ void visualise_rooms(visualiser::ModelVis& vis){
                 room_agt.setModel("resources/f4f/obj/room.obj");
             else
                 room_agt.setModel("resources/f4f/obj/fillingroom.obj");
-            
+
             room_agt.setModelScale(1.0f, 1.0f, 1.0f);
 
             room_agt.setScaleXVariable(LENGTH_OBJ);
@@ -152,7 +152,7 @@ void define_environment(ModelDescription& model){
 
     // Environment properties
     env.newProperty<unsigned int>(SEED, 123456789);
-    
+
     env.newProperty<unsigned short, V>(INDEX2COORDX, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDY, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDZ, {0});
@@ -190,11 +190,12 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, RISK_CLASSES + 1>(RISK_CONST, {0.0f});
 
     env.newProperty<float, DAYS + 1>(PERC_INF, {0.0f});
+    env.newProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, {0});
 
     env.newProperty<float, RISK_CLASSES + 1>(VIRUS_SEVERITY, {0.0f});
 
     env.newProperty<unsigned short>(RUN_IDX, 0);
-    
+
 
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
@@ -221,7 +222,7 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR_FIRSTPARAM);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, DAYS_IN_A_WEEK, HOURS_SCHEDULE_LENGTH>(ENV_BIRTH_RATE_DISTR_SECONDPARAM);
-    
+
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS);
     env.newMacroProperty<int, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_AREA);
     env.newMacroProperty<double, NUMBER_OF_AGENTS_TYPES, EVENT_LENGTH>(ENV_EVENTS_PROBABILITY);
@@ -346,7 +347,7 @@ void define_room_messages(ModelDescription& model){
     waiting_room_message.newVariable<int>(WAITING_ROOM_TIME);
     waiting_room_message.newVariable<int>(AGENT_TYPE);
     waiting_room_message.setPersistent(true);
-    waiting_room_message.setBounds(0, V); 
+    waiting_room_message.setBounds(0, V);
 }
 
 // Define model's agents pedestrian
@@ -444,7 +445,7 @@ void define_room(ModelDescription& model){
             room.newVariable<unsigned short>(X_CENTER, 0);
             room.newVariable<unsigned short>(Y_CENTER, 0);
             room.newVariable<unsigned short>(Z_CENTER, 0);
-            
+
             define_room_functions(room, room_type);
         }
     }
@@ -542,9 +543,9 @@ void define_visualisation(visualiser::ModelVis& vis){
 
     visualise_pedestrians(vis);
     visualise_rooms(vis);
-    
+
     // Draw the discrete grid
-    auto pen = vis.newLineSketch(0.0f, 0.0f, 0.0f, 0.5f); 
+    auto pen = vis.newLineSketch(0.0f, 0.0f, 0.0f, 0.5f);
     for (unsigned char j = 0; j < FLOORS; j++){
         // Grid Lines
         for (unsigned short i = 0; i <= ENV_DIM_X; i += 1) {

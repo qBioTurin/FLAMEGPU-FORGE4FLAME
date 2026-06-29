@@ -245,7 +245,11 @@ namespace host_functions {
         auto number_of_agents_by_type = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES_PLUS_1>(NUMBER_OF_AGENTS_BY_TYPE);
         auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
 
+        const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
         const unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
+        auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
+        auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+        auto node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE);
 
         // Generate initial infected agents
         vector<int> selectedIndices;
@@ -398,10 +402,38 @@ namespace host_functions {
             unsigned short slot = 0;
             while((int) env_rate_distr[i][week_day][slot] != -1){
                 if((int) env_hours_schedule[i][0][week_day][2 * slot] >= START_STEP_TIME){
-                    unsigned short random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
+                    int gm_total_capacity = 0;
+                    int gm_current_occupation = 0;
+                    unsigned short random_agent = 0;
+                    if (i == PATIENT_GENERALMEDICINE) {
+                        for (int v = 0; v < V; v++) {
+                            if (node_type[v] == BEDROOM) {
+                                gm_total_capacity += specific_resources[PATIENT_GENERALMEDICINE][v];
+                                gm_current_occupation += specific_resources_counter[PATIENT_GENERALMEDICINE][v];
+                            }
+                        }
+                        float saturation = (gm_total_capacity > 0) ? ((float)gm_current_occupation / gm_total_capacity * 100.0f) : 0.0f;
+                        printf("Saturation check: General Medicine ward capacity is %d, occupied is %d, saturation is %.2f%%\n", gm_total_capacity, gm_current_occupation, saturation);
 
+                        random_agent = FLAMEGPU->environment.getProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, day);
+                    } else {
+                        random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
+                    }
+
+                    int currently_spawned_in_step = 0;
                     for(int j = 0; j < random_agent; j++){
+                        if (i == PATIENT_GENERALMEDICINE) {
+                            if (gm_current_occupation + currently_spawned_in_step >= gm_total_capacity) {
+                                printf("Notification: Patient of General Medicine generated but General Medicine ward is full (Capacity: %d, Occupied: %d), so it must go.\n", gm_total_capacity, gm_current_occupation);
+                                continue;
+                            }
+                            currently_spawned_in_step++;
+                        }
                         int new_agent_state = SUSCEPTIBLE;
+                        unsigned short infection_days = 0;
+                        unsigned short fatality_days = 0;
+                        unsigned short vaccination_end_of_immunization_days = 0;
+                        unsigned short identified_infected_state = NOT_IDENTIFIED;
 
                         HostAgentAPI pedestrian = FLAMEGPU->agent("pedestrian");
 
@@ -413,14 +445,22 @@ namespace host_functions {
 
                         unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
 
-                        float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
-                        float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
-                        unsigned short vaccination_end_of_immunization_days = 0;
-                        if(random < (float) env_vaccination_fraction[0][i] && random_efficacy < (float) env_vaccination_efficacy[0][i]){
-                            new_agent_state = RECOVERED;
-    #ifdef REINFECTION
-                            vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][i], (float) env_vaccination_end_of_immunization_distr_firstparam[0][i], (float) env_vaccination_end_of_immunization_distr_secondparam[0][i], true);
-    #endif
+                        if (i == PATIENT_GENERALMEDICINE) {
+                            new_agent_state = INFECTED;
+                            identified_infected_state = IDENTIFIED;
+                            infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
+#ifdef FATALITY
+                            fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), false)));
+#endif
+                        } else {
+                            float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
+                            float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
+                            if(random < (float) env_vaccination_fraction[0][i] && random_efficacy < (float) env_vaccination_efficacy[0][i]){
+                                new_agent_state = RECOVERED;
+#ifdef REINFECTION
+                                vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[0][i], (float) env_vaccination_end_of_immunization_distr_firstparam[0][i], (float) env_vaccination_end_of_immunization_distr_secondparam[0][i], true);
+#endif
+                            }
                         }
 
                         HostNewAgentAPI new_pedestrian = pedestrian.newAgent();
@@ -437,9 +477,11 @@ namespace host_functions {
                         new_pedestrian.setVariable<int>(AGENT_TYPE, i);
                         new_pedestrian.setVariable<int>(AGENT_SUBTYPE, 0);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
+                        new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
+                        new_pedestrian.setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
                         new_pedestrian.setVariable<unsigned short>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned short>(SEVERITY, MINOR);
-                        new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
+                        new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, identified_infected_state);
                         new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, week_day);
                         new_pedestrian.setVariable<unsigned short>(RISK_CLASS, risk_class);
 
@@ -611,22 +653,60 @@ namespace host_functions {
             auto env_swab_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
             auto env_swab_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
             auto counters = FLAMEGPU->environment.getMacroProperty<unsigned int, NUM_COUNTERS>(COUNTERS);
+            auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
+            auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
+            auto node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE);
 
             float risk_classes_cdf[RISK_CLASSES + 1] = {0.0f};
             for(unsigned short i = 0; i < RISK_CLASSES; i++){
                 risk_classes_cdf[i] = FLAMEGPU->environment.getProperty<float, RISK_CLASSES + 1>(PROPORTIONS, i);
             }
 
+            // --- Epigraph Hospitalized Integration for Subsequent Days ---
+            int num_hospitalized = FLAMEGPU->environment.getProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, day);
+            int total_generated = 0;
+
             for(int i = NUMBER_OF_AGENTS_TYPES_WITHOUT_A_RATE; i < NUMBER_OF_AGENTS_TYPES; i++){
                 unsigned short slot = 0;
-                while((int) env_rate_distr[i][week_day][slot] != -1){
-                    unsigned short random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
 
+                while((int) env_rate_distr[i][week_day][slot] != -1){
+                    int gm_total_capacity = 0;
+                    int gm_current_occupation = 0;
+                    unsigned short random_agent = 0;
+                    if (i == PATIENT_GENERALMEDICINE) {
+                        for (int v = 0; v < V; v++) {
+                            if (node_type[v] == BEDROOM) {
+                                gm_total_capacity += specific_resources[PATIENT_GENERALMEDICINE][v];
+                                gm_current_occupation += specific_resources_counter[PATIENT_GENERALMEDICINE][v];
+                            }
+                        }
+                        float saturation = (gm_total_capacity > 0) ? ((float)gm_current_occupation / gm_total_capacity * 100.0f) : 0.0f;
+                        printf("Saturation check: General Medicine ward capacity is %d, occupied is %d, saturation is %.2f%%\n", gm_total_capacity, gm_current_occupation, saturation);
+
+                        random_agent = num_hospitalized;
+                    } else {
+                        random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
+                    }
+                    total_generated += random_agent;
+
+                    int currently_spawned_in_step = 0;
                     for(int j = 0; j < random_agent; j++){
+                        if (i == PATIENT_GENERALMEDICINE) {
+                            if (gm_current_occupation + currently_spawned_in_step >= gm_total_capacity) {
+                                printf("Notification: Patient of General Medicine generated but General Medicine ward is full (Capacity: %d, Occupied: %d), so it must go.\n", gm_total_capacity, gm_current_occupation);
+                                continue;
+                            }
+                            currently_spawned_in_step++;
+                        }
                         int new_agent_state = SUSCEPTIBLE;
+                        unsigned short infection_days = 0;
+                        unsigned short fatality_days = 0;
+                        unsigned short vaccination_end_of_immunization_days = 0;
+                        unsigned short identified_infected_state = NOT_IDENTIFIED;
+
                         HostAgentAPI pedestrian = FLAMEGPU->agent("pedestrian");
 
-                        unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][0], false))]);
+                        unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (float) spawnrooms_areas_ids[(int) env_flow_area[i][0][week_day][0]][0], false))]);
 
                         float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
                         float y = FLAMEGPU->environment.getProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, spawnroom_id);
@@ -634,14 +714,22 @@ namespace host_functions {
 
                         unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
 
-                        float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
-                        float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
-                        unsigned short vaccination_end_of_immunization_days = 0;
-                        if(random < (float) env_vaccination_fraction[day-1][i] && random_efficacy < (float) env_vaccination_efficacy[day-1][i]){
-                            new_agent_state = RECOVERED;
-#ifdef REINFECTION
-                            vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[day-1][i], (float) env_vaccination_end_of_immunization_distr_firstparam[day-1][i], (float) env_vaccination_end_of_immunization_distr_secondparam[day-1][i], true);
+                        if (i == PATIENT_GENERALMEDICINE) {
+                            new_agent_state = INFECTED;
+                            identified_infected_state = IDENTIFIED;
+                            infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
+#ifdef FATALITY
+                            fatality_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_FATALITY_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_FATALITY_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_FATALITY_DAYS, risk_class * 2 + 1), false)));
 #endif
+                        } else {
+                            float random = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
+                            float random_efficacy = cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false);
+                            if(random < (float) env_vaccination_fraction[day-1][i] && random_efficacy < (float) env_vaccination_efficacy[day-1][i]){
+                                new_agent_state = RECOVERED;
+#ifdef REINFECTION
+                                vaccination_end_of_immunization_days = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_VACCINATION_END_OF_IMMUNIZATION_DISTR_IDX, (int) env_vaccination_end_of_immunization_distr[day-1][i], (float) env_vaccination_end_of_immunization_distr_firstparam[day-1][i], (float) env_vaccination_end_of_immunization_distr_secondparam[day-1][i], true);
+#endif
+                            }
                         }
 
                         HostNewAgentAPI new_pedestrian = pedestrian.newAgent();
@@ -659,9 +747,11 @@ namespace host_functions {
                         new_pedestrian.setVariable<int>(AGENT_TYPE, i);
                         new_pedestrian.setVariable<int>(AGENT_SUBTYPE, 0);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
+                        new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
+                        new_pedestrian.setVariable<unsigned short>(FATALITY_DAYS, fatality_days);
                         new_pedestrian.setVariable<unsigned short>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned short>(SEVERITY, MINOR);
-                        new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, NOT_IDENTIFIED);
+                        new_pedestrian.setVariable<unsigned short>(IDENTIFIED_INFECTED, identified_infected_state);
                         new_pedestrian.setVariable<unsigned short>(WEEK_DAY_FLOW, week_day);
                         new_pedestrian.setVariable<unsigned short>(RISK_CLASS, risk_class);
                         new_pedestrian.setVariable<unsigned short>(EXITED_FROM_ENVIRONMENT, 1);
@@ -686,6 +776,10 @@ namespace host_functions {
                     slot++;
                 }
             }
+
+#if defined(DEBUG) && !defined(ENSEMBLE)
+            printf("Epigraph hospitalized on Day %d: %d. Total daily rate agents generated (after adjustments): %d\n", day, num_hospitalized, total_generated);
+#endif
 
             FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
 #if defined(DEBUG) && !defined(ENSEMBLE)
