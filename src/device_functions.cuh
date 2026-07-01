@@ -162,14 +162,10 @@ namespace device_functions {
         int random_iterator = random;
         unsigned short final_target;
 
-        // auto spawnrooms_areas_ids = FLAMEGPU->environment.template getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
         auto global_resources = FLAMEGPU->environment.template getMacroProperty<int, V>(GLOBAL_RESOURCES);
         auto global_resources_counter = FLAMEGPU->environment.template getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
         auto specific_resources = FLAMEGPU->environment.template getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
         auto specific_resources_counter = FLAMEGPU->environment.template getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
-
-        // unsigned short random_area = (unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (NUM_AREAS-1), false));
-        // final_target = (unsigned short) spawnrooms_areas_ids[random_area][(unsigned short) (cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 1.0f, (float) spawnrooms_areas_ids[random_area][0], false))];
 
         auto messages = FLAMEGPU->message_in(flow);
         bool room_resources = false;
@@ -357,24 +353,30 @@ namespace device_functions {
 
                             auto messages = FLAMEGPU->message_in(alternative_resources_type_det[agent_type][final_target]);
 
+                            //different name and passing the right lenght rooms
                             unsigned short ward_indeces_alternative[SOLUTION_LENGTH];
-                            unsigned short j = 0;
-                            unsigned short k = 0;
+                            unsigned short j_alt = 0;
+                            unsigned short k_alt = 0;
 
-                            auto i = messages.begin();
-                            while(i != messages.end()){
-                                const int local_area = (*i).template getVariable<int>(AREA);
+                            auto i_alt = messages.begin();
+                            while(i_alt != messages.end()){
+                                const int local_area = (*i_alt).template getVariable<int>(AREA);
 
                                 if(local_area == alternative_resources_area_det[agent_type][final_target]){
-                                    ward_indeces_alternative[j] = k;
-                                    j++;
+                                    ward_indeces_alternative[j_alt] = k_alt;
+                                    j_alt++;
                                 }
-
-                                i++;
-                                k++;
+                                i_alt++;
+                                k_alt++;
                             }
-                            int random = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float) (j-1), false));
-                            final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random, lenght_rooms, ward_indeces_alternative, available);
+
+                            // SAFETY CHECK: Only search if at least one alternative room exists
+                            if (j_alt > 0) {
+                                int random_alt = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_TAKE_NEW_DESTINATION_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, (float)(j_alt - 1), false));
+                                final_target = findFreeRoomOfTypeAndArea(FLAMEGPU, alternative_resources_type_det[agent_type][final_target], random_alt, j_alt, ward_indeces_alternative, available);
+                            } else {
+                                *available = false;
+                            }
                         }
                     }
                 }

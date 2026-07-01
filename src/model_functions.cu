@@ -191,6 +191,7 @@ void define_environment(ModelDescription& model){
 
     env.newProperty<float, DAYS + 1>(PERC_INF, {0.0f});
     env.newProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, {0});
+    env.newProperty<int>(TOTAL_REJECTED, 0);
 
     env.newProperty<float, RISK_CLASSES + 1>(VIRUS_SEVERITY, {0.0f});
 

@@ -85,6 +85,7 @@ namespace host_functions {
      * Initialization function.
     */
     FLAMEGPU_INIT_FUNCTION(initFunction){
+        setvbuf(stdout, NULL, _IONBF, 0);
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning initFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
@@ -113,7 +114,7 @@ namespace host_functions {
             rng_state.close();
         }
 
-        fflush(stdout);
+       // fflush(stdout);
 
         printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
 
@@ -402,33 +403,58 @@ namespace host_functions {
             unsigned short slot = 0;
             while((int) env_rate_distr[i][week_day][slot] != -1){
                 if((int) env_hours_schedule[i][0][week_day][2 * slot] >= START_STEP_TIME){
+                    int covid_total_capacity = 0;
+                    int covid_current_occupation = 0;
                     int gm_total_capacity = 0;
                     int gm_current_occupation = 0;
+                    int covid_in_gm_capacity = 0;
+                    int covid_in_gm_occupation = 0;
                     unsigned short random_agent = 0;
-                    if (i == PATIENT_GENERALMEDICINE) {
+
+                    if (i == PATIENT_COVID19) {
                         for (int v = 0; v < V; v++) {
                             if (node_type[v] == BEDROOM) {
-                                gm_total_capacity += specific_resources[PATIENT_GENERALMEDICINE][v];
-                                gm_current_occupation += specific_resources_counter[PATIENT_GENERALMEDICINE][v];
+                                // Dedicated COVID-19 bedrooms (has COVID capacity but no GM capacity)
+                                if (specific_resources[PATIENT_COVID19][v] > 0 && specific_resources[PATIENT_GENERALMEDICINE][v] == 0) {
+                                    covid_total_capacity += specific_resources[PATIENT_COVID19][v];
+                                    covid_current_occupation += specific_resources_counter[PATIENT_COVID19][v];
+                                }
+                                // GM bedrooms
+                                if (specific_resources[PATIENT_GENERALMEDICINE][v] > 0) {
+                                    gm_total_capacity += specific_resources[PATIENT_GENERALMEDICINE][v];
+                                    gm_current_occupation += specific_resources_counter[PATIENT_GENERALMEDICINE][v];
+
+                                    covid_in_gm_capacity += specific_resources[PATIENT_COVID19][v];
+                                    covid_in_gm_occupation += specific_resources_counter[PATIENT_COVID19][v];
+                                }
                             }
                         }
-                        float saturation = (gm_total_capacity > 0) ? ((float)gm_current_occupation / gm_total_capacity * 100.0f) : 0.0f;
-                        printf("Saturation check: General Medicine ward capacity is %d, occupied is %d, saturation is %.2f%%\n", gm_total_capacity, gm_current_occupation, saturation);
+                        float saturation = (covid_total_capacity > 0) ? ((float)covid_current_occupation / covid_total_capacity * 100.0f) : 0.0f;
+                        printf("Saturation check: COVID-19 ward capacity is %d, occupied is %d, saturation is %.2f%%\n", covid_total_capacity, covid_current_occupation, saturation);
+                        printf("COVID-19 patients in GM ward (overflow): %d occupied out of %d capacity\n", covid_in_gm_occupation, covid_in_gm_capacity);
 
-                        random_agent = FLAMEGPU->environment.getProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, day);
+                        int epigraph_val = FLAMEGPU->environment.getProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, day);
+                        int remaining_covid = (covid_total_capacity - covid_current_occupation > 0) ? (covid_total_capacity - covid_current_occupation) : 0;
+
+                        int rejected = 0;
+                        if (epigraph_val > remaining_covid) {
+                            printf("Notification: COVID-19 ward is full.\n");
+                            int overflow = epigraph_val - remaining_covid;
+                            int remaining_gm = (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation) > 0) ? (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation)) : 0;
+                            if (overflow > remaining_gm) {
+                                rejected = overflow - remaining_gm;
+                                printf("Notification: General Medicine ward is also full. %d COVID-19 patients rejected.\n", rejected);
+                                int total_rejected = FLAMEGPU->environment.getProperty<int>(TOTAL_REJECTED);
+                                total_rejected += rejected;
+                                FLAMEGPU->environment.setProperty<int>(TOTAL_REJECTED, total_rejected);
+                            }
+                        }
+                        random_agent = epigraph_val - rejected;
                     } else {
                         random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
                     }
 
-                    int currently_spawned_in_step = 0;
                     for(int j = 0; j < random_agent; j++){
-                        if (i == PATIENT_GENERALMEDICINE) {
-                            if (gm_current_occupation + currently_spawned_in_step >= gm_total_capacity) {
-                                printf("Notification: Patient of General Medicine generated but General Medicine ward is full (Capacity: %d, Occupied: %d), so it must go.\n", gm_total_capacity, gm_current_occupation);
-                                continue;
-                            }
-                            currently_spawned_in_step++;
-                        }
                         int new_agent_state = SUSCEPTIBLE;
                         unsigned short infection_days = 0;
                         unsigned short fatality_days = 0;
@@ -445,7 +471,7 @@ namespace host_functions {
 
                         unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
 
-                        if (i == PATIENT_GENERALMEDICINE) {
+                        if (i == PATIENT_COVID19) {
                             new_agent_state = INFECTED;
                             identified_infected_state = IDENTIFIED;
                             infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
@@ -656,6 +682,8 @@ namespace host_functions {
             auto specific_resources = FLAMEGPU->environment.getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES);
             auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
             auto node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE);
+            auto total_rejected = FLAMEGPU->environment.getProperty<int>(TOTAL_REJECTED);
+            int rejected_today = 0;
 
             float risk_classes_cdf[RISK_CLASSES + 1] = {0.0f};
             for(unsigned short i = 0; i < RISK_CLASSES; i++){
@@ -670,34 +698,57 @@ namespace host_functions {
                 unsigned short slot = 0;
 
                 while((int) env_rate_distr[i][week_day][slot] != -1){
+                    int covid_total_capacity = 0;
+                    int covid_current_occupation = 0;
                     int gm_total_capacity = 0;
                     int gm_current_occupation = 0;
+                    int covid_in_gm_capacity = 0;
+                    int covid_in_gm_occupation = 0;
                     unsigned short random_agent = 0;
-                    if (i == PATIENT_GENERALMEDICINE) {
+
+                    if (i == PATIENT_COVID19) {
                         for (int v = 0; v < V; v++) {
                             if (node_type[v] == BEDROOM) {
-                                gm_total_capacity += specific_resources[PATIENT_GENERALMEDICINE][v];
-                                gm_current_occupation += specific_resources_counter[PATIENT_GENERALMEDICINE][v];
+                                // Dedicated COVID-19 bedrooms (has COVID capacity but no GM capacity)
+                                if (specific_resources[PATIENT_COVID19][v] > 0 && specific_resources[PATIENT_GENERALMEDICINE][v] == 0) {
+                                    covid_total_capacity += specific_resources[PATIENT_COVID19][v];
+                                    covid_current_occupation += specific_resources_counter[PATIENT_COVID19][v];
+                                }
+                                // GM bedrooms
+                                if (specific_resources[PATIENT_GENERALMEDICINE][v] > 0) {
+                                    gm_total_capacity += specific_resources[PATIENT_GENERALMEDICINE][v];
+                                    gm_current_occupation += specific_resources_counter[PATIENT_GENERALMEDICINE][v];
+
+                                    covid_in_gm_capacity += specific_resources[PATIENT_COVID19][v];
+                                    covid_in_gm_occupation += specific_resources_counter[PATIENT_COVID19][v];
+                                }
                             }
                         }
-                        float saturation = (gm_total_capacity > 0) ? ((float)gm_current_occupation / gm_total_capacity * 100.0f) : 0.0f;
-                        printf("Saturation check: General Medicine ward capacity is %d, occupied is %d, saturation is %.2f%%\n", gm_total_capacity, gm_current_occupation, saturation);
+                        float saturation = (covid_total_capacity > 0) ? ((float)covid_current_occupation / covid_total_capacity * 100.0f) : 0.0f;
+                        printf("Saturation check: COVID-19 ward capacity is %d, occupied is %d, saturation is %.2f%%\n", covid_total_capacity, covid_current_occupation, saturation);
+                        printf("COVID-19 patients in General Medicine ward (overflow): %d occupied out of %d capacity\n", covid_in_gm_occupation, covid_in_gm_capacity);
 
-                        random_agent = num_hospitalized;
+                        int remaining_covid = (covid_total_capacity - covid_current_occupation > 0) ? (covid_total_capacity - covid_current_occupation) : 0;
+
+                        int rejected = 0;
+                        if (num_hospitalized > remaining_covid) {
+                            printf("Notification: COVID-19 ward is full.\n");
+                            int overflow = num_hospitalized - remaining_covid;
+                            int remaining_gm = (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation) > 0) ? (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation)) : 0;
+                            if (overflow > remaining_gm) {
+                                rejected = overflow - remaining_gm;
+                                printf("Notification: General Medicine ward is also full. %d COVID-19 patients rejected.\n", rejected);
+                                total_rejected += rejected;
+                                rejected_today += rejected;
+                            }
+                        }
+                        random_agent = num_hospitalized - rejected;
                     } else {
                         random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
                     }
                     total_generated += random_agent;
 
-                    int currently_spawned_in_step = 0;
                     for(int j = 0; j < random_agent; j++){
-                        if (i == PATIENT_GENERALMEDICINE) {
-                            if (gm_current_occupation + currently_spawned_in_step >= gm_total_capacity) {
-                                printf("Notification: Patient of General Medicine generated but General Medicine ward is full (Capacity: %d, Occupied: %d), so it must go.\n", gm_total_capacity, gm_current_occupation);
-                                continue;
-                            }
-                            currently_spawned_in_step++;
-                        }
                         int new_agent_state = SUSCEPTIBLE;
                         unsigned short infection_days = 0;
                         unsigned short fatality_days = 0;
@@ -714,7 +765,7 @@ namespace host_functions {
 
                         unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
 
-                        if (i == PATIENT_GENERALMEDICINE) {
+                        if (i == PATIENT_COVID19) {
                             new_agent_state = INFECTED;
                             identified_infected_state = IDENTIFIED;
                             infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
@@ -777,11 +828,14 @@ namespace host_functions {
                 }
             }
 
+
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("Epigraph hospitalized on Day %d: %d. Total daily rate agents generated (after adjustments): %d\n", day, num_hospitalized, total_generated);
 #endif
 
             FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+            FLAMEGPU->environment.setProperty<int>(TOTAL_REJECTED, total_rejected);
+            printf("At day %d: rejected today are %d, total rejected are %d\n", day, rejected_today, total_rejected);
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending birth for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
@@ -838,8 +892,11 @@ namespace host_functions {
         ofstream rng_state(filename.c_str(), ofstream::out);
         rng_state << host_rng[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)];
         rng_state.close();
+        auto total_rejected = FLAMEGPU->environment.getProperty<int>(TOTAL_REJECTED);
+        printf("4,%d,%d,Total rejected agents due to full General Medicine ward: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), total_rejected);
 
         printf("4,%d,%d,Simulation completed.\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
+
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
