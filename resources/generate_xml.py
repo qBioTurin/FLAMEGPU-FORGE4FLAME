@@ -105,7 +105,7 @@ def obtain_areas(WHOLEmodel):
 
 	return areas_dict
 
-def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name, types_IDs, max_dimension, max_objects):
+def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name, types_IDs, max_dimension, max_objects, pedestrian_names):
 	roomsINcanvas = WHOLEmodel["roomsINcanvas"]
 
 	color = WHOLEmodel["color"][0]
@@ -174,7 +174,6 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		# Create room's matrix based on max_dimension (excluding Fillingroom, Spawnroom, and Stair)
 		room_matrix = np.zeros((max_dimension, max_dimension), dtype=int)
 		objects = pd.DataFrame()
-		resources_objects = pd.DataFrame()
 		if WHOLEmodel["matricesCanvas"][floor_name]["rooms"] != [] and type != "Fillingroom":
 			# Fill the room matrix with the corresponding part of the matrix in the model
 			if door == "bottom" or door == "top":
@@ -182,54 +181,48 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			else:
 				room_matrix[:int(math.ceil(length+2)), :int(math.ceil(width+2))] = WHOLEmodel["matricesCanvas"][floor_name]["rooms"][room_name]
 
-			objects_list = WHOLEmodel["roomObjects"][room_name]
-			if objects_list != []:
-				normalized = []
-				for item in objects_list:
-					normalized_item = {}
-					for key, value in item.items():
-						if isinstance(value, list) and value:
-							normalized_item[key] = value[0]
-						elif isinstance(value, dict) and not value:
-							normalized_item[key] = None
-						else:
-							normalized_item[key] = value
+			try:
+				objects_list = WHOLEmodel["roomObjects"][room_name]
+				if objects_list != []:
+					normalized = []
+					for item in objects_list:
+						normalized_item = {}
+						for key, value in item.items():
+							if isinstance(value, list) and value:
+								normalized_item[key] = value[0]
+							elif isinstance(value, dict) and not value:
+								normalized_item[key] = None
+							else:
+								normalized_item[key] = value
 
-					if normalized_item["isObstacle"]:
-						normalized_item["capacity"] = 0
+						if normalized_item["isObstacle"]:
+							normalized_item["capacity"] = 0
 
-					normalized.append(normalized_item)
+						normalized.append(normalized_item)
 
-				objects = pd.DataFrame(normalized)
+					objects = pd.DataFrame(normalized)
 
-				# Count non-obstacles
-				non_obstacle_count = sum(1 for obj in objects.to_dict(orient='records') if not obj["isObstacle"])
-				if non_obstacle_count > max_objects:
-					max_objects = non_obstacle_count
+					# Count non-obstacles
+					non_obstacle_count = sum(1 for obj in objects.to_dict(orient='records') if not obj["isObstacle"])
+					if non_obstacle_count > max_objects:
+						max_objects = non_obstacle_count
 
-				# Sort objects: false (non-obstacles) first, then true (obstacles), then by distance from door to corner
-				objects['_sort_key'] = objects.apply(lambda row: (row["isObstacle"], ((row["x"] - door_x)**2 + (row["y"] - door_z)**2)**0.5), axis=1)
-				objects = objects.sort_values('_sort_key').drop('_sort_key', axis=1).reset_index(drop=True)
+					# Sort objects: false (non-obstacles) first, then true (obstacles), then by distance from door to corner
+					objects['_sort_key'] = objects.apply(lambda row: (row["isObstacle"], ((row["x"] - door_x)**2 + (row["y"] - door_z)**2)**0.5), axis=1)
+					objects = objects.sort_values('_sort_key').drop('_sort_key', axis=1).reset_index(drop=True)
 
-				# Keep only non-obstacle objects
-				objects = objects[objects["isObstacle"] == False].reset_index(drop=True)
+					# Keep only non-obstacle objects
+					objects = objects[objects["isObstacle"] == False].reset_index(drop=True)
 
-				resources_objects_dataframe = pd.DataFrame()
-				# resources_objects_list = WHOLEmodel["resourcesObjects"][room_name]
-				# resources_objects_room = {}
-				# agents_specific_resources = {}
+					objects.loc[:, pedestrian_names.keys()] = 0
 
-				# if len(resources_objects_list) != 0 and type != "Spawnroom" and type != "Fillingroom" and type != "Stair":
-				# 		if normalized_item["name"] in resources_objects_list:
-				# 			resources_objects_room = resources_objects_list[normalized_item["name"]]["objectResource"]
-
-				# 	for res in resources_objects_room:
-				# 		if res["room"] == normalized_item["name"]:
-				# 			for key, value in res.items():
-				# 				if key != "room":
-				# 					agents_specific_resources[key] = value
-
-				# resources_objects_dataframe = pd.DataFrame.from_dict(agents_specific_resources, orient = "index")
+					objects_agents_resources = WHOLEmodel["agent_resource_links_df"]
+					
+					for object_agent_resources in objects_agents_resources:
+						if object_agent_resources["room"] == room_name:
+							objects.loc[np.where(objects["name"] == object_agent_resources["object"])[0], object_agent_resources["agent_name"]] = object_agent_resources["concurrent_usage"]
+			except KeyError:
+				objects = pd.DataFrame()
 
 		if door == "bottom":
 			yaw = 0
@@ -293,8 +286,8 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 			num_spawnroom = num_spawnroom + 1
 
 		if door != "none":
-			local_graph.add_vertex(x_door, y, z_door, x_door, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), np.zeros((max_dimension, max_dimension), dtype=int), pd.DataFrame(), pd.DataFrame())
-			local_graph.add_vertex(center_x, y, center_z, x, z, [int(x), int(z)], [math.ceil(x + dimension_x), math.ceil(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe, room_matrix, objects, resources_objects)
+			local_graph.add_vertex(x_door, y, z_door, x_door, z_door, [x_door, z_door], [x_door, z_door], MapEncoding.DOOR, areas[area]["ID"], yaw, 0, 0, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), np.zeros((max_dimension, max_dimension), dtype=int), pd.DataFrame())
+			local_graph.add_vertex(center_x, y, center_z, x, z, [int(x), int(z)], [math.ceil(x + dimension_x), math.ceil(z + dimension_z)], MapEncoding.to_code(type.upper()), areas[area]["ID"], yaw, length, width, resources_dataframe, waiting_room_det_dataframe, waiting_room_rand_dataframe, room_matrix, objects)
 
 	nodesINcanvas = WHOLEmodel["nodesINcanvas"]
 	nodesINcanvas = [node for node in nodesINcanvas if node["CanvasID"] == floor_name]
@@ -302,7 +295,7 @@ def read_model(room_file, rooms, areas, y_offset, floor, WHOLEmodel, floor_name,
 		x = node["x"]
 		z = node["y"]
 
-		local_graph.add_vertex(x, y, z, x, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CPOINT, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), np.zeros((max_dimension, max_dimension), dtype=int), pd.DataFrame(), pd.DataFrame())
+		local_graph.add_vertex(x, y, z, x, z, [x - 1, z - 1], [x + 1, z + 1], MapEncoding.CPOINT, -1, 0, 1, 1, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), np.zeros((max_dimension, max_dimension), dtype=int), pd.DataFrame())
 
 	local_graph.init_edges(np.array(WHOLEmodel["matricesCanvas"][floor_name]["floor"]))
 
@@ -329,7 +322,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 		with open("rooms_file.xml", "w") as room_file:
 			room_file.write("<rooms>\n")
 			for key, value in floors_IDs.items():
-				local_graph, num_spawnroom_graph, max_objects = read_model(room_file, rooms, areas, y_offset, value["order"], WHOLEmodel, key, types_IDs, max_dimension, max_objects)
+				local_graph, num_spawnroom_graph, max_objects = read_model(room_file, rooms, areas, y_offset, value["order"], WHOLEmodel, key, types_IDs, max_dimension, max_objects, pedestrian_names)
 				num_spawnroom = num_spawnroom + num_spawnroom_graph
 				graphs.append(local_graph)
 			room_file.write("</rooms>\n")
@@ -409,11 +402,9 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 					coord2index[int(v.coords.y/y_offset)][j][i] = v.id
 
 			if v.type != MapEncoding.FILLINGROOM and v.type != MapEncoding.DOOR and v.type != MapEncoding.CPOINT:
-				print(v.room_matrix)
 				rooms_matrices[v.id, :, :] = v.room_matrix
 				door_coords = np.where(v.room_matrix == MapEncoding.DOOR.value)
-				rooms_doors_position[v.id, :] = [door_coords[0][0], door_coords[1][0]]
-				print("Door position for room ID", v.id, ":", rooms_doors_position[v.id, :])
+				rooms_doors_position[v.id, :] = [door_coords[1][0], door_coords[0][0]]
 
 			node_type[v.id] = v.type.value
 			node_yaw[v.id] = v.yaw
@@ -442,15 +433,10 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 					rooms_length_objects[v.id] = list(v.objects.loc[:, "length"]) + [0] * (max_objects - len(v.objects) + 1)
 					rooms_width_objects[v.id] = list(v.objects.loc[:, "width"]) + [0] * (max_objects - len(v.objects) + 1)
 
-				# for v in vlist:
-				# 	if len(v.resources) != 0:
-				# 		global_resources[v.id] = v.resources.loc["MAX", 0]
+					rooms_resources_global_objects[v.id] = list(v.objects.loc[:, "capacity"]) + [0] * (max_objects - len(v.objects) + 1)
 						
-				# for v in vlist:
-				# 	if len(v.resources) != 0:
-				# 		for agent, ID in pedestrian_names.items():
-				# 			if agent in v.resources.index:
-				# 				specific_resources[ID][v.id] = v.resources.loc[agent, 0]
+					for agent, ID in pedestrian_names.items():
+						rooms_resources_specific_objects[ID][v.id] = list(v.objects.loc[:, agent]) + [0] * (max_objects - len(v.objects) + 1)
 
 		autogenerated_defines.write("#define GET_SPAWNROOM_ID_FOR_VECTORS(x) ((x == ")
 		for i, node in enumerate(extern_node):

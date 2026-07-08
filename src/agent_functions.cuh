@@ -671,6 +671,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             short actual_node_object = FLAMEGPU->getVariable<short>(ACTUAL_NODE_OBJECT);
 
             if(actual_node_object != -1){
+                auto rooms_resources_global_objects_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
+                auto rooms_resources_specific_objects_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS_COUNTER);
+
                 --rooms_resources_global_objects_counter[agent_type][actual_node][actual_node_object];
                 --rooms_resources_specific_objects_counter[agent_type][actual_node][actual_node_object];
 

@@ -1301,7 +1301,11 @@ namespace device_functions {
         unsigned short goal_z = goal_pos[1];
 
         // Get grid data from environment
-        auto room_matrix = FLAMEGPU->environment.template getMacroProperty<float, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+        auto room_matrix = FLAMEGPU->environment.template getMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+
+        // Get starting and goal cell values to determine which object cells agent can traverse
+        short start_cell_value = (short) room_matrix[room_id][start_z][start_x];
+        short goal_cell_value = (short) room_matrix[room_id][goal_z][goal_x];
 
         // Initialize start node
         short initial_h = CHEBYSHEV_DISTANCE(start_x, goal_x, start_z, goal_z);
@@ -1420,8 +1424,63 @@ namespace device_functions {
                     }
                 }
 
+                // Line-of-sight optimization: skip intermediate waypoints if reachable directly
+                unsigned short final_wp_count = 1; // Always keep start point
+                for (unsigned short i = 1; i < wp_count; ++i) {
+                    bool can_reach_directly = false;
+                    short farthest_j = i;
+
+                    // Try to reach as far as possible in direct line
+                    for (short j = i + 1; j < wp_count; ++j) {
+                        short x1 = solution_x[final_wp_count - 1];
+                        short z1 = solution_z[final_wp_count - 1];
+                        short x2 = solution_x[j];
+                        short z2 = solution_z[j];
+
+                        // Check all points along the line using Chebyshev distance
+                        bool line_clear = true;
+                        short dx = x2 - x1;
+                        short dz = z2 - z1;
+                        short abs_dx = (dx < 0) ? -dx : dx;
+                        short abs_dz = (dz < 0) ? -dz : dz;
+                        short steps = (abs_dx > abs_dz) ? abs_dx : abs_dz;
+
+                        // Check each step along the line with proper scaling
+                        for (short step = 0; step <= steps && line_clear; ++step) {
+                            // Use integer division with rounding for each coordinate
+                            short check_x = x1 + (steps > 0 ? (dx * step + steps / 2) / steps : 0);
+                            short check_z = z1 + (steps > 0 ? (dz * step + steps / 2) / steps : 0);
+
+                            short cell_val = (short) room_matrix[room_id][check_z][check_x];
+                            if (cell_val == 0 || (cell_val != 1 && cell_val != 2 && cell_val != start_cell_value && cell_val != goal_cell_value)) {
+                                line_clear = false;
+                            }
+                        }
+
+                        if (line_clear) {
+                            farthest_j = j;
+                            can_reach_directly = true;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // Add the farthest reachable waypoint
+                    if (can_reach_directly) {
+                        solution_x[final_wp_count] = solution_x[farthest_j];
+                        solution_z[final_wp_count] = solution_z[farthest_j];
+                        final_wp_count++;
+                        i = farthest_j;
+                    } else {
+                        // Can't reach further, add current waypoint
+                        solution_x[final_wp_count] = solution_x[i];
+                        solution_z[final_wp_count] = solution_z[i];
+                        final_wp_count++;
+                    }
+                }
+
                 // Fill rest with -1
-                for(unsigned short i = wp_count; i < SOLUTION_LENGTH; ++i) {
+                for(unsigned short i = final_wp_count; i < SOLUTION_LENGTH; ++i) {
                     solution_x[i] = -1;
                     solution_z[i] = -1;
                 }
@@ -1432,23 +1491,33 @@ namespace device_functions {
             }
 
             // 4. Expand neighbors (4 directions)
-            const short dirs_x[8] = {0, 0, -1, 1, -1, -1, 1, 1};
-            const short dirs_z[8] = {-1, 1, 0, 0, -1, 1, -1, 1};
+            const short dirs_x[4] = {0, 0, -1, 1};
+            const short dirs_z[4] = {-1, 1, 0, 0};
 
-            for (int k = 0; k < 8; ++k) {
+            for (int k = 0; k < 4; ++k) {
                 short nx = current_x + dirs_x[k];
                 short nz = current_z + dirs_z[k];
 
                 if (nx < 0 || nx >= MAX_DIMENSION || nz < 0 || nz >= MAX_DIMENSION)
                     continue;
 
-                if ((short)room_matrix[room_id][nz][nx] != 1 || closedset[nz][nx] != NOT_PRESENT)
+                // Check if neighbor cell is passable: walkable (1), door (2), or matches start cell value
+                short neighbor_value = (short) room_matrix[room_id][nz][nx];
+                if (neighbor_value == 0 || closedset[nz][nx] != NOT_PRESENT)
+                    continue;
+                
+                // Cell is passable if: 1 (walkable), 2 (door), or equals start_cell_value (agent's current object)
+                if (neighbor_value != 1 && neighbor_value != 2 && neighbor_value != start_cell_value && neighbor_value != goal_cell_value)
                     continue;
 
                 bool is_diagonal = (dirs_x[k] != 0 && dirs_z[k] != 0);
                 if (is_diagonal) {
-                    if ((short)room_matrix[room_id][current_z][nx] != 1 ||
-                        (short)room_matrix[room_id][nz][current_x] != 1)
+                    short cell_x = (short) room_matrix[room_id][current_z][nx];
+                    short cell_z = (short) room_matrix[room_id][nz][current_x];
+
+                    // And must match passability criteria
+                    if (((cell_x != 1 && cell_x != 2 && cell_x != start_cell_value && cell_x != goal_cell_value) ||
+                         (cell_z != 1 && cell_z != 2 && cell_z != start_cell_value && cell_z != goal_cell_value)))
                         continue;
                 }
 
@@ -1476,7 +1545,7 @@ namespace device_functions {
      * Update agent intermediate and final targets.
     */
     template<typename MessageIn, typename MessageOut>
-    FLAMEGPU_DEVICE_FUNCTION void update_targets_coordinates(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, short* new_targets_x, short* new_targets_z, unsigned short *target_index, const int stay) {
+    FLAMEGPU_DEVICE_FUNCTION void update_targets_coordinates(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short actual_node, short* new_targets_x, short* new_targets_z, unsigned short *target_index, const int stay) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning of update_targets_coordinates for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
 #endif
@@ -1492,15 +1561,15 @@ namespace device_functions {
 
         short i = 1;
         while(i < SOLUTION_LENGTH && new_targets_x[i] != -1){
-            float x = FLAMEGPU->environment.template getProperty<float, V>(NODE_X, new_targets[i]);
-            float z = FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, new_targets[i]);
+            float x = FLAMEGPU->environment.template getProperty<float, V>(NODE_X, new_targets_x[i]);
+            float z = FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, new_targets_z[i]);
 
             float offset_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f - 1e-3, false);
             float offset_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, 1.0f - 1e-3, false);
 
-            new_target_x = (float) new_targets_x[i] + (float) FLAMEGPU->environment.template getProperty<unsigned short>(NODE_X, start_node) - 1.0f + offset_x;
+            new_target_x = (float) new_targets_x[i] + FLAMEGPU->environment.template getProperty<float, V>(NODE_X, actual_node) - 1.0f + offset_x;
             new_target_y = agent_pos[1];
-            new_target_z = (float) new_targets_z[i] + (float) FLAMEGPU->environment.template getProperty<unsigned short>(NODE_Z, start_node) - 1.0f + offset_z;
+            new_target_z = (float) new_targets_z[i] + FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, actual_node) - 1.0f + offset_z;
 
             intermediate_target_x[contacts_id][*target_index].exchange(new_target_x);
             intermediate_target_y[contacts_id][*target_index].exchange(new_target_y);
@@ -1531,13 +1600,14 @@ namespace device_functions {
         
         float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
         unsigned short target_index = FLAMEGPU->template getVariable<unsigned short>(TARGET_INDEX);
-        unsigned short start_position[2] = {((unsigned short) agent_pos[0]) - FLAMEGPU->environment.template getProperty<unsigned short>(NODE_X, start_node) + 1, ((unsigned short) agent_pos[2]) - FLAMEGPU->environment.template getProperty<unsigned short>(NODE_Z, start_node) + 1};
+        unsigned short start_position[2] = {(unsigned short) (agent_pos[0] - FLAMEGPU->environment.template getProperty<float, V>(NODE_X, start_node) + 1.0f), (unsigned short) (agent_pos[2] - FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, start_node) + 1.0f)};
         unsigned short final_position[2] = {(unsigned short) room_doors_position[start_node][0], (unsigned short) room_doors_position[start_node][1]};
         short solution_x[SOLUTION_LENGTH] = {-1};
         short solution_z[SOLUTION_LENGTH] = {-1};
 
+
         a_star_matrix(FLAMEGPU, start_node, start_position, final_position, solution_x, solution_z);
-        update_targets_coordinates(FLAMEGPU, solution_x, solution_z, &target_index, 0);
+        update_targets_coordinates(FLAMEGPU, start_node, solution_x, solution_z, &target_index, 0);
 
         FLAMEGPU->template setVariable<unsigned char>(MOVEMENT_PHASE, ROOM2DOOR);
 #if defined(DEBUG) && !defined(ENSEMBLE)
@@ -1559,15 +1629,40 @@ namespace device_functions {
         unsigned short target_index = FLAMEGPU->template getVariable<unsigned short>(TARGET_INDEX);
         float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
         short start_node = coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]];
-        short actual_node = FLAMEGPU->template getProperty<short>(ACTUAL_NODE);
+        short actual_node = FLAMEGPU->template getVariable<short>(ACTUAL_NODE);
         short final_node;
+        short solution[SOLUTION_LENGTH] = {-1};
         unsigned short final_door_position_x, final_door_position_y, final_door_position_z;
+
+        printf("[TEMP_DEBUG] start_node: %d, actual_node: %d\n", start_node, actual_node);
+        printf("[TEMP_DEBUG] agent_pos: (%f, %f, %f)\n", agent_pos[0], agent_pos[1], agent_pos[2]);
         
-        final_door_position_x = room_doors_position[start_node][0] + FLAMEGPU->environment.template getProperty<unsigned short>(NODE_X, start_node) - 1;
-        final_door_position_y = FLAMEGPU->environment.template getProperty<unsigned short>(INDEX2COORDY, actual_node);
-        final_door_position_z = room_doors_position[start_node][1] + FLAMEGPU->environment.template getProperty<unsigned short>(NODE_Z, start_node) - 1;
+        printf("[TEMP_DEBUG] room_doors_position[actual_node]: (%f, %f)\n", (float) room_doors_position[actual_node][0], (float) room_doors_position[actual_node][1]);
+        printf("[TEMP_DEBUG] NODE_X: %f, NODE_Z: %f\n", FLAMEGPU->environment.template getProperty<float, V>(NODE_X, actual_node), FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, actual_node));
+
+        // Print NODE_X and NODE_Z for all nodes
+        for(short node = 0; node < V; ++node) {
+            printf("[TEMP_DEBUG] NODE_X[%d]: %f, NODE_Z[%d]: %f\n", node, FLAMEGPU->environment.template getProperty<float, V>(NODE_X, node), node, FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, node));
+        }
+
+        for(short node = 0; node < V; ++node) {
+            printf("[TEMP_DEBUG] INDEX2COORD[%d]: (%d, %d, %d)\n", node, (unsigned short) FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDX, node), (unsigned short) FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDY, node), (unsigned short) FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDZ, node));
+        }
+
+        // Print room doors position for all nodes
+        for(short node = 0; node < V; ++node) {
+            printf("[TEMP_DEBUG] room_doors_position[%d]: (%f, %f)\n", node, (float) room_doors_position[node][0], (float) room_doors_position[node][1]);
+        }
+
+        final_door_position_x = (unsigned short) (((float) room_doors_position[actual_node][0]) + FLAMEGPU->environment.template getProperty<float, V>(NODE_X, actual_node) - 1.0f);
+        final_door_position_y = FLAMEGPU->environment.template getProperty<unsigned short, V>(INDEX2COORDY, actual_node);
+        final_door_position_z = (unsigned short) (((float) room_doors_position[actual_node][1]) + FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, actual_node) - 1.0f);
+
+        printf("[TEMP_DEBUG] final_door_position: (%d, %d, %d)\n", final_door_position_x, final_door_position_y, final_door_position_z);
 
         final_node = coord2index[final_door_position_y/YOFFSET][final_door_position_z][final_door_position_x];
+
+        printf("[TEMP_DEBUG] final_node: %d\n", final_node);
 
         a_star(FLAMEGPU, start_node, final_node, solution);
         update_targets(FLAMEGPU, solution, &target_index, false, 0);
@@ -1589,19 +1684,21 @@ namespace device_functions {
         auto rooms_has_objects = FLAMEGPU->environment.template getMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
         auto coord2index = FLAMEGPU->environment.template getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
+        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+
         float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
         short start_node = coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]];
-        short actual_node = FLAMEGPU->template getProperty<short>(ACTUAL_NODE);
-        short actual_node_stay = FLAMEGPU->template getProperty<short>(ACTUAL_NODE_STAY);
+        short actual_node = FLAMEGPU->template getVariable<short>(ACTUAL_NODE);
+        short actual_node_stay = FLAMEGPU->template getVariable<short>(ACTUAL_NODE_STAY);
         short agent_type = FLAMEGPU->template getVariable<short>(AGENT_TYPE);
         short solution_x[SOLUTION_LENGTH] = {-1};
         short solution_z[SOLUTION_LENGTH] = {-1};
         short selected_object = -1;
         unsigned short target_index = FLAMEGPU->template getVariable<unsigned short>(TARGET_INDEX);
-        unsigned short start_position[2] = {((unsigned short) agent_pos[0]) - FLAMEGPU->environment.template getProperty<unsigned short>(NODE_X, start_node) - 1, ((unsigned short) agent_pos[2]) - FLAMEGPU->environment.template getProperty<unsigned short>(NODE_Z, start_node) - 1};
+        unsigned short start_position[2] = {(unsigned short) (agent_pos[0] - FLAMEGPU->environment.template getProperty<float, V>(NODE_X, start_node) - 1.0f), (unsigned short) (agent_pos[2] - FLAMEGPU->environment.template getProperty<float>(NODE_Z, start_node) - 1.0f)};
         unsigned short final_position[2] = {0};
 
-        if((char) room_has_objects[room_index]){
+        if((char) rooms_has_objects[actual_node]){
             auto rooms_resources_global_objects = FLAMEGPU->environment.template getMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS);
             auto rooms_resources_global_objects_counter = FLAMEGPU->environment.template getMacroProperty<unsigned int, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_GLOBAL_OBJECTS_COUNTER);
             auto rooms_resources_specific_objects = FLAMEGPU->environment.template getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V, MAX_OBJECTS+1>(ROOMS_RESOURCES_SPECIFIC_OBJECTS);
@@ -1638,28 +1735,32 @@ namespace device_functions {
             if(selected_object == -1){
                 FLAMEGPU->template setVariable<short>(ACTUAL_NODE_OBJECT, -1);
 
-                auto room_matrix = FLAMEGPU->environment.template getMacroProperty<float, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
+                auto room_matrix = FLAMEGPU->environment.template getMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
 
                 // TO DO: CONSIDEARE LA ROTAZIONE DELLA STANZA! VIENE FATTO GIA' DA F4F? Anche delle coordinate e dimensioni degli oggetti nella stanza?
 
                 // Select a position (x, z) in the matrix with a 1 at random.
-                unsigned short room_length = (unsigned short) FLAMEGPU->environment.template getProperty<float>(ROOM_LENGTH, actual_node);
-                unsigned short room_width = (unsigned short) FLAMEGPU->environment.template getProperty<float>(ROOM_WIDTH, actual_node);
-                unsigned short positions[room_length * room_width][2];
+                unsigned short room_length = (unsigned short) FLAMEGPU->environment.template getProperty<float>(NODE_LENGTH, actual_node);
+                unsigned short room_width = (unsigned short) FLAMEGPU->environment.template getProperty<float>(NODE_WIDTH, actual_node);
+                unsigned short positions[MAX_DIMENSION * MAX_DIMENSION][2];
                 unsigned short num_positions = 0;
                 for(unsigned short z = 1; z < room_width; ++z){
                     for(unsigned short x = 1; x < room_length; ++x){
                         if((short) room_matrix[actual_node][z][x] == 1){
-                            positions[num_positions][0] = x;
-                            positions[num_positions][1] = z;
-                            num_positions++;
+                            if(num_positions < MAX_DIMENSION * MAX_DIMENSION){
+                                positions[num_positions][0] = x;
+                                positions[num_positions][1] = z;
+                                num_positions++;
+                            }
                         }
                     }
                 }
 
-                unsigned short random_index = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, FLAMEGPU->template getVariable<short>(CONTACTS_ID), 0.0f, (float) num_positions - 1.0f, false));
-                final_position[0] = positions[random_index][0] + 1;
-                final_position[1] = positions[random_index][1] + 1;
+                if(num_positions > 0){
+                    unsigned short random_index = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, FLAMEGPU->template getVariable<short>(CONTACTS_ID), 0.0f, (float) num_positions - 1.0f, false));
+                    final_position[0] = positions[random_index][0] + 1;
+                    final_position[1] = positions[random_index][1] + 1;
+                }
             }
             else{
                 auto rooms_x_objects = FLAMEGPU->environment.template getMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
@@ -1675,8 +1776,8 @@ namespace device_functions {
                 unsigned short random_offset_x = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, FLAMEGPU->template getVariable<short>(CONTACTS_ID), 0.0f, length_object - 1e-3, false));
                 unsigned short random_offset_z = (unsigned short) round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_UNIFORM_0_1_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, FLAMEGPU->template getVariable<short>(CONTACTS_ID), 0.0f, width_object - 1e-3, false));
 
-                final_position[0] = (x_object + random_offset_x) - FLAMEGPU->environment.template getProperty<unsigned short>(NODE_X, start_node) + 1;
-                final_position[1] = (z_object + random_offset_z) - FLAMEGPU->environment.template getProperty<unsigned short>(NODE_Z, start_node) + 1;
+                final_position[0] = (x_object + random_offset_x) - FLAMEGPU->environment.template getProperty<float, V>(NODE_X, start_node) + 1.0f;
+                final_position[1] = (z_object + random_offset_z) - FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, start_node) + 1.0f;
             }
         }
         else{
@@ -1690,7 +1791,7 @@ namespace device_functions {
         }
 
         a_star_matrix(FLAMEGPU, start_node, start_position, final_position, solution_x, solution_z);
-        update_targets_coordinates(FLAMEGPU, solution_x, solution_z, &target_index, actual_node_stay);
+        update_targets_coordinates(FLAMEGPU, actual_node, solution_x, solution_z, &target_index, actual_node_stay);
 
         // Save the index of the object selected by the agent to update the resources availability when the agent will exit the room.
         FLAMEGPU->template setVariable<short>(ACTUAL_NODE_OBJECT, selected_object);

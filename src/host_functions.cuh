@@ -129,6 +129,7 @@ namespace host_functions {
 #endif
         // Import a macro properties
         FLAMEGPU->environment.importMacroProperty(COORD2INDEX, string("resources/macro_environment/") + COORD2INDEX + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOM_DOORS_POSITION, string("resources/macro_environment/") + ROOM_DOORS_POSITION + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOM_MATRICES, string("resources/macro_environment/") + ROOM_MATRICES + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOMS_HAS_OBJECTS, string("resources/macro_environment/") + ROOMS_HAS_OBJECTS + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOMS_X_OBJECTS, string("resources/macro_environment/") + ROOMS_X_OBJECTS + ".xml");
