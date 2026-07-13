@@ -86,6 +86,8 @@ for input_file in *.csv; do
             mapping[3] = "AEROSOL"
             mapping[4] = "INFO"
             mapping[5] = "DEBUG"
+            mapping[6] = "EPIGRAPH_DISEASE"
+            mapping[7] = "EPIGRAPH_RJ"
 
             # Define the expected number of columns for each category
             expected["AGENT_POSITION_AND_STATUS"] = 10
@@ -93,6 +95,8 @@ for input_file in *.csv; do
             expected["CONTACTS_MATRIX"] = 6
             expected["AEROSOL"] = 5
             expected["INFO"] = 4
+            expected["EPIGRAPH_DISEASE"] = 9
+            expected["EPIGRAPH_RJ"] = 6
         }
         {
             col1 = $1

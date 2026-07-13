@@ -725,6 +725,7 @@ namespace host_functions {
                             }
                         }
                         float saturation = (covid_total_capacity > 0) ? ((float)covid_current_occupation / covid_total_capacity * 100.0f) : 0.0f;
+                        printf("6,%d,%d, %d, %d,%d,%.2f%%,%d, %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day, covid_total_capacity, covid_current_occupation, saturation, covid_in_gm_occupation, covid_in_gm_capacity);
                         printf("Saturation check: COVID-19 ward capacity is %d, occupied is %d, saturation is %.2f%%\n", covid_total_capacity, covid_current_occupation, saturation);
                         printf("COVID-19 patients in General Medicine ward (overflow): %d occupied out of %d capacity\n", covid_in_gm_occupation, covid_in_gm_capacity);
 
@@ -740,6 +741,7 @@ namespace host_functions {
                                 printf("Notification: General Medicine ward is also full. %d COVID-19 patients rejected.\n", rejected);
                                 total_rejected += rejected;
                                 rejected_today += rejected;
+                                printf("7,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day, rejected_today, total_rejected);
                             }
                         }
                         random_agent = num_hospitalized - rejected;
