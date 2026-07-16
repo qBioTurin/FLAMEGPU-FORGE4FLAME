@@ -1,4 +1,4 @@
-# Minimum CMake version 3.18 for CUDA --std=c++17 
+# Minimum CMake version 3.18 for CUDA --std=c++17
 cmake_minimum_required(VERSION 3.18...3.25 FATAL_ERROR)
 
 # Optionaly set the version of flamegpu which should be used, ideally a tag (i.e. `v2.0.0-rc`) or branch name, or potentially a commit hash.
@@ -59,7 +59,15 @@ SET(ALL_SRC
 flamegpu_add_executable("${PROJECT_NAME}" "${ALL_SRC}" "${FLAMEGPU_ROOT}" "${PROJECT_BINARY_DIR}" TRUE)
 
 # Add src directory to include path
-target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src", "/home/iterrone/lustre/iterrone/libzmq/include")
+
+target_link_directories("${PROJECT_NAME}" PRIVATE
+    "/home/iterrone/lustre/iterrone/libzmq/build/lib"
+)
+
+target_link_libraries("${PROJECT_NAME}" PRIVATE
+    zmq
+)
 
 # Also set as (visual studio) startup project
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT "${PROJECT_NAME}")

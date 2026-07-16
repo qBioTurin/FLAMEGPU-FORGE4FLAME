@@ -5,6 +5,7 @@
 // #include <unistd.h>
 #include <vector>
 #include <algorithm>
+#include <zmq.h>
 #include "defines.h"
 #include "pugixml.hpp"
 
@@ -13,6 +14,16 @@ using namespace std;
 using namespace pugi;
 
 namespace host_functions {
+
+    void *zmq_context = nullptr;
+    void *zmq_responder = nullptr;
+
+    typedef struct {
+        int hospitalized;
+        int day;
+    } Mess;
+
+
     unsigned char findLeftmostIndex(const float target, const float *env_events_cdf, const short num_events) {
         int left = 0;
         int right = num_events - 1;
@@ -115,6 +126,19 @@ namespace host_functions {
         }
 
        // fflush(stdout);
+
+       //initialize socket
+       if(zmq_context == nullptr){
+            zmq_context = zmq_ctx_new();
+            zmq_responder = zmq_socket(zmq_context, ZMQ_REP);
+            int rc = zmq_bind(zmq_responder, "tcp://*:1234"); // random door, to update
+            if (rc != 0) {
+                perror("Failed to bind socket");
+                throw std::runtime_error ("Failed to bind socket");
+        }
+
+            printf("Server started. Waiting for EpiGraph or FlameGPU...\n");
+        }
 
         printf("4,%d,%d,Simulating day %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day);
 
@@ -433,7 +457,11 @@ namespace host_functions {
                         printf("Saturation check: COVID-19 ward capacity is %d, occupied is %d, saturation is %.2f%%\n", covid_total_capacity, covid_current_occupation, saturation);
                         printf("COVID-19 patients in GM ward (overflow): %d occupied out of %d capacity\n", covid_in_gm_occupation, covid_in_gm_capacity);
 
-                        int epigraph_val = FLAMEGPU->environment.getProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, day);
+                        Mess msg;
+                        zmq_recv(zmq_responder, &msg, sizeof(msg), 0);
+                        int epigraph_val = msg.hospitalized;
+                        printf("Received number hospitalized %d and day... %d\n", msg.hospitalized, msg.day);
+
                         int remaining_covid = (covid_total_capacity - covid_current_occupation > 0) ? (covid_total_capacity - covid_current_occupation) : 0;
 
                         int rejected = 0;
@@ -449,6 +477,8 @@ namespace host_functions {
                                 FLAMEGPU->environment.setProperty<int>(TOTAL_REJECTED, total_rejected);
                             }
                         }
+                        printf("Sending rejected to epigraph\n");
+                        zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
                         random_agent = epigraph_val - rejected;
                     } else {
                         random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
@@ -691,7 +721,11 @@ namespace host_functions {
             }
 
             // --- Epigraph Hospitalized Integration for Subsequent Days ---
-            int num_hospitalized = FLAMEGPU->environment.getProperty<int, DAYS + 1>(EPIGRAPH_HOSPITALIZED, day);
+            int num_hospitalized;
+            Mess msg;
+            zmq_recv(zmq_responder, &msg, sizeof(msg), 0);
+            num_hospitalized = msg.hospitalized;                                                                                                                                                                                          //send hospitalized global to flame
+            printf("Received number hospitalized %d and day... %d\n", msg.hospitalized, msg.day);
             int total_generated = 0;
 
             for(int i = NUMBER_OF_AGENTS_TYPES_WITHOUT_A_RATE; i < NUMBER_OF_AGENTS_TYPES; i++){
@@ -724,11 +758,6 @@ namespace host_functions {
                                 }
                             }
                         }
-                        float saturation = (covid_total_capacity > 0) ? ((float)covid_current_occupation / covid_total_capacity * 100.0f) : 0.0f;
-                        printf("6,%d,%d, %d, %d,%d,%.2f%%,%d, %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day, covid_total_capacity, covid_current_occupation, saturation, covid_in_gm_occupation, covid_in_gm_capacity);
-                        printf("Saturation check: COVID-19 ward capacity is %d, occupied is %d, saturation is %.2f%%\n", covid_total_capacity, covid_current_occupation, saturation);
-                        printf("COVID-19 patients in General Medicine ward (overflow): %d occupied out of %d capacity\n", covid_in_gm_occupation, covid_in_gm_capacity);
-
                         int remaining_covid = (covid_total_capacity - covid_current_occupation > 0) ? (covid_total_capacity - covid_current_occupation) : 0;
 
                         int rejected = 0;
@@ -744,7 +773,19 @@ namespace host_functions {
                                 printf("7,%d,%d,%d,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day, rejected_today, total_rejected);
                             }
                         }
+                        printf("Sending rejected to epigraph\n");
+                        zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
                         random_agent = num_hospitalized - rejected;
+
+                        int admitted_to_covid = (num_hospitalized > remaining_covid) ? remaining_covid : num_hospitalized;
+                        int admitted_to_gm = (num_hospitalized > remaining_covid) ? (num_hospitalized - remaining_covid - rejected) : 0;
+                        int post_covid_current_occupation = covid_current_occupation + admitted_to_covid;
+                        int post_covid_in_gm_occupation = covid_in_gm_occupation + admitted_to_gm;
+                        float post_saturation = (covid_total_capacity > 0) ? ((float)post_covid_current_occupation / covid_total_capacity * 100.0f) : 0.0f;
+
+                        printf("6,%d,%d, %d, %d,%d,%.2f%%,%d, %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), day, covid_total_capacity, post_covid_current_occupation, post_saturation, post_covid_in_gm_occupation, covid_in_gm_capacity);
+                        printf("Saturation check: COVID-19 ward capacity is %d, occupied is %d, saturation is %.2f%%\n", covid_total_capacity, post_covid_current_occupation, post_saturation);
+                        printf("COVID-19 patients in General Medicine ward (overflow): %d occupied out of %d capacity\n", post_covid_in_gm_occupation, covid_in_gm_capacity);
                     } else {
                         random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
                     }
@@ -897,7 +938,13 @@ namespace host_functions {
         auto total_rejected = FLAMEGPU->environment.getProperty<int>(TOTAL_REJECTED);
         printf("4,%d,%d,Total rejected agents due to full General Medicine ward: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), total_rejected);
 
+        // 5. Clean up of zmq
+        zmq_close(zmq_responder);
+        zmq_ctx_term(zmq_context);
+        zmq_responder = nullptr;
+        zmq_context = nullptr;
         printf("4,%d,%d,Simulation completed.\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
+
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending exitFunction for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
