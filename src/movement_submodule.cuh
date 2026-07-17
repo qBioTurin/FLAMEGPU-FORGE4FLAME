@@ -225,7 +225,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 void define_environment_submodule(ModelDescription &smm) {
     EnvironmentDescription env = smm.Environment();
 
-    env.newProperty<unsigned short>(RUN_IDX, 0);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
@@ -308,7 +307,6 @@ SubModelDescription create_smm(ModelDescription &model) {
     SubModelDescription smm = model.newSubModel("move", sub_model_move);
     smm.setMaxSteps(STEP);
 
-    smm.SubEnvironment().mapProperty(RUN_IDX, RUN_IDX);
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_X, INTERMEDIATE_TARGET_X);
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_Y, INTERMEDIATE_TARGET_Y);
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_Z, INTERMEDIATE_TARGET_Z);
