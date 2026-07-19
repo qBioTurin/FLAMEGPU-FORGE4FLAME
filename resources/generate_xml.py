@@ -433,6 +433,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 				mean_end_of_immunization_days_dist[disease_idx] = distributions[disease_dict["nu_dist"][0]]
 
 		proportions[len(disease)] = 0.0
+		#print(proportions)
 
 		outside_contagion = pd.DataFrame(WHOLEmodel["outside_contagion"])
 
@@ -498,6 +499,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 				total_number_of_agents = total_number_of_agents + n
 
 		number_of_agents_by_type[total_number_of_agents_types] = total_number_of_agents
+		num_risk_classes = len(disease)
 
 		env_flow = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
 		env_flow_area = np.full((total_number_of_agents_types, max_number_of_agents_subtype, days_in_a_week, flow_length), -1, dtype=int)
@@ -543,16 +545,16 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 		env_swab_distr = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
 		env_swab_distr_firstparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
 		env_swab_distr_secondparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
-		env_quarantine_days_distr = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
-		env_quarantine_days_distr_firstparam = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
-		env_quarantine_days_distr_secondparam = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
-		env_quarantine_swab_sensitivity = np.zeros((days, total_number_of_agents_types+1), dtype=float)
-		env_quarantine_swab_specificity = np.zeros((days, total_number_of_agents_types+1), dtype=float)
-		env_quarantine_swab_days_distr = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
-		env_quarantine_swab_days_distr_firstparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
-		env_quarantine_swab_days_distr_secondparam = np.full((days, total_number_of_agents_types+1), -1, dtype=float)
-		env_room_for_quarantine_type = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
-		env_room_for_quarantine_area = np.full((days, total_number_of_agents_types+1), -1, dtype=int)
+		env_quarantine_days_distr = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=int)
+		env_quarantine_days_distr_firstparam = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=int)
+		env_quarantine_days_distr_secondparam = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=int)
+		env_quarantine_swab_sensitivity = np.zeros((days, total_number_of_agents_types+1, num_risk_classes), dtype=float)
+		env_quarantine_swab_specificity = np.zeros((days, total_number_of_agents_types+1, num_risk_classes), dtype=float)
+		env_quarantine_swab_days_distr = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=int)
+		env_quarantine_swab_days_distr_firstparam = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=float)
+		env_quarantine_swab_days_distr_secondparam = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=float)
+		env_room_for_quarantine_type = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=int)
+		env_room_for_quarantine_area = np.full((days, total_number_of_agents_types+1, num_risk_classes), -1, dtype=int)
 		env_external_screening_first = np.zeros((days, total_number_of_agents_types+1), dtype=float)
 		env_external_screening_second = np.zeros((days, total_number_of_agents_types+1), dtype=float)
 
@@ -708,7 +710,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 
 							if int(rf["TimeSlot"].split("-")[1].split(":")[0]) == 23 and int(rf["TimeSlot"].split("-")[1].split(":")[1]) == 59:
 								exit_time = exit_time - steps_in_a_minute
-							
+
 							# To fix, this is not correct
 							times, unit_measure = rf["Times"].split(" ")
 							times = np.float64(times)
@@ -868,16 +870,29 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 					env_swab_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][initial_agent_order[agent_name]][1:]]
 					env_swab_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][initial_agent_order[agent_name]][1:]]
 				if col == "Quarantine":
-					env_quarantine_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist.Days", col][initial_agent_order[agent_name]][1:]]
-					env_quarantine_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist.Days", col][initial_agent_order[agent_name]][1:]]
-					env_quarantine_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist.Days", col][initial_agent_order[agent_name]][1:]]
-					env_quarantine_swab_days_distr[:, agent_names[agent_name]["ID"]] = [distributions[distr.split(", ")[0]] for distr in agents_whatif.loc["Dist", col][initial_agent_order[agent_name]][1:]]
-					env_quarantine_swab_days_distr_firstparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[1] for param in agents_whatif.loc["Dist", col][initial_agent_order[agent_name]][1:]]
-					env_quarantine_swab_days_distr_secondparam[:, agent_names[agent_name]["ID"]] = [param.split(", ")[2] for param in agents_whatif.loc["Dist", col][initial_agent_order[agent_name]][1:]]
-					env_quarantine_swab_sensitivity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Sensitivity", col][initial_agent_order[agent_name]][1:]
-					env_quarantine_swab_specificity[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Specificity", col][initial_agent_order[agent_name]][1:]
-					env_room_for_quarantine_type[:, agent_names[agent_name]["ID"]] = [types_IDs[room.split("-")[0]]["ID"] for room in agents_whatif.loc["Q.Room", col][initial_agent_order[agent_name]][1:]]
-					env_room_for_quarantine_area[:, agent_names[agent_name]["ID"]] = [areas[room.split("-")[1]]["ID"] for room in agents_whatif.loc["Q.Room", col][initial_agent_order[agent_name]][1:]]
+					risk_names = [d["name"][0] for d in disease]
+					for i, row_data in enumerate(agents_whatif.loc["Dist.Days", col]):
+						agent_name, risk_name = row_data[0].rsplit("-", 1)
+						agent_id = agent_names[agent_name]["ID"]
+						risk_index = risk_names.index(risk_name)
+
+						dist_days = row_data[1:]
+						env_quarantine_days_distr[:, agent_id, risk_index] = [distributions[distr.split(", ")[0]] for distr in dist_days]
+						env_quarantine_days_distr_firstparam[:, agent_id, risk_index] = [param.split(", ")[1] for param in dist_days]
+						env_quarantine_days_distr_secondparam[:, agent_id, risk_index] = [param.split(", ")[2] for param in dist_days]
+
+						swab_dist = agents_whatif.loc["Dist", col][i][1:]
+						env_quarantine_swab_days_distr[:, agent_id, risk_index] = [distributions[distr.split(", ")[0]] for distr in swab_dist]
+						env_quarantine_swab_days_distr_firstparam[:, agent_id, risk_index] = [param.split(", ")[1] for param in swab_dist]
+						env_quarantine_swab_days_distr_secondparam[:, agent_id, risk_index] = [param.split(", ")[2] for param in swab_dist]
+
+						env_quarantine_swab_sensitivity[:, agent_id, risk_index] = agents_whatif.loc["Sensitivity", col][i][1:]
+
+						env_quarantine_swab_specificity[:, agent_id, risk_index] = agents_whatif.loc["Specificity", col][i][1:]
+
+						q_room = agents_whatif.loc["Q.Room", col][i][1:]
+						env_room_for_quarantine_type[:, agent_id, risk_index] = [types_IDs[room.split("-")[0]]["ID"] for room in q_room]
+						env_room_for_quarantine_area[:, agent_id, risk_index] = [areas[room.split("-")[1]]["ID"] for room in q_room]
 				if col == "External screening":
 					env_external_screening_first[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["First", col][initial_agent_order[agent_name]][1:]
 					env_external_screening_second[:, agent_names[agent_name]["ID"]] = agents_whatif.loc["Second", col][initial_agent_order[agent_name]][1:]
@@ -1335,7 +1350,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_days_distr[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range (num_risk_classes):
+						file.write(str(env_quarantine_days_distr[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_DAYS_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_DAYS_DISTR \"ENV_QUARANTINE_DAYS_DISTR\"\n")
 
@@ -1343,7 +1359,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_days_distr_firstparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range (num_risk_classes):
+						file.write(str(env_quarantine_days_distr_firstparam[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM \"ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM\"\n")
 
@@ -1351,7 +1368,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_days_distr_secondparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_quarantine_days_distr_secondparam[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM \"ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM\"\n")
 
@@ -1359,7 +1377,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_SENSITIVITY>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_swab_sensitivity[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_quarantine_swab_sensitivity[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_SWAB_SENSITIVITY></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_SENSITIVITY \"ENV_QUARANTINE_SWAB_SENSITIVITY\"\n")
 
@@ -1367,7 +1386,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_SPECIFICITY>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_swab_specificity[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_quarantine_swab_specificity[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_SWAB_SPECIFICITY></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_SPECIFICITY \"ENV_QUARANTINE_SWAB_SPECIFICITY\"\n")
 
@@ -1375,7 +1395,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_swab_days_distr[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_quarantine_swab_days_distr[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_SWAB_DAYS_DISTR></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_DAYS_DISTR \"ENV_QUARANTINE_SWAB_DAYS_DISTR\"\n")
 
@@ -1383,7 +1404,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_swab_days_distr_firstparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_quarantine_swab_days_distr_firstparam[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM \"ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM\"\n")
 
@@ -1391,7 +1413,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_quarantine_swab_days_distr_secondparam[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_quarantine_swab_days_distr_secondparam[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes - 1)) else ","))
 			file.write("</ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM \"ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM\"\n")
 
@@ -1399,7 +1422,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_ROOM_FOR_QUARANTINE_TYPE>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_room_for_quarantine_type[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_room_for_quarantine_type[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes)) else ","))
 			file.write("</ENV_ROOM_FOR_QUARANTINE_TYPE></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_ROOM_FOR_QUARANTINE_TYPE \"ENV_ROOM_FOR_QUARANTINE_TYPE\"\n")
 
@@ -1407,7 +1431,8 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 			file.write("<states><macro_environment><ENV_ROOM_FOR_QUARANTINE_AREA>")
 			for k in range(days):
 				for j in range(total_number_of_agents_types+1):
-					file.write(str(env_room_for_quarantine_area[k][j]) + ("" if((j == total_number_of_agents_types) and (k == days - 1)) else ","))
+					for r in range(num_risk_classes):
+						file.write(str(env_room_for_quarantine_area[k][j][r]) + ("" if((j == total_number_of_agents_types) and (k == days - 1) and (r == num_risk_classes)) else ","))
 			file.write("</ENV_ROOM_FOR_QUARANTINE_AREA></macro_environment></states>\n")
 		autogenerated_variables_names.write("#define ENV_ROOM_FOR_QUARANTINE_AREA \"ENV_ROOM_FOR_QUARANTINE_AREA\"\n")
 
@@ -1950,7 +1975,7 @@ def main():
 			agents = WHOLEmodel["agents"]
 			for agent_name, _ in agents.items():
 				initial_agent_order[agent_name] = len(initial_agent_order.keys())
-			
+
 			filtered_agents_time_window = {agent: details for agent, details in agents.items() if details['entry_type'][0] == 'Time window'}
 			filtered_agents_daily_rate = {agent: details for agent, details in agents.items() if details['entry_type'][0] == 'Daily Rate'}
 			agents = filtered_agents_time_window | filtered_agents_daily_rate

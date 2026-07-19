@@ -153,17 +153,19 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
         FLAMEGPU->setVariable<int>(SWAB_STEPS, swab_steps);
 
         // Quarantine swabs
-        auto env_quarantine_swab_days_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
-        auto env_quarantine_swab_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
-        auto env_quarantine_swab_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
+        auto env_quarantine_swab_days_distr = FLAMEGPU->environment.getMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
+        auto env_quarantine_swab_days_distr_firstparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
+        auto env_quarantine_swab_days_distr_secondparam = FLAMEGPU->environment.getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
 
+        auto risk_class = FLAMEGPU->getVariable<unsigned short>(RISK_CLASS);
         const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
 
         if(quarantine > 0){
+           // printf("beh qua sono i tamponi in quarantena ma in quarantena non ho nessuno indi... %d\n", FLAMEGPU->template getVariable<short>(CONTACTS_ID));
             int swab_steps = -1;
-            if((int) env_quarantine_swab_days_distr[day-1][agent_type] != NO_SWAB){
+            if((int) env_quarantine_swab_days_distr[day-1][agent_type][risk_class] != NO_SWAB){
                 if(FLAMEGPU->getVariable<int>(SWAB_STEPS) == 0)
-                    swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[day-1][agent_type], contacts_id, (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_firstparam[day-1][agent_type]), (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_secondparam[day-1][agent_type]), true));
+                    swab_steps = round(cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_SWAB_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)], (int) env_quarantine_swab_days_distr[day-1][agent_type][risk_class], contacts_id, (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_firstparam[day-1][agent_type][risk_class]), (float) (STEPS_IN_A_DAY * env_quarantine_swab_days_distr_secondparam[day-1][agent_type][risk_class]), true));
                 else
                     swab_steps = FLAMEGPU->getVariable<int>(SWAB_STEPS);
             }
