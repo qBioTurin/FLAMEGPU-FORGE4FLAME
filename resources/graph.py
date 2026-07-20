@@ -53,6 +53,8 @@ class Vertex:
                  coordinates: Coordinates,
                  x: int,
                  z: int,
+                 x_door: int,
+                 z_door: int,
                  typeof: MapEncoding,
                  area: int,
                  yaw: float,
@@ -67,6 +69,8 @@ class Vertex:
         self.coords = coordinates
         self.x = x
         self.z = z
+        self.x_door = x_door
+        self.z_door = z_door
         self.type = typeof
         self.area = area
         self.yaw = yaw
@@ -131,10 +135,10 @@ class SpatialGraph:
             if vtype not in [MapEncoding.CORRIDOR, MapEncoding.INSIDEROOM]:
                 self.vertices[vtype] = []
 
-    def add_vertex(self, x_value: int, y_value: int, z_value: int, x: int, z: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame, room_matrix: np.ndarray, objects: pd.DataFrame):
+    def add_vertex(self, x_value: int, y_value: int, z_value: int, x: int, z: int, x_door: int, z_door: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame, room_matrix: np.ndarray, objects: pd.DataFrame):
         global first_vertex_id
 
-        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), x, z, vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand, room_matrix, objects))
+        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), x, z, x_door, z_door, vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand, room_matrix, objects))
         self.__first_vid = self.__first_vid + 1
         first_vertex_id = first_vertex_id + 1
 

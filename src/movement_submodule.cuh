@@ -160,7 +160,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
-    auto room_doors_position = FLAMEGPU->environment.getMacroProperty<float, V, 2>(ROOM_DOORS_POSITION);
 
     unsigned char movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
@@ -185,16 +184,11 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         return ALIVE;
     }    
 
-    for(short node = 0; node < V; ++node) {
-        printf("[TEMP_DEBUG TEST] NODE_X[%d]: %f, NODE_Z[%d]: %f\n", node, FLAMEGPU->environment.getProperty<float, V>(NODE_X, node), node, FLAMEGPU->environment.getProperty<float, V>(NODE_Z, node));
-    }
-
-    printf("[TEMP_DEBUG TEST] RUN_IDX: %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX));
-
     while(distance < available_vel && available_vel > 0.0f) {
         agent_pos[0] = intermediate_target[0];
         agent_pos[1] = intermediate_target[1];
         agent_pos[2] = intermediate_target[2];
+
         available_vel = available_vel - distance;
 
         next_index = (next_index + 1) % SOLUTION_LENGTH;
@@ -203,10 +197,10 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
         if(next_index == target_index && stay == 0) {
             if(movement_phase == ROOM2DOOR){
-                room2room_logic(FLAMEGPU);
+                room2room_logic(FLAMEGPU, agent_pos);
             }
             else if(movement_phase == ROOM2ROOM){
-                door2room_logic(FLAMEGPU);
+                door2room_logic(FLAMEGPU, agent_pos);
             }
         }
 
@@ -273,7 +267,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         agent_vel[2] = 0.0f;
     }
 
-
     // Update variables
     FLAMEGPU->setVariable<float>(X, agent_pos[0]);
     FLAMEGPU->setVariable<float>(Y, agent_pos[1]);
@@ -297,16 +290,19 @@ void define_environment_submodule(ModelDescription &smm) {
     env.newProperty<float, V>(NODE_Z, {0.0f});
     env.newProperty<float, V>(NODE_LENGTH, {0.0f});
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
+    env.newProperty<float, V>(NODE_YAW, {0.0f});
     env.newProperty<unsigned short, V>(INDEX2COORDX, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDY, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDZ, {0});
+    env.newMacroProperty<unsigned short, V, V>(ADJMATRIX);
+    env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
-    env.newMacroProperty<float, V, 2>(ROOM_DOORS_POSITION);
+    env.newMacroProperty<float, V, 4>(ROOM_DOORS_POSITION);
     env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
@@ -352,9 +348,10 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<short>(AGENT_TYPE);
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian_sm.newVariable<unsigned short>(NEXT_INDEX);
-    pedestrian_sm.newVariable<short>(ACTUAL_NODE);
-    pedestrian_sm.newVariable<short>(ACTUAL_NODE_STAY);
-    pedestrian_sm.newVariable<short>(ACTUAL_NODE_OBJECT);
+    pedestrian_sm.newVariable<short>(SOURCE_NODE);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE_STAY);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE_OBJECT);
     pedestrian_sm.newVariable<unsigned char>(MOVEMENT_PHASE);
 
     AgentFunctionDescription output_location = smm.Agent("pedestrian_submodule").newFunction("outputPedestrianLocationSub", outputPedestrianLocationSub);
@@ -401,9 +398,12 @@ SubModelDescription create_smm(ModelDescription &model) {
     smm.SubEnvironment().mapProperty(NODE_Z, NODE_Z);
     smm.SubEnvironment().mapProperty(NODE_LENGTH, NODE_LENGTH);
     smm.SubEnvironment().mapProperty(NODE_WIDTH, NODE_WIDTH);
+    smm.SubEnvironment().mapProperty(NODE_YAW, NODE_YAW);
     smm.SubEnvironment().mapProperty(INDEX2COORDX, INDEX2COORDX);
     smm.SubEnvironment().mapProperty(INDEX2COORDY, INDEX2COORDY);
     smm.SubEnvironment().mapProperty(INDEX2COORDZ, INDEX2COORDZ);
+    smm.SubEnvironment().mapMacroProperty(CUDA_RNG_OFFSETS_PEDESTRIAN, CUDA_RNG_OFFSETS_PEDESTRIAN);
+    smm.SubEnvironment().mapMacroProperty(ADJMATRIX, ADJMATRIX);
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_X, INTERMEDIATE_TARGET_X);
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_Y, INTERMEDIATE_TARGET_Y);
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_Z, INTERMEDIATE_TARGET_Z);

@@ -198,7 +198,7 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     
     env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
-    env.newMacroProperty<float, V, 2>(ROOM_DOORS_POSITION);
+    env.newMacroProperty<float, V, 4>(ROOM_DOORS_POSITION);
     env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
@@ -411,9 +411,10 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned char>(IN_AN_EVENT);
     pedestrian.newVariable<short>(EVENT_ID);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
-    pedestrian.newVariable<short>(ACTUAL_NODE, -1);
-    pedestrian.newVariable<short>(ACTUAL_NODE_STAY, -1);
-    pedestrian.newVariable<short>(ACTUAL_NODE_OBJECT, -1);
+    pedestrian.newVariable<short>(SOURCE_NODE, -1);
+    pedestrian.newVariable<short>(DESTINATION_NODE, -1);
+    pedestrian.newVariable<short>(DESTINATION_NODE_STAY, -1);
+    pedestrian.newVariable<short>(DESTINATION_NODE_OBJECT, -1);
     pedestrian.newVariable<short>(WAITING_ROOM_TIME);
     pedestrian.newVariable<unsigned char>(WAITING_ROOM_FLAG);
     pedestrian.newVariable<unsigned char>(ENTRY_EXIT_FLAG);
