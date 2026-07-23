@@ -748,9 +748,10 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
 
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
+    const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
 
-    // Check if there is at least one support request
-    if(currently_supported == -1 && on_the_way_to_support == -1 && requested_support == -1 && !in_an_event){
+    // Check if there is at least one support request and agent is not quarantined
+    if(currently_supported == -1 && on_the_way_to_support == -1 && requested_support == -1 && !in_an_event && quarantine == 0){
         auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
         unsigned int total_requests = support_requests[agent_type][0];
@@ -838,9 +839,10 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
+    const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
 
-    // The agent which requested support is waiting for the support agent
-    if(currently_supported == -1 && requested_support != -1 && on_the_way_to_support == -1){
+    // The agent which requested support is waiting for the support agent and is not quarantined
+    if(currently_supported == -1 && requested_support != -1 && on_the_way_to_support == -1 && quarantine == 0){
         auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
 
         int request_id = FLAMEGPU->getVariable<int>(REQUEST_ID);
@@ -942,8 +944,9 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
+    const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
 
-    if(requested_support != -1 && currently_supported != -1 && on_the_way_to_support == -1 &&
+    if(requested_support != -1 && currently_supported != -1 && on_the_way_to_support == -1 && quarantine == 0 &&
       (requested_support_event_with_flow == -1 || (in_an_event && requested_support_event_with_flow != -1) || support_time_event != -1)){
         // Send message with updated position to the support agent
         FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
@@ -1006,9 +1009,10 @@ FLAMEGPU_AGENT_FUNCTION(supportAgent, MessageBucket, MessageNone) {
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
 
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
+    const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
 
-    // Support agent is supporting (update its position based on the received message)
-    if(on_the_way_to_support == -1 && requested_support == -1 && currently_supported != -1){
+    // Support agent is supporting (update its position based on the received message) and is not quarantined
+    if(on_the_way_to_support == -1 && requested_support == -1 && currently_supported != -1 && quarantine == 0){
         auto messages = FLAMEGPU->message_in(NUMBER_OF_AGENTS_TYPES + contacts_id);
         auto interested_message = messages.begin();
 
