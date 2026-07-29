@@ -94,7 +94,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
     }
 
     FLAMEGPU->message_out.setVariable<id_t>(ID, FLAMEGPU->getID());
-    FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, FLAMEGPU->getVariable<int>(CONTACTS_ID));
     FLAMEGPU->message_out.setLocation(
         FLAMEGPU->getVariable<float>(X),
         FLAMEGPU->getVariable<float>(Y),
@@ -110,7 +110,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     }
 
     // Move the agent
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
@@ -238,7 +238,7 @@ void define_message_submodule(ModelDescription &smm) {
     // Location pedestrian message
     MessageSpatial3D::Description pedestrian_message = smm.newMessage<MessageSpatial3D>("location_submodule");
     pedestrian_message.newVariable<id_t>(ID);
-    pedestrian_message.newVariable<short>(CONTACTS_ID);
+    pedestrian_message.newVariable<int>(CONTACTS_ID);
     pedestrian_message.setRadius(3.0f);
     pedestrian_message.setMin(0, 0, 0);
     pedestrian_message.setMax(ENV_DIM_X, ENV_DIM_Y, ENV_DIM_Z);
@@ -263,7 +263,7 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<float>(STEER_Z);
     pedestrian_sm.newVariable<int>(CAN_MOVE);
     pedestrian_sm.newVariable<int>(SKIP_FLOW);
-    pedestrian_sm.newVariable<short>(CONTACTS_ID, -1);
+    pedestrian_sm.newVariable<int>(CONTACTS_ID, -1);
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian_sm.newVariable<unsigned short>(NEXT_INDEX);
 

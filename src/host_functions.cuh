@@ -331,7 +331,7 @@ namespace host_functions {
         for (xml_node xagent = agents.child("xagent"); xagent; xagent = xagent.next_sibling("xagent")) {
             // Extract child nodes of xagent, like <name>, <state>, <x>, etc.
             string name = xagent.child("name").text().as_string();
-            short contacts_id = (short) xagent.child("contacts_id").text().as_int();
+            int contacts_id = xagent.child("contacts_id").text().as_int();
             int agent_type = xagent.child("agent_type").text().as_int();
             int agent_subtype = xagent.child("agent_subtype").text().as_int();
 
@@ -391,7 +391,7 @@ namespace host_functions {
             new_pedestrian.setVariable<float>(Z, z);
             new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
             new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
-            new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
+            new_pedestrian.setVariable<int>(CONTACTS_ID, contacts_id);
             new_pedestrian.setVariable<int>(AGENT_TYPE, agent_type);
             new_pedestrian.setVariable<int>(AGENT_SUBTYPE, agent_subtype);
             new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][agent_type]) ? (int) env_mask_type[0][agent_type]: NO_MASK);
@@ -418,10 +418,10 @@ namespace host_functions {
             new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
             new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
-            FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+            FLAMEGPU->environment.setProperty<int>(NEXT_CONTACTS_ID, contacts_id);
         }
 
-        short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID) + 1;
+        int contacts_id = FLAMEGPU->environment.getProperty<int>(NEXT_CONTACTS_ID) + 1;
 
         for(int i = NUMBER_OF_AGENTS_TYPES_WITHOUT_A_RATE; i < NUMBER_OF_AGENTS_TYPES; i++){
             unsigned short slot = 0;
@@ -527,7 +527,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
                         new_pedestrian.setVariable<float>(Z, z);
                         new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
-                        new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
+                        new_pedestrian.setVariable<int>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
                         new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][i]) ? (int) env_mask_type[0][i]: NO_MASK);
                         new_pedestrian.setVariable<int>(AGENT_TYPE, i);
@@ -563,7 +563,7 @@ namespace host_functions {
             }
         }
 
-        FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+        FLAMEGPU->environment.setProperty<int>(NEXT_CONTACTS_ID, contacts_id);
 
 
         xml_document doc;
@@ -685,7 +685,7 @@ namespace host_functions {
             const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
             const unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
 
-            short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID);
+            int contacts_id = FLAMEGPU->environment.getProperty<int>(NEXT_CONTACTS_ID);
 
             auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
             auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
@@ -835,7 +835,7 @@ namespace host_functions {
                         new_pedestrian.setVariable<float>(Z, z);
                         new_pedestrian.setVariable<int>(CAN_MOVE, 0);
                         new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
-                        new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
+                        new_pedestrian.setVariable<int>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<int>(DISEASE_STATE, new_agent_state);
                         new_pedestrian.setVariable<int>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[day-1][i]) ? (int) env_mask_type[day-1][i]: NO_MASK);
                         new_pedestrian.setVariable<int>(AGENT_TYPE, i);
@@ -876,7 +876,7 @@ namespace host_functions {
             printf("Epigraph hospitalized on Day %d: %d. Total daily rate agents generated (after adjustments): %d\n", day, num_hospitalized, total_generated);
 #endif
 
-            FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+            FLAMEGPU->environment.setProperty<int>(NEXT_CONTACTS_ID, contacts_id);
             FLAMEGPU->environment.setProperty<int>(TOTAL_REJECTED, total_rejected);
             printf("At day %d: rejected today are %d, total rejected are %d\n", day, rejected_today, total_rejected);
 #if defined(DEBUG) && !defined(ENSEMBLE)

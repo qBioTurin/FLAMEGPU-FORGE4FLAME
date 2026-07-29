@@ -164,7 +164,7 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
     env.newProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, {0.0f});
     env.newProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, {0});
-    env.newProperty<short>(NEXT_CONTACTS_ID, 0);
+    env.newProperty<int>(NEXT_CONTACTS_ID, 0);
     env.newProperty<unsigned short>(DAY, 1);
     env.newProperty<unsigned short>(WEEK_DAY, 0);
     env.newProperty<float, RISK_CLASSES + 1>(PROPORTIONS, {0.0f});
@@ -295,7 +295,7 @@ void define_pedestrian_messages(ModelDescription& model){
     // Location pedestrian message
     MessageSpatial3D::Description pedestrian_message = model.newMessage<MessageSpatial3D>("location");
     pedestrian_message.newVariable<id_t>(ID);
-    pedestrian_message.newVariable<short>(CONTACTS_ID);
+    pedestrian_message.newVariable<int>(CONTACTS_ID);
     pedestrian_message.newVariable<int>(DISEASE_STATE);
     pedestrian_message.newVariable<int>(AGENT_TYPE);
     pedestrian_message.newVariable<short>(GRAPH_NODE);
@@ -318,7 +318,7 @@ void define_pedestrian_messages(ModelDescription& model){
 
     // Message for agent links
     MessageBucket::Description link_message = model.newMessage<MessageBucket>("link_message");
-    link_message.newVariable<short>(CONTACTS_ID);
+    link_message.newVariable<int>(CONTACTS_ID);
     link_message.newVariable<int>(REQUEST_ID);
     link_message.newVariable<float>(X);
     link_message.newVariable<float>(Y);
@@ -344,7 +344,7 @@ void define_room_messages(ModelDescription& model){
 
     // Handle resources message
     MessageBucket::Description waiting_room_message = model.newMessage<MessageBucket>("waiting_room_message");
-    waiting_room_message.newVariable<short>(CONTACTS_ID);
+    waiting_room_message.newVariable<int>(CONTACTS_ID);
     waiting_room_message.newVariable<int>(WAITING_ROOM_TIME);
     waiting_room_message.newVariable<int>(AGENT_TYPE);
     waiting_room_message.setPersistent(true);
@@ -384,7 +384,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned char>(INIT);
     pedestrian.newVariable<unsigned char>(INFECTED_CONTACT);
     pedestrian.newVariable<short>(ANIMATE_DIR, 1);
-    pedestrian.newVariable<short>(CONTACTS_ID, -1);
+    pedestrian.newVariable<int>(CONTACTS_ID, -1);
     pedestrian.newVariable<int>(DISEASE_STATE);
     pedestrian.newVariable<int>(MASK_TYPE, NO_MASK);
     pedestrian.newVariable<int>(ROOM_FOR_QUARANTINE_INDEX, -1);
@@ -406,12 +406,12 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<int>(ENTRY_EXIT_FLAG);
     pedestrian.newVariable<short>(NODE_WAITING_FOR, -1);
     pedestrian.newVariable<unsigned short>(EXITED_FROM_ENVIRONMENT);
-    pedestrian.newVariable<short>(REQUESTED_SUPPORT, -1);
+    pedestrian.newVariable<int>(REQUESTED_SUPPORT, -1);
     pedestrian.newVariable<short>(REQUESTED_TYPE, -1);
     pedestrian.newVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, -1);
     pedestrian.newVariable<short>(SUPPORT_TIME_EVENT, -1);
-    pedestrian.newVariable<short>(CURRENTLY_SUPPORTED, -1);
-    pedestrian.newVariable<short>(ON_THE_WAY_TO_SUPPORT, -1);
+    pedestrian.newVariable<int>(CURRENTLY_SUPPORTED, -1);
+    pedestrian.newVariable<int>(ON_THE_WAY_TO_SUPPORT, -1);
     pedestrian.newVariable<int>(REQUEST_ID, -1);
     pedestrian.newVariable<short>(REQUEST_NODE, -1);
     pedestrian.newVariable<int>(REQUEST_TIME, -1);

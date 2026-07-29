@@ -18,7 +18,7 @@ namespace device_functions {
      * Generate a random number using the given RNG, distribution and parameters for pedestrians.
     */
     template<typename MessageIn, typename MessageOut>
-    FLAMEGPU_DEVICE_FUNCTION double cuda_pedestrian_rng(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, short id, double a, double b, bool flow_time) {
+    FLAMEGPU_DEVICE_FUNCTION double cuda_pedestrian_rng(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, unsigned short distribution_id, curandState *cuda_states, int type, int id, double a, double b, bool flow_time) {
         double random = (type == TRUNCATED_POSITIVE_NORMAL) ? curand_normal(&cuda_states[id]): curand_uniform(&cuda_states[id]);
 
         if(type == EXPONENTIAL && compare_double((double) random, 1.0f, 1e-10f)){
@@ -29,7 +29,7 @@ namespace device_functions {
         const double event_time_random = DISTRIBUTION(type, random, a, b);
 
         auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
-        cuda_rng_offsets_pedestrian[FLAMEGPU->template getVariable<short>(CONTACTS_ID)]++;
+        cuda_rng_offsets_pedestrian[FLAMEGPU->template getVariable<int>(CONTACTS_ID)]++;
 
         return (flow_time && event_time_random < 1.0f) ? 1.0f: event_time_random;
     }
@@ -59,9 +59,9 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void generate_offset(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, float* jitter_x, float* jitter_z,  short new_target){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of generate_offset for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of generate_offset for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const float yaw = FLAMEGPU->environment.template getProperty<float, V>(NODE_YAW, new_target);
         const bool yaw_condition = compare_double(yaw, M_PI/2, 0.5f) || compare_double(yaw, 2*M_PI - M_PI/2, 0.5f);
 
@@ -75,7 +75,7 @@ namespace device_functions {
         *jitter_x = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_X_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, offset_x - 1e-3, false);
         *jitter_z = cuda_pedestrian_rng(FLAMEGPU, PEDESTRIAN_JITTER_Z_DISTR_IDX, cuda_pedestrian_states[FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX)], UNIFORM, contacts_id, 0.0f, offset_z - 1e-3, false);
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending of generate_offset for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending of generate_offset for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -85,7 +85,7 @@ namespace device_functions {
     template<typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION short findFreeRoomForEventOfTypeAndArea(DeviceAPI<MessageBucket, MessageOut>* FLAMEGPU, float previous_separation, int type_room_event, int area_room_event, bool *available) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of findFreeRoomForEventOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of findFreeRoomForEventOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
         short event_node;
@@ -143,7 +143,7 @@ namespace device_functions {
         while(!*available && event_node != -1);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending of findFreeRoomForEventOfTypeAndAre for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending of findFreeRoomForEventOfTypeAndAre for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         return event_node;
     }
@@ -154,10 +154,10 @@ namespace device_functions {
     template<typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION short findFreeRoomOfTypeAndArea(DeviceAPI<MessageBucket, MessageOut>* FLAMEGPU, int flow, int random, int lenght_rooms, unsigned short* ward_indeces, bool *available) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
 
         int random_iterator = random;
         unsigned short final_target;
@@ -200,7 +200,7 @@ namespace device_functions {
         while(!*available && random_iterator != random);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending of findFreeRoomOfTypeAndArea for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         return final_target;
     }
@@ -211,7 +211,7 @@ namespace device_functions {
     template<typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION short take_new_destination_flow(DeviceAPI<MessageBucket, MessageOut> *FLAMEGPU, int *stay, const short start_node, bool *available, const bool identified = false, const unsigned short severity = MINOR){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         unsigned short flow_index = FLAMEGPU->template getVariable<unsigned short>(FLOW_INDEX) + 1;
         unsigned short week_day_flow = FLAMEGPU->template getVariable<unsigned short>(WEEK_DAY_FLOW);
@@ -221,7 +221,7 @@ namespace device_functions {
         const unsigned short day = FLAMEGPU->environment.template getProperty<unsigned short>(DAY);
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
         const int agent_subtype = FLAMEGPU->template getVariable<int>(AGENT_SUBTYPE);
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
 
         auto spawnrooms_areas_ids = FLAMEGPU->environment.template getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
         auto env_flow = FLAMEGPU->environment.template getMacroProperty<int, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
@@ -434,7 +434,7 @@ namespace device_functions {
             *stay = 1;
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending of take_new_destination_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         return final_target;
     }
@@ -445,7 +445,7 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void a_star(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, const unsigned short start, const unsigned short goal, short* solution) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         short closedset[V];
         short openset[V][3];
@@ -512,7 +512,7 @@ namespace device_functions {
                     solution[i] = -1;
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
                 return;
             }
@@ -550,7 +550,7 @@ namespace device_functions {
         }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending of a_star for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU-> getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -597,7 +597,7 @@ namespace device_functions {
     //     openset[start_idx][G_COST] = 0;
     //     openset[start_idx][PARENT] = STARTING_POINT;
 
-    //     // n_open tiene traccia di quanti nodi ci sono da esplorare
+    //     // n_open tieni traccia di quanti nodi ci sono da esplorare
     //     for(unsigned short n_open = 1; n_open > 0;) {
 
     //         // 1. Trova il nodo con F_COST minore (Lowest F)
@@ -708,14 +708,14 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void update_targets(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU, short* new_targets, unsigned short *target_index, const bool clean, const int stay) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         auto intermediate_target_x = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
         auto intermediate_target_y = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
         auto intermediate_target_z = FLAMEGPU->environment.template getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
         auto stay_matrix = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
 
         float new_target_x, new_target_y, new_target_z;
 
@@ -762,7 +762,7 @@ namespace device_functions {
         FLAMEGPU->template setVariable<unsigned short>(TARGET_INDEX, *target_index);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -772,11 +772,11 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void update_flow(DeviceAPI<MessageIn, MessageOut> *FLAMEGPU, const bool quarantine){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of update_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of update_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
         const int agent_subtype = FLAMEGPU->template getVariable<int>(AGENT_SUBTYPE);
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const unsigned short target_index = FLAMEGPU->template getVariable<unsigned short>(TARGET_INDEX);
         const unsigned short identified = FLAMEGPU->template getVariable<unsigned short>(IDENTIFIED_INFECTED);
 
@@ -789,14 +789,15 @@ namespace device_functions {
 
         unsigned short entry_time_index = FLAMEGPU->template getVariable<unsigned short>(ENTRY_TIME_INDEX) + 1;
         unsigned short week_day_flow = FLAMEGPU->template getVariable<unsigned short>(WEEK_DAY_FLOW);
-        unsigned short empty_days;
+
+        int empty_days = 0;
         int start_step;
 
-        if((int) env_hours_schedule[agent_type][agent_subtype][week_day_flow][2 * entry_time_index] == 0 || quarantine){
+        if((int) env_flow[agent_type][agent_subtype][week_day_flow][entry_time_index] == -1 || quarantine){
             entry_time_index = 0;
+            empty_days = 1;
             week_day_flow = (week_day_flow + 1) % DAYS_IN_A_WEEK;
 
-            empty_days = 0;
             while((int) env_flow[agent_type][agent_subtype][week_day_flow][0] == -1){
                 empty_days++;
                 week_day_flow = (week_day_flow + 1) % DAYS_IN_A_WEEK;
@@ -821,17 +822,17 @@ namespace device_functions {
         FLAMEGPU->template setVariable<unsigned short>(ENTRY_TIME_INDEX, entry_time_index);
         FLAMEGPU->template setVariable<unsigned short>(WEEK_DAY_FLOW, week_day_flow);
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending update_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending update_flow for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
     template<typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void put_in_quarantine(DeviceAPI<MessageBucket, MessageOut> *FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning put_in_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning put_in_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const unsigned short day = FLAMEGPU->environment.template getProperty<unsigned short>(DAY);
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
 
         auto stay_matrix = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
@@ -928,7 +929,7 @@ namespace device_functions {
         }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending put_in_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending put_in_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -938,11 +939,11 @@ namespace device_functions {
     template<typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void swab(DeviceAPI<MessageBucket, MessageOut> *FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning swab for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning swab for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const unsigned short day = FLAMEGPU->environment.template getProperty<unsigned short>(DAY);
         const unsigned int disease_state = FLAMEGPU->template getVariable<unsigned int>(DISEASE_STATE);
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
 
         auto stay_matrix = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
@@ -1035,7 +1036,7 @@ namespace device_functions {
         }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending swab for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending swab for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -1045,11 +1046,11 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void exit_from_quarantine(DeviceAPI<MessageIn, MessageOut> *FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning exit_from_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning exit_from_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const unsigned short day = FLAMEGPU->environment.template getProperty<unsigned short>(DAY);
         const unsigned short agent_with_a_rate = FLAMEGPU->template getVariable<unsigned short>(AGENT_WITH_A_RATE);
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
         const int agent_subtype = FLAMEGPU->template getVariable<int>(AGENT_SUBTYPE);
         const int quarantine_node = FLAMEGPU->template getVariable<int>(ROOM_FOR_QUARANTINE_INDEX);
@@ -1125,16 +1126,16 @@ namespace device_functions {
         float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
 
         if(agent_pos[1] == INVISIBLE_AGENT_Y)
-            printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
+            printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
         else
-            printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+            printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
 
         if(!CHECK_IS_SPAWNROOM(quarantine_node))
             FLAMEGPU->template setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 1);
 
         counters[AGENTS_IN_QUARANTINE]--;
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending exit_from_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending exit_from_quarantine for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -1144,7 +1145,7 @@ namespace device_functions {
     template<typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void screening(DeviceAPI<MessageBucket, MessageOut> *FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const unsigned short day = FLAMEGPU->environment.template getProperty<unsigned short>(DAY);
         const unsigned short identified_bool = FLAMEGPU->template getVariable<unsigned short>(IDENTIFIED_INFECTED);
@@ -1165,7 +1166,7 @@ namespace device_functions {
             }
         }
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -1175,11 +1176,11 @@ namespace device_functions {
     template<typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void external_screening(DeviceAPI<MessageBucket, MessageOut> *FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning external_screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning external_screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         const unsigned short day = FLAMEGPU->environment.template getProperty<unsigned short>(DAY);
         const unsigned int disease_state = FLAMEGPU->template getVariable<unsigned int>(DISEASE_STATE);
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const int agent_type = FLAMEGPU->template getVariable<int>(AGENT_TYPE);
 
         auto env_external_screening_first = FLAMEGPU->environment.template getMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
@@ -1192,7 +1193,7 @@ namespace device_functions {
             if(random_external_screening_first < (float) env_external_screening_first[day-1][agent_type]){
                 swab(FLAMEGPU);
 #if defined(DEBUG) && !defined(ENSEMBLE)
-                printf("5,%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+                printf("5,%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
                 return;
             }
@@ -1203,7 +1204,7 @@ namespace device_functions {
             }
         }
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending external_screening for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
@@ -1213,9 +1214,9 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION flamegpu::AGENT_STATUS contagion_processes(DeviceAPI<MessageIn, MessageOut> *FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of contagion_processes for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of contagion_processes for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const unsigned short risk_class = FLAMEGPU->template getVariable<unsigned short>(RISK_CLASS);
 
         int disease_state = FLAMEGPU->template getVariable<int>(DISEASE_STATE);
@@ -1268,9 +1269,9 @@ namespace device_functions {
                 float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
 
                 if(agent_pos[1] == INVISIBLE_AGENT_Y)
-                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
+                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
                 else
-                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
             }
         }
 
@@ -1284,7 +1285,7 @@ namespace device_functions {
         FLAMEGPU->template setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, end_of_immunization_days);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending contagion_processes for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending contagion_processes for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         return ALIVE;
     }
@@ -1295,9 +1296,9 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION flamegpu::AGENT_STATUS update_infection(DeviceAPI<MessageIn, MessageOut> *FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of update_infected for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of update_infected for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
-        const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
         const unsigned short risk_class = FLAMEGPU->template getVariable<unsigned short>(RISK_CLASS);
 
         int disease_state = FLAMEGPU->template getVariable<int>(DISEASE_STATE);
@@ -1330,7 +1331,7 @@ namespace device_functions {
             if(!fatality_days){
                 disease_state = DIED;
 #if defined(DEBUG) && !defined(ENSEMBLE)
-                printf("5,%d,%d,Ending update_infected for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+                printf("5,%d,%d,Ending update_infected for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
                 return DEAD;
             }
@@ -1371,12 +1372,12 @@ namespace device_functions {
             float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
 
             if(agent_pos[1] == INVISIBLE_AGENT_Y)
-                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
+                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
             else
-                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
         }
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending update_infected for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending update_infected for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         return ALIVE;
     }
@@ -1387,10 +1388,10 @@ namespace device_functions {
     template<typename MessageIn, typename MessageOut>
     FLAMEGPU_DEVICE_FUNCTION void outside_contagion(DeviceAPI<MessageIn, MessageOut>* FLAMEGPU){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Beginning of outside_contagion for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Beginning of outside_contagion for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
         if(FLAMEGPU->template getVariable<int>(DISEASE_STATE) == SUSCEPTIBLE && FLAMEGPU->template getVariable<unsigned short>(EXITED_FROM_ENVIRONMENT) && FLAMEGPU->template getVariable<float>(Y) == INVISIBLE_AGENT_Y){
-            const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
+            const int contacts_id = FLAMEGPU->template getVariable<int>(CONTACTS_ID);
             const unsigned short day = FLAMEGPU->environment.template getProperty<unsigned short>(DAY)-1;
             const float perc_inf = FLAMEGPU->environment.template getProperty<float, DAYS + 1>(PERC_INF, day);
             const unsigned short risk_class = FLAMEGPU->template getVariable<unsigned short>(RISK_CLASS);
@@ -1427,13 +1428,13 @@ namespace device_functions {
                 float agent_pos[3] = {FLAMEGPU->template getVariable<float>(X), FLAMEGPU->template getVariable<float>(Y), FLAMEGPU->template getVariable<float>(Z)};
 
                 if(agent_pos[1] == INVISIBLE_AGENT_Y)
-                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
+                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE));
                 else
-                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+                    printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID), FLAMEGPU->template getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->template getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
             }
         }
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending outside_contagion for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending outside_contagion for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<int>(CONTACTS_ID));
 #endif
     }
 
