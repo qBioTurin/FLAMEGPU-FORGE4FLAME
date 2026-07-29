@@ -59,7 +59,8 @@ SET(ALL_SRC
 flamegpu_add_executable("${PROJECT_NAME}" "${ALL_SRC}" "${FLAMEGPU_ROOT}" "${PROJECT_BINARY_DIR}" TRUE)
 
 # Add src directory to include path
-target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src", "/home/iterrone/lustre/iterrone/libzmq/include")
+target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+                             "/home/iterrone/lustre/iterrone/libzmq/include")
 
 target_link_directories("${PROJECT_NAME}" PRIVATE
     "/home/iterrone/lustre/iterrone/libzmq/build/lib"
