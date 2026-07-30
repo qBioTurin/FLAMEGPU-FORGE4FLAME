@@ -20,11 +20,11 @@ using namespace std;
 */
 FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     if (!FLAMEGPU->getVariable<char>(CAN_MOVE) || FLAMEGPU->getVariable<char>(SKIP_FLOW)) {
         #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
         #endif
         return ALIVE;
     }
@@ -37,6 +37,7 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
     float navigate_velocity[3] = {0.0f, 0.0f, 0.0f};
     float avoid_velocity[3] = {0.0f, 0.0f, 0.0f};
     float speed_sq = agent_vel[0] * agent_vel[0] + agent_vel[2] * agent_vel[2];
+    unsigned char movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
 
     if(speed_sq > 0.0001f){
         float s = sqrtf(speed_sq);
@@ -65,17 +66,25 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
             if (dot_product > 1.0f) dot_product = 1.0f;
             float ang = acosf(dot_product);
 
+            float avoid_weight = AVOID_WEIGHT;
+            float steer_weight = STEER_WEIGHT;
+
+            if(movement_phase == ROOM2DOOR || movement_phase == DOOR2ROOM) {
+                avoid_weight = AVOID_WEIGHT * 0.5f;
+                steer_weight = STEER_WEIGHT * 0.5f;
+            }
+
             // STEER
             if(ang < RAD_PERCEPTION || ang > (PI - RAD_PERCEPTION)) {
-                float steer_scalar = powf(I_SCALER / separation, 1.25f) * STEER_WEIGHT;
+                float steer_scalar = powf(I_SCALER / separation, 1.25f) * steer_weight;
 
                 navigate_velocity[0] += to_agent_x * steer_scalar;
                 navigate_velocity[1] += 0.0f;  // No vertical steer
                 navigate_velocity[2] += to_agent_z * steer_scalar;
             }
-
+            
             // AVOID
-            float avoid_scalar = powf(I_SCALER / separation, 2.0f) * AVOID_WEIGHT;
+            float avoid_scalar = powf(I_SCALER / separation, 2.0f) * avoid_weight;
 
             avoid_velocity[0] += to_agent_x * avoid_scalar;
             avoid_velocity[1] += 0.0f;  // No vertical avoid
@@ -96,7 +105,7 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
     FLAMEGPU->setVariable<float>(STEER_Z, steer_velocity[2]);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending avoid_pedestrians for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -111,7 +120,7 @@ FLAMEGPU_AGENT_FUNCTION(avoid_pedestrians, MessageSpatial3D, MessageNone) {
 */
 FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial3D) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning outputPedestrianLocationSub for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning outputPedestrianLocationSub for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
      if (!FLAMEGPU->getVariable<char>(CAN_MOVE) || FLAMEGPU->getVariable<char>(SKIP_FLOW)) {
         FLAMEGPU->setVariable<float>(VELX, 0.0f);
@@ -120,7 +129,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
     }
 
     FLAMEGPU->message_out.setVariable<id_t>(ID, FLAMEGPU->getID());
-    FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, FLAMEGPU->getVariable<int>(CONTACTS_ID));
     FLAMEGPU->message_out.setLocation(
         FLAMEGPU->getVariable<float>(X),
         FLAMEGPU->getVariable<float>(Y),
@@ -128,7 +137,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
     );
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending outputPedestrianLocationSub for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending outputPedestrianLocationSub for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -143,17 +152,17 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationSub, MessageNone, MessageSpatial
 */
 FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     if(!FLAMEGPU->getVariable<char>(CAN_MOVE) || FLAMEGPU->getVariable<char>(SKIP_FLOW)) {
         #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
         #endif
         return ALIVE;
     }
 
     // Move the agent
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
 
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
@@ -179,12 +188,13 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         FLAMEGPU->setVariable<float>(VELY, 0.0f);
         FLAMEGPU->setVariable<float>(VELZ, 0.0f);
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
         return ALIVE;
     }    
 
     while(distance < available_vel && available_vel > 0.0f) {
+        // printf("[TEMP_DEBUG] Agent %d moving to next intermediate target: (%.2f, %.2f, %.2f)\n", contacts_id, intermediate_target[0], intermediate_target[1], intermediate_target[2]);
         agent_pos[0] = intermediate_target[0];
         agent_pos[1] = intermediate_target[1];
         agent_pos[2] = intermediate_target[2];
@@ -202,6 +212,8 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
             else if(movement_phase == ROOM2ROOM){
                 door2room_logic(FLAMEGPU, agent_pos);
             }
+
+            target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         }
 
         if(next_index == target_index || stay > 0) {
@@ -212,6 +224,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         intermediate_target[0] = (float) intermediate_target_x[contacts_id][next_index];
         intermediate_target[1] = (float) intermediate_target_y[contacts_id][next_index];
         intermediate_target[2] = (float) intermediate_target_z[contacts_id][next_index];
+        // printf("[TEMP_DEBUG] Agent %d moving to next intermediate target: (%.2f, %.2f, %.2f)\n", contacts_id, intermediate_target[0], intermediate_target[1], intermediate_target[2]);
         distance = sqrt(pow(intermediate_target[0] - agent_pos[0], 2) + pow(intermediate_target[1] - agent_pos[1], 2) + pow(intermediate_target[2] - agent_pos[2], 2));
     }
 
@@ -221,9 +234,11 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     agent_vel[2] = (available_vel * (intermediate_target[2] - agent_pos[2]))/std::max(1.0f, distance);
 
 
-    //const float MAX_DODGE = 0.15f; to see if substitute in the future
-    const float MAX_DODGE = 1.0f / STEP;
-    const float MAX_DODGE_SQ = MAX_DODGE * MAX_DODGE;
+    float max_dodge = 1.0f / STEP;;
+    if(movement_phase == ROOM2DOOR || movement_phase == DOOR2ROOM) {
+        max_dodge = 0.15f;
+    }
+    const float max_dodge_sq = max_dodge * max_dodge;
 
     if (available_vel == 0.0f) {
         // Agent has arrived. Turn off avoidance so they don't slide through walls!
@@ -231,10 +246,10 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         agent_steer[2] = 0.0f;
     } else {
         float steer_len_sq = agent_steer[0]*agent_steer[0] + agent_steer[2]*agent_steer[2];
-        if (steer_len_sq > MAX_DODGE_SQ) {
+        if (steer_len_sq > max_dodge_sq) {
             float len = sqrtf(steer_len_sq);
-            agent_steer[0] = (agent_steer[0] / len) * MAX_DODGE;
-            agent_steer[2] = (agent_steer[2] / len) * MAX_DODGE;
+            agent_steer[0] = (agent_steer[0] / len) * max_dodge;
+            agent_steer[2] = (agent_steer[2] / len) * max_dodge;
         }
     }
 
@@ -276,7 +291,7 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     FLAMEGPU->setVariable<float>(VELZ, agent_vel[2]);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending move_agent_function for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -319,7 +334,7 @@ void define_message_submodule(ModelDescription &smm) {
     // Location pedestrian message
     MessageSpatial3D::Description pedestrian_message = smm.newMessage<MessageSpatial3D>("location_submodule");
     pedestrian_message.newVariable<id_t>(ID);
-    pedestrian_message.newVariable<short>(CONTACTS_ID);
+    pedestrian_message.newVariable<int>(CONTACTS_ID);
     pedestrian_message.setRadius(3.0f);
     pedestrian_message.setMin(0, 0, 0);
     pedestrian_message.setMax(ENV_DIM_X, ENV_DIM_Y, ENV_DIM_Z);
@@ -344,7 +359,7 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<char>(CAN_MOVE);
     pedestrian_sm.newVariable<char>(SKIP_FLOW);
     pedestrian_sm.newVariable<float, 3>(FINAL_TARGET);
-    pedestrian_sm.newVariable<short>(CONTACTS_ID, -1);
+    pedestrian_sm.newVariable<int>(CONTACTS_ID, -1);
     pedestrian_sm.newVariable<short>(AGENT_TYPE);
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian_sm.newVariable<unsigned short>(NEXT_INDEX);
@@ -352,6 +367,13 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<short>(DESTINATION_NODE);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_STAY);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_OBJECT);
+    pedestrian_sm.newVariable<short>(SOURCE_NODE_EVENT, -1);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE_EVENT, -1);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE_STAY_EVENT, -1);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE_OBJECT_EVENT, -1);
+    pedestrian_sm.newVariable<short>(SOURCE_NODE_SUPPORT, -1);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE_SUPPORT, -1);
+    pedestrian_sm.newVariable<short>(DESTINATION_NODE_STAY_SUPPORT, -1);
     pedestrian_sm.newVariable<unsigned char>(MOVEMENT_PHASE);
 
     AgentFunctionDescription output_location = smm.Agent("pedestrian_submodule").newFunction("outputPedestrianLocationSub", outputPedestrianLocationSub);

@@ -225,6 +225,7 @@ namespace host_functions {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
+        auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
         auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
         auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
         auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
@@ -317,21 +318,29 @@ namespace host_functions {
             HostAgentAPI pedestrian_type = FLAMEGPU->agent(name);
             HostNewAgentAPI new_pedestrian = pedestrian_type.newAgent();
 
-            // unsigned short entry_time_index = 0;
+            unsigned short entry_time_index = 0;
             unsigned short empty_days = 0;
             unsigned short weekday_agent = week_day;
 
             bool schedule_found = false;
-            if((int) env_hours_schedule[agent_type][agent_subtype][weekday_agent][0] >= START_STEP_TIME)
-                schedule_found = true;
+            while(!schedule_found && entry_time_index < HOURS_SCHEDULE_LENGTH){
+                if((int) env_hours_schedule[agent_type][agent_subtype][weekday_agent][entry_time_index] >= START_STEP_TIME)
+                    schedule_found = true;
+                else
+                    entry_time_index += 2;
+            }
 
-            while((short) env_flow[agent_type][agent_subtype][weekday_agent][0] == -1 && !schedule_found){
-                empty_days++;
-                weekday_agent = (weekday_agent + 1) % DAYS_IN_A_WEEK;
+            if(!schedule_found){
+                entry_time_index = 0;
+
+                do{
+                    empty_days++;
+                    weekday_agent = (weekday_agent + 1) % DAYS_IN_A_WEEK;
+                } while((short) env_flow[agent_type][agent_subtype][weekday_agent][entry_time_index] == -1);
             }
 
             // Get random spawnroom from the available ones
-            unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(short) env_flow_area[agent_type][agent_subtype][weekday_agent][0]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (float) spawnrooms_areas_ids[(short) env_flow_area[agent_type][agent_subtype][weekday_agent][0]][0], false))]);
+            unsigned short spawnroom_id = GET_SPAWNROOM_ID_FOR_VECTORS((unsigned short) spawnrooms_areas_ids[(short) env_flow_area[agent_type][agent_subtype][weekday_agent][entry_time_index]][(unsigned short) (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 1.0f, (float) spawnrooms_areas_ids[(short) env_flow_area[agent_type][agent_subtype][weekday_agent][entry_time_index]][0], false))]);
 
             float x = cuda_host_rng(FLAMEGPU, HOST_OFFSET_X_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, spawnroom_id * 2), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 1), false);
             float y = FLAMEGPU->environment.getProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, spawnroom_id);
@@ -365,9 +374,10 @@ namespace host_functions {
             new_pedestrian.setVariable<float>(Z, z);
             new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
             new_pedestrian.setVariable<unsigned char>(DISEASE_STATE, new_agent_state);
-            new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
+            new_pedestrian.setVariable<int>(CONTACTS_ID, contacts_id);
             new_pedestrian.setVariable<short>(AGENT_TYPE, agent_type);
             new_pedestrian.setVariable<short>(AGENT_SUBTYPE, agent_subtype);
+            new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
             new_pedestrian.setVariable<unsigned char>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][agent_type]) ? (unsigned short) env_mask_type[0][agent_type]: NO_MASK);
             new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
             new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
@@ -380,7 +390,7 @@ namespace host_functions {
                 swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (short) env_swab_distr[0][agent_type], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[0][agent_type]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[0][agent_type]), true));
             new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
-            const unsigned short initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][agent_subtype][weekday_agent][0]) - START_STEP_TIME + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (short) env_flow_distr[agent_type][agent_subtype][weekday_agent][0], (float) env_flow_distr_firstparam[agent_type][agent_subtype][weekday_agent][0], (float) env_flow_distr_secondparam[agent_type][agent_subtype][weekday_agent][0], true);
+            const unsigned int initial_stay = empty_days * STEPS_IN_A_DAY + ((int) env_hours_schedule[agent_type][agent_subtype][weekday_agent][entry_time_index] - START_STEP_TIME) + cuda_host_rng(FLAMEGPU, HOST_FLOW_DISTR_IDX, (short) env_flow_distr[agent_type][agent_subtype][weekday_agent][entry_time_index], (float) env_flow_distr_firstparam[agent_type][agent_subtype][weekday_agent][entry_time_index], (float) env_flow_distr_secondparam[agent_type][agent_subtype][weekday_agent][entry_time_index], true);
             stay_matrix[contacts_id][0] = initial_stay;
 
             intermediate_target_x[contacts_id][0] = x;
@@ -392,10 +402,10 @@ namespace host_functions {
             new_pedestrian.setVariable<short>(NODE_WAITING_FOR, -1);
             new_pedestrian.setVariable<short>(ACTUAL_EVENT_NODE, -1);
 
-            FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+            FLAMEGPU->environment.setProperty<int>(NEXT_CONTACTS_ID, contacts_id);
         }
 
-        short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID) + 1;
+        int contacts_id = FLAMEGPU->environment.getProperty<int>(NEXT_CONTACTS_ID) + 1;
 
         for(int i = NUMBER_OF_AGENTS_TYPES_WITHOUT_A_RATE; i < NUMBER_OF_AGENTS_TYPES; i++){
             unsigned short slot = 0;
@@ -434,11 +444,12 @@ namespace host_functions {
                         new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
                         new_pedestrian.setVariable<float>(Z, z);
                         new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
-                        new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
+                        new_pedestrian.setVariable<int>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<unsigned char>(DISEASE_STATE, new_agent_state);
                         new_pedestrian.setVariable<unsigned char>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][i]) ? (unsigned short) env_mask_type[0][i]: NO_MASK);
                         new_pedestrian.setVariable<short>(AGENT_TYPE, i);
                         new_pedestrian.setVariable<short>(AGENT_SUBTYPE, 0);
+                        new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                         new_pedestrian.setVariable<unsigned char>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned char>(SEVERITY, MINOR);
@@ -452,7 +463,7 @@ namespace host_functions {
                             swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (short) env_swab_distr[0][i], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[0][i]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[0][i]), true));
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
-                        const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (float) env_hours_schedule[i][0][week_day][2 * slot], (float) env_hours_schedule[i][0][week_day][2 * slot + 1], true);
+                        const unsigned int initial_stay = (unsigned int) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (float) env_hours_schedule[i][0][week_day][2 * slot], (float) env_hours_schedule[i][0][week_day][2 * slot + 1], true);
                         stay_matrix[contacts_id][0] = initial_stay - START_STEP_TIME;
 
                         intermediate_target_x[contacts_id][0] = x;
@@ -469,7 +480,7 @@ namespace host_functions {
             }
         }
 
-        FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+        FLAMEGPU->environment.setProperty<int>(NEXT_CONTACTS_ID, contacts_id);
 
 
         xml_document doc;
@@ -591,8 +602,9 @@ namespace host_functions {
             const unsigned short day = FLAMEGPU->environment.getProperty<unsigned short>(DAY);
             const unsigned short week_day = FLAMEGPU->environment.getProperty<unsigned short>(WEEK_DAY);
 
-            short contacts_id = FLAMEGPU->environment.getProperty<short>(NEXT_CONTACTS_ID);
+            int contacts_id = FLAMEGPU->environment.getProperty<int>(NEXT_CONTACTS_ID);
 
+            auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
             auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
             auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
             auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
@@ -655,11 +667,12 @@ namespace host_functions {
                         new_pedestrian.setVariable<float>(Y, INVISIBLE_AGENT_Y);
                         new_pedestrian.setVariable<float>(Z, z);
                         new_pedestrian.setVariable<float, 3>(FINAL_TARGET, {x, y, z});
-                        new_pedestrian.setVariable<short>(CONTACTS_ID, contacts_id);
+                        new_pedestrian.setVariable<int>(CONTACTS_ID, contacts_id);
                         new_pedestrian.setVariable<unsigned char>(DISEASE_STATE, new_agent_state);
                         new_pedestrian.setVariable<unsigned char>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[day-1][i]) ? (unsigned short) env_mask_type[day-1][i]: NO_MASK);
                         new_pedestrian.setVariable<short>(AGENT_TYPE, i);
                         new_pedestrian.setVariable<short>(AGENT_SUBTYPE, 0);
+                        new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                         new_pedestrian.setVariable<unsigned char>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned char>(SEVERITY, MINOR);
@@ -673,7 +686,7 @@ namespace host_functions {
                             swab_steps = round(cuda_host_rng(FLAMEGPU, HOST_SWAB_DISTR_IDX, (short) env_swab_distr[day-1][i], (float) (STEPS_IN_A_DAY * env_swab_distr_firstparam[day-1][i]), (float) (STEPS_IN_A_DAY * env_swab_distr_secondparam[day-1][i]), true));
                         new_pedestrian.setVariable<int>(SWAB_STEPS, swab_steps);
 
-                        const unsigned short initial_stay = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (float) env_hours_schedule[i][0][week_day][2 * slot], (float) env_hours_schedule[i][0][week_day][2 * slot + 1], true);
+                        const unsigned int initial_stay = (unsigned int) cuda_host_rng(FLAMEGPU, HOST_HOURS_SCHEDULE_DISTR_IDX, UNIFORM, (float) env_hours_schedule[i][0][week_day][2 * slot], (float) env_hours_schedule[i][0][week_day][2 * slot + 1], true);
                         stay_matrix[contacts_id][0] = initial_stay;
 
                         intermediate_target_x[contacts_id][0] = x;
@@ -689,7 +702,7 @@ namespace host_functions {
                 }
             }
 
-            FLAMEGPU->environment.setProperty<short>(NEXT_CONTACTS_ID, contacts_id);
+            FLAMEGPU->environment.setProperty<int>(NEXT_CONTACTS_ID, contacts_id);
 #if defined(DEBUG) && !defined(ENSEMBLE)
             printf("5,%d,%d,Ending birth for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
