@@ -739,7 +739,6 @@ namespace device_functions {
         auto stay_matrix = FLAMEGPU->environment.template getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
         const short contacts_id = FLAMEGPU->template getVariable<short>(CONTACTS_ID);
-        const unsigned short old_target_index = *target_index;
 
         float new_target_x, new_target_y, new_target_z;
 
@@ -749,8 +748,6 @@ namespace device_functions {
             if(next_index != *target_index){
                 *target_index = (next_index + 1) % SOLUTION_LENGTH;
             }
-
-            stay_matrix[contacts_id][*target_index].exchange(0);
         }
 
         short i = 1;
@@ -774,8 +771,7 @@ namespace device_functions {
             intermediate_target_y[contacts_id][*target_index].exchange(new_target_y);
             intermediate_target_z[contacts_id][*target_index].exchange(new_target_z);
 
-            if(i > 1)
-                stay_matrix[contacts_id][*target_index].exchange(0);
+            stay_matrix[contacts_id][*target_index].exchange(0);
 
             *target_index = (*target_index + 1) % SOLUTION_LENGTH;
 
@@ -784,15 +780,6 @@ namespace device_functions {
 
         stay_matrix[contacts_id][*target_index].exchange(stay);
         FLAMEGPU->template setVariable<unsigned short>(TARGET_INDEX, *target_index);
-
-        if (*target_index != old_target_index) {
-            unsigned short clean_idx = (*target_index + 1) % SOLUTION_LENGTH;
-            while (clean_idx != old_target_index) {
-                stay_matrix[contacts_id][clean_idx].exchange(0);
-                clean_idx = (clean_idx + 1) % SOLUTION_LENGTH;
-            }
-            stay_matrix[contacts_id][old_target_index].exchange(0);
-        }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending update_targets for agent with id %d\n", FLAMEGPU->environment.template getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->template getVariable<short>(CONTACTS_ID));
