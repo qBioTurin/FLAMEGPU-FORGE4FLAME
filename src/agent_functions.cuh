@@ -438,15 +438,13 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
                     FLAMEGPU->setVariable<short>(SOURCE_NODE, start_node);
                     FLAMEGPU->setVariable<short>(DESTINATION_NODE, event_node);
-                    FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY, event_time_random);
-
-                    // printf("[TEMP_DEBUG] Agent %d (type %d) is moving from node %d to event node %d\n", contacts_id, agent_type, start_node, event_node);
+                    FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, event_time_random);
 
                     room2door_logic(FLAMEGPU);
 
                     FLAMEGPU->setVariable<short>(SOURCE_NODE_EVENT, event_node);
                     FLAMEGPU->setVariable<short>(DESTINATION_NODE_EVENT, final_node);
-                    FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY_EVENT, final_stay);
+                    FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY_EVENT, final_stay);
 
                     FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 1);
                     FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, event_node);
@@ -659,7 +657,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
             FLAMEGPU->setVariable<short>(SOURCE_NODE, FLAMEGPU->getVariable<short>(SOURCE_NODE_EVENT));
             FLAMEGPU->setVariable<short>(DESTINATION_NODE, FLAMEGPU->getVariable<short>(DESTINATION_NODE_EVENT));
-            FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY, FLAMEGPU->getVariable<short>(DESTINATION_NODE_STAY_EVENT));
+            FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, FLAMEGPU->getVariable<int>(DESTINATION_NODE_STAY_EVENT));
 
             room2door_logic(FLAMEGPU);
 
@@ -667,7 +665,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
             FLAMEGPU->setVariable<short>(SOURCE_NODE_EVENT, -1);
             FLAMEGPU->setVariable<short>(DESTINATION_NODE_EVENT, -1);
-            FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY_EVENT, -1);
+            FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY_EVENT, -1);
         }
 
         if(!stay)
@@ -704,10 +702,12 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             const short start_node = coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]];
             const short start_node_type = FLAMEGPU->environment.getProperty<short, V>(NODE_TYPE, start_node);
 
-            if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM) {
+            if(!CHECK_IS_SPAWNROOM(start_node) && start_node_type != WAITINGROOM && !FLAMEGPU->getVariable<unsigned char>(SKIPPED)) {
                 --global_resources_counter[start_node];
                 --specific_resources_counter[agent_type][start_node];
             }
+
+            FLAMEGPU->setVariable<unsigned char>(SKIPPED, 0);
 
             if (FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 2 && !just_finished_event) {
                 FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
@@ -741,7 +741,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
                 FLAMEGPU->setVariable<short>(SOURCE_NODE, -1);
                 FLAMEGPU->setVariable<short>(DESTINATION_NODE, -1);
-                FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY, -1);
+                FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, -1);
                 FLAMEGPU->setVariable<short>(DESTINATION_NODE_OBJECT, -1);
             }
 
@@ -784,7 +784,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             if(destination_node != final_node){
                 FLAMEGPU->setVariable<short>(SOURCE_NODE, start_node);
                 FLAMEGPU->setVariable<short>(DESTINATION_NODE, final_node);
-                FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY, flow_stay);
+                FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, flow_stay);
 
                 room2door_logic(FLAMEGPU);
             }
@@ -792,7 +792,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 stay_matrix[contacts_id][target_index].exchange(flow_stay);
 
                 FLAMEGPU->setVariable<short>(SOURCE_NODE, start_node);
-                FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY, flow_stay);
+                FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, flow_stay);
             }
 
             FLAMEGPU->setVariable<char>(CAN_MOVE, 1);
@@ -900,13 +900,13 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
 
             FLAMEGPU->setVariable<short>(SOURCE_NODE, start_node);
             FLAMEGPU->setVariable<short>(DESTINATION_NODE, target_node);
-            FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY, support_stay);
+            FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, support_stay);
 
             room2door_logic(FLAMEGPU);
 
             FLAMEGPU->setVariable<short>(SOURCE_NODE_SUPPORT, support_node);
             FLAMEGPU->setVariable<short>(DESTINATION_NODE_SUPPORT, final_node);
-            FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY_SUPPORT, final_stay);
+            FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY_SUPPORT, final_stay);
 
             FLAMEGPU->setVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT, (unsigned short) (*interested_message).getVariable<int>(CONTACTS_ID));
         }
@@ -993,6 +993,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
 
                     FLAMEGPU->setVariable<short>(SOURCE_NODE, target_node);
                     FLAMEGPU->setVariable<short>(DESTINATION_NODE, target_node);
+                    FLAMEGPU->setVariable<unsigned char>(SKIPPED, 1);
                     FLAMEGPU->setVariable<unsigned char>(MOVEMENT_PHASE, DOOR2ROOM);
                 }
                 else{
@@ -1014,7 +1015,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
                         // printf("[TEMP_DEBUG] Agent with id %d, start_position: (%d, %d), final_position: (%d, %d)\n", contacts_id, start_position[0], start_position[1], final_position[0], final_position[1]);
 
                         a_star_matrix(FLAMEGPU, target_node, start_position, final_position, solution_x, solution_z);
-                        update_targets_coordinates(FLAMEGPU, target_node, solution_x, solution_z, &target_index, true, FLAMEGPU->getVariable<short>(DESTINATION_NODE_STAY_EVENT));
+                        update_targets_coordinates(FLAMEGPU, target_node, solution_x, solution_z, &target_index, true, FLAMEGPU->getVariable<int>(DESTINATION_NODE_STAY_EVENT));
 
                         auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
                         auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
@@ -1026,7 +1027,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
 
                         FLAMEGPU->setVariable<short>(SOURCE_NODE_EVENT, -1);
                         FLAMEGPU->setVariable<short>(DESTINATION_NODE_EVENT, -1);
-                        FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY_EVENT, -1);
+                        FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY_EVENT, -1);
                         
                         FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
                         FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
@@ -1167,13 +1168,13 @@ FLAMEGPU_AGENT_FUNCTION(supportAgent, MessageBucket, MessageNone) {
 
                 FLAMEGPU->setVariable<short>(SOURCE_NODE, FLAMEGPU->getVariable<short>(SOURCE_NODE_SUPPORT));
                 FLAMEGPU->setVariable<short>(DESTINATION_NODE, FLAMEGPU->getVariable<short>(DESTINATION_NODE_SUPPORT));
-                FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY, FLAMEGPU->getVariable<short>(DESTINATION_NODE_STAY_SUPPORT));
+                FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, FLAMEGPU->getVariable<int>(DESTINATION_NODE_STAY_SUPPORT));
 
                 room2door_logic(FLAMEGPU);
 
                 FLAMEGPU->setVariable<short>(SOURCE_NODE_SUPPORT, -1);
                 FLAMEGPU->setVariable<short>(DESTINATION_NODE_SUPPORT, -1);
-                FLAMEGPU->setVariable<short>(DESTINATION_NODE_STAY_SUPPORT, -1);
+                FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY_SUPPORT, -1);
             }
         }
     }

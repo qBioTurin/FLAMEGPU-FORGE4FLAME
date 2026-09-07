@@ -365,15 +365,15 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<unsigned short>(NEXT_INDEX);
     pedestrian_sm.newVariable<short>(SOURCE_NODE);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE);
-    pedestrian_sm.newVariable<short>(DESTINATION_NODE_STAY);
+    pedestrian_sm.newVariable<int>(DESTINATION_NODE_STAY);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_OBJECT);
     pedestrian_sm.newVariable<short>(SOURCE_NODE_EVENT, -1);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_EVENT, -1);
-    pedestrian_sm.newVariable<short>(DESTINATION_NODE_STAY_EVENT, -1);
+    pedestrian_sm.newVariable<int>(DESTINATION_NODE_STAY_EVENT, -1);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_OBJECT_EVENT, -1);
     pedestrian_sm.newVariable<short>(SOURCE_NODE_SUPPORT, -1);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_SUPPORT, -1);
-    pedestrian_sm.newVariable<short>(DESTINATION_NODE_STAY_SUPPORT, -1);
+    pedestrian_sm.newVariable<int>(DESTINATION_NODE_STAY_SUPPORT, -1);
     pedestrian_sm.newVariable<unsigned char>(MOVEMENT_PHASE);
 
     AgentFunctionDescription output_location = smm.Agent("pedestrian_submodule").newFunction("outputPedestrianLocationSub", outputPedestrianLocationSub);

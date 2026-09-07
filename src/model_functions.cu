@@ -413,15 +413,15 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
     pedestrian.newVariable<short>(SOURCE_NODE, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE, -1);
-    pedestrian.newVariable<short>(DESTINATION_NODE_STAY, -1);
+    pedestrian.newVariable<int>(DESTINATION_NODE_STAY, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_OBJECT, -1);
     pedestrian.newVariable<short>(SOURCE_NODE_EVENT, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_EVENT, -1);
-    pedestrian.newVariable<short>(DESTINATION_NODE_STAY_EVENT, -1);
+    pedestrian.newVariable<int>(DESTINATION_NODE_STAY_EVENT, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_OBJECT_EVENT, -1);
     pedestrian.newVariable<short>(SOURCE_NODE_SUPPORT, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_SUPPORT, -1);
-    pedestrian.newVariable<short>(DESTINATION_NODE_STAY_SUPPORT, -1);
+    pedestrian.newVariable<int>(DESTINATION_NODE_STAY_SUPPORT, -1);
     pedestrian.newVariable<short>(WAITING_ROOM_TIME);
     pedestrian.newVariable<unsigned char>(WAITING_ROOM_FLAG);
     pedestrian.newVariable<unsigned char>(ENTRY_EXIT_FLAG);
@@ -440,6 +440,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<int>(REQUEST_WAITING_TIME_BEHAVE, -1);
     pedestrian.newVariable<unsigned char>(RISK_CLASS);
     pedestrian.newVariable<unsigned char>(MOVEMENT_PHASE);
+    pedestrian.newVariable<unsigned char>(SKIPPED);
 
     define_pedestrian_functions(pedestrian);
 }
