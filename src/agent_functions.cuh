@@ -597,7 +597,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             return ALIVE;
         }
 
-        if(next_index == target_index && !stay && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 1 && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
+        // When the stay at the event room finishes, release event room resources and set returning state (IN_AN_EVENT = 2)
+        if(!stay && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 1 && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
             FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 2);
             just_finished_event = true;
             short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
@@ -605,6 +606,11 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             --specific_resources_counter[agent_type][event_node];
             FLAMEGPU->setVariable<short>(ACTUAL_EVENT_NODE, -1);
             FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW, -1);
+        }
+
+        // When returning agent reaches their original destination target, reset IN_AN_EVENT to 0 so future events can trigger
+        if(next_index == target_index && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 2){
+            FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 0);
         }
 
         if(!stay)
