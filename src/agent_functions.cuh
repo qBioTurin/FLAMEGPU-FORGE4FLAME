@@ -630,8 +630,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
         }
 
         if(next_index == target_index && !stay && FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT) == 1 && FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE) != -1){
-            FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 2);
-            just_finished_event = true;
             short event_node = FLAMEGPU->getVariable<short>(ACTUAL_EVENT_NODE);
 
             FLAMEGPU->setVariable<unsigned char>(IN_AN_EVENT, 2);

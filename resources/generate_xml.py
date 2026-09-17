@@ -1028,14 +1028,13 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 					if agent in v.resources.index:
 						specific_resources[ID][v.id] = v.resources.loc[agent, 0]
 
-		#Setting waiting room both for
-		#det flow
+		# Setting waiting room both for
 		for v in vlist:
 			if len(v.waitingroom_det) != 0:
 				for agent, ID in pedestrian_names.items():
 					if agent in v.waitingroom_det.index:
 						key = v.waitingroom_det.loc[agent, "Room"]
-						if key == "Same room":
+						if key == "Same room type":
 							alternative_resources_area_det[ID][v.id] = v.area
 							alternative_resources_type_det[ID][v.id] = v.type.value
 						elif key == "Skip room":
@@ -1051,7 +1050,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 				for agent, ID in pedestrian_names.items():
 					if agent in v.waitingroom_rand.index:
 						key = v.waitingroom_rand.loc[agent, "Room"]
-						if key == "Same room":
+						if key == "Same room type":
 							alternative_resources_area_rand[ID][v.id] = v.area
 							alternative_resources_type_rand[ID][v.id] = v.type.value
 						elif key == "Skip room":
