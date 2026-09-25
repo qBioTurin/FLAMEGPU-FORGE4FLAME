@@ -459,27 +459,59 @@ namespace host_functions {
 
                         Mess msg;
                         zmq_recv(zmq_responder, &msg, sizeof(msg), 0);
-                        int epigraph_val = msg.hospitalized;
+                        int epigraph_val_hospitalized = msg.hospitalized;
+                        vector<int> hospitalizedID;
+                        vector<float> deaths;
+                        vector<int> rejectedID;
                         printf("Received number hospitalized %d and day... %d\n", msg.hospitalized, msg.day);
 
                         int remaining_covid = (covid_total_capacity - covid_current_occupation > 0) ? (covid_total_capacity - covid_current_occupation) : 0;
-
                         int rejected = 0;
-                        if (epigraph_val > remaining_covid) {
-                            printf("Notification: COVID-19 ward is full.\n");
-                            int overflow = epigraph_val - remaining_covid;
-                            int remaining_gm = (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation) > 0) ? (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation)) : 0;
-                            if (overflow > remaining_gm) {
-                                rejected = overflow - remaining_gm;
-                                printf("Notification: General Medicine ward is also full. %d COVID-19 patients rejected.\n", rejected);
-                                int total_rejected = FLAMEGPU->environment.getProperty<int>(TOTAL_REJECTED);
-                                total_rejected += rejected;
-                                FLAMEGPU->environment.setProperty<int>(TOTAL_REJECTED, total_rejected);
+
+                        if(epigraph_val_hospitalized > 0){
+                            hospitalizedID.resize(epigraph_val_hospitalized);
+                            deaths.resize(epigraph_val_hospitalized);
+                            zmq_recv(zmq_responder, hospitalizedID.data(), hospitalizedID.size() * sizeof(int), 0);
+                            zmq_recv(zmq_responder, deaths.data(), deaths.size () * sizeof(float), 0);
+                            printf("array ricevuti, %d %f primi elementi\n", hospitalizedID[0], deaths[0]);
+
+                            if (epigraph_val_hospitalized > remaining_covid) {
+                                printf("Notification: COVID-19 ward is full.\n");
+                                int overflow = epigraph_val_hospitalized - remaining_covid;
+                                int remaining_gm = (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation) > 0) ? (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation)) : 0;
+                                if (overflow > remaining_gm) {
+                                    rejected = overflow - remaining_gm;
+                                    printf("Notification: General Medicine ward is also full. %d COVID-19 patients rejected.\n", rejected);
+                                    int total_rejected = FLAMEGPU->environment.getProperty<int>(TOTAL_REJECTED);
+                                    total_rejected += rejected;
+                                    FLAMEGPU->environment.setProperty<int>(TOTAL_REJECTED, total_rejected);
+                                }
                             }
                         }
                         printf("Sending rejected to epigraph\n");
                         zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
-                        random_agent = epigraph_val - rejected;
+                        if(rejected > 0){
+                            rejectedID.resize(rejected);
+                            for (int i = 0; i < rejected; i++) {
+
+                                int last_idx = hospitalizedID.size() - 1 - i;
+                                int j = rand() % (last_idx + 1);
+
+
+                                std::swap(hospitalizedID[j], hospitalizedID[last_idx]);
+                                std::swap(deaths[j], deaths[last_idx]);
+
+                                rejectedID[i] = hospitalizedID[last_idx];
+
+                            }
+                            zmq_send(zmq_responder, rejectedID.data(), rejectedID.size() * sizeof(int), 0);
+
+                            // take the percentage of deaht only of the admitted
+                            deaths.resize(deaths.size() - rejected);
+                            hospitalizedID.resize(hospitalizedID.size() - rejected);
+
+                            }
+                        random_agent = epigraph_val_hospitalized - rejected;
                     } else {
                         random_agent = (unsigned short) cuda_host_rng(FLAMEGPU, HOST_RATE_DISTR_IDX, (int) env_rate_distr[i][week_day][slot], (float) env_rate_distr_firstparam[i][week_day][slot], (float) env_rate_distr_secondparam[i][week_day][slot], true);
                     }
@@ -721,10 +753,10 @@ namespace host_functions {
             }
 
             // --- Epigraph Hospitalized Integration for Subsequent Days ---
-            int num_hospitalized;
+            int epigraph_val_hospitalized;
             Mess msg;
             zmq_recv(zmq_responder, &msg, sizeof(msg), 0);
-            num_hospitalized = msg.hospitalized;                                                                                                                                                                                          //send hospitalized global to flame
+            epigraph_val_hospitalized = msg.hospitalized;                                                                                                                                                                                          //send hospitalized global to flame
             printf("Received number hospitalized %d and day... %d\n", msg.hospitalized, msg.day);
             int total_generated = 0;
 
@@ -739,6 +771,9 @@ namespace host_functions {
                     int covid_in_gm_capacity = 0;
                     int covid_in_gm_occupation = 0;
                     unsigned short random_agent = 0;
+                    vector<int> hospitalizedID;
+                    vector<float> deaths;
+                    vector<int> rejectedID;
 
                     if (i == PATIENT_COVID19) {
                         for (int v = 0; v < V; v++) {
@@ -760,10 +795,17 @@ namespace host_functions {
                         }
                         int remaining_covid = (covid_total_capacity - covid_current_occupation > 0) ? (covid_total_capacity - covid_current_occupation) : 0;
 
+                        if(epigraph_val_hospitalized > 0){
+                            hospitalizedID.resize(epigraph_val_hospitalized);
+                            deaths.resize(epigraph_val_hospitalized);
+                            zmq_recv(zmq_responder, hospitalizedID.data(), hospitalizedID.size() * sizeof(int), 0);
+                            zmq_recv(zmq_responder, deaths.data(), deaths.size () * sizeof(float), 0);
+                            printf("array ricevuti, %d %f primi elementi\n", hospitalizedID[0], deaths[0]);
+                        }
                         int rejected = 0;
-                        if (num_hospitalized > remaining_covid) {
+                        if (epigraph_val_hospitalized > remaining_covid) {
                             printf("Notification: COVID-19 ward is full.\n");
-                            int overflow = num_hospitalized - remaining_covid;
+                            int overflow = epigraph_val_hospitalized - remaining_covid;
                             int remaining_gm = (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation) > 0) ? (gm_total_capacity - (gm_current_occupation + covid_in_gm_occupation)) : 0;
                             if (overflow > remaining_gm) {
                                 rejected = overflow - remaining_gm;
@@ -775,10 +817,26 @@ namespace host_functions {
                         }
                         printf("Sending rejected to epigraph\n");
                         zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
-                        random_agent = num_hospitalized - rejected;
+                        if(rejected > 0){
+                            rejectedID.resize(rejected);
+                            for (int i = 0; i < rejected; i++) {
 
-                        int admitted_to_covid = (num_hospitalized > remaining_covid) ? remaining_covid : num_hospitalized;
-                        int admitted_to_gm = (num_hospitalized > remaining_covid) ? (num_hospitalized - remaining_covid - rejected) : 0;
+                                int last_idx = hospitalizedID.size() - 1 - i;
+                                int j = rand() % (last_idx + 1);
+
+                                std::swap(hospitalizedID[j], hospitalizedID[last_idx]);
+                                std::swap(deaths[j], deaths[last_idx]);
+
+                                rejectedID[i] = hospitalizedID[last_idx];
+                            }
+                            zmq_send(zmq_responder, rejectedID.data(), rejectedID.size() * sizeof(int), 0);
+                        }
+                        random_agent = epigraph_val_hospitalized - rejected;
+                        deaths.resize(deaths.size() - rejected);
+                        hospitalizedID.resize(hospitalizedID.size() - rejected);
+
+                        int admitted_to_covid = (epigraph_val_hospitalized > remaining_covid) ? remaining_covid : epigraph_val_hospitalized;
+                        int admitted_to_gm = (epigraph_val_hospitalized > remaining_covid) ? (epigraph_val_hospitalized - remaining_covid - rejected) : 0;
                         int post_covid_current_occupation = covid_current_occupation + admitted_to_covid;
                         int post_covid_in_gm_occupation = covid_in_gm_occupation + admitted_to_gm;
                         float post_saturation = (covid_total_capacity > 0) ? ((float)post_covid_current_occupation / covid_total_capacity * 100.0f) : 0.0f;
@@ -873,7 +931,7 @@ namespace host_functions {
 
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("Epigraph hospitalized on Day %d: %d. Total daily rate agents generated (after adjustments): %d\n", day, num_hospitalized, total_generated);
+            printf("Epigraph hospitalized on Day %d: %d. Total daily rate agents generated (after adjustments): %d\n", day, epigraph_val_hospitalized, total_generated);
 #endif
 
             FLAMEGPU->environment.setProperty<int>(NEXT_CONTACTS_ID, contacts_id);
