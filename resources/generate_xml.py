@@ -834,7 +834,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 								weight = times / np.float64(steps_in_a_minute)
 
 							if "hour" in unit_measure:
-								weight = times / (np.float64(steps_in_a_minute) * np.float64(steps_in_a_minute))
+								weight = times / (np.float64(steps_in_a_minute) * np.float64(steps_in_a_hour))
 
 							if "day" in unit_measure:
 								weight = times / np.float64(exit_time - entry_time)
