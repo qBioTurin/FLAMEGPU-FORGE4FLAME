@@ -512,7 +512,6 @@ namespace host_functions {
                             }
                         }
                         epigraph_log("Sending rejected to epigraph\n");
-                        zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
                         if(rejected > 0){
                             rejectedID.resize(rejected);
                             for (int i = 0; i < rejected; i++) {
@@ -527,12 +526,16 @@ namespace host_functions {
                                 rejectedID[i] = hospitalizedID[last_idx];
 
                             }
-                            zmq_send(zmq_responder, rejectedID.data(), rejectedID.size() * sizeof(int), 0);
+
+                            zmq_send(zmq_responder, rejectedID.data(), rejectedID.size() * sizeof(int), ZMQ_SNDMORE);
+                            zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
 
                             // take the percentage of deaht only of the admitted
                             deaths.resize(deaths.size() - rejected);
                             hospitalizedID.resize(hospitalizedID.size() - rejected);
 
+                            } else {
+                            zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
                             }
                         random_agent = epigraph_val_hospitalized - rejected;
                     } else {
@@ -823,7 +826,7 @@ namespace host_functions {
                             deaths.resize(epigraph_val_hospitalized);
                             zmq_recv(zmq_responder, hospitalizedID.data(), hospitalizedID.size() * sizeof(int), 0);
                             zmq_recv(zmq_responder, deaths.data(), deaths.size () * sizeof(float), 0);
-                            epigraph_log("array ricevuti, %d %d primi elementi\n", hospitalizedID[0], deaths[0]);
+                            epigraph_log("array ricevuti, %d %f primi elementi\n", hospitalizedID[0], deaths[0]);
                         }
                         int rejected = 0;
                         if (epigraph_val_hospitalized > remaining_covid) {
@@ -839,7 +842,6 @@ namespace host_functions {
                             }
                         }
                         epigraph_log("Sending rejected to epigraph\n");
-                        zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
                         if(rejected > 0){
                             rejectedID.resize(rejected);
                             for (int i = 0; i < rejected; i++) {
@@ -852,7 +854,10 @@ namespace host_functions {
 
                                 rejectedID[i] = hospitalizedID[last_idx];
                             }
+                            zmq_send(zmq_responder, &rejected, sizeof(rejected), ZMQ_SNDMORE);
                             zmq_send(zmq_responder, rejectedID.data(), rejectedID.size() * sizeof(int), 0);
+                        } else {
+                            zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
                         }
                         random_agent = epigraph_val_hospitalized - rejected;
                         deaths.resize(deaths.size() - rejected);
