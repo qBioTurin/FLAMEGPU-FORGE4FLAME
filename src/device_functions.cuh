@@ -750,7 +750,7 @@ namespace device_functions {
             intermediate_target_y[contacts_id][*target_index].exchange(new_target_y);
             intermediate_target_z[contacts_id][*target_index].exchange(new_target_z);
 
-            if(i > 1)
+            if(clean || i > 1)
                 stay_matrix[contacts_id][*target_index].exchange(0);
 
             *target_index = (*target_index + 1) % SOLUTION_LENGTH;
