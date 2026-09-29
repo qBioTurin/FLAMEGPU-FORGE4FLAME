@@ -123,10 +123,10 @@ void visualise_rooms(visualiser::ModelVis& vis){
         {
             visualiser::AgentVis room_agt = vis.addAgent(room_type);
             // Position vars are named x, y, z; so they are used by default
-            if(room_type != FILLINGROOM_AGENT_STRING)
-                room_agt.setModel("resources/f4f/obj/room.obj");
-            else
-                room_agt.setModel("resources/f4f/obj/fillingroom.obj");
+            // if(room_type != FILLINGROOM_AGENT_STRING)
+            room_agt.setModel("resources/f4f/obj/room.obj");
+            // else
+            //     room_agt.setModel("resources/f4f/obj/fillingroom.obj");
             
             room_agt.setModelScale(1.0f, 1.0f, 1.0f);
 
@@ -466,9 +466,10 @@ void define_room(ModelDescription& model){
             room.newVariable<int>(COLOR_ID, 0);
             room.newVariable<float>(VOLUME, 0.0f);
             room.newVariable<float>(QUANTA_CONCENTRATION, 0.0f);
-            room.newVariable<unsigned short>(X_CENTER, 0);
-            room.newVariable<unsigned short>(Y_CENTER, 0);
-            room.newVariable<unsigned short>(Z_CENTER, 0);
+            room.newVariable<int>(GRAPH_NODE, 0);
+            // room.newVariable<unsigned short>(X_CENTER, 0);
+            // room.newVariable<unsigned short>(Y_CENTER, 0);
+            // room.newVariable<unsigned short>(Z_CENTER, 0);
             
             define_room_functions(room, room_type);
         }

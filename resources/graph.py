@@ -12,8 +12,10 @@ from collections import deque
 first_vertex_id = 0
 
 class Coordinates:
-    def __init__(self, x, y, z, nw, se) -> None:
+    def __init__(self, x, y, z, center_x, center_z, nw, se) -> None:
         self.__point = np.array([x, y, z])
+        self.__center_x = center_x
+        self.__center_z = center_z
         self.__nw_corder = nw
         self.__se_corner = se
     
@@ -34,6 +36,14 @@ class Coordinates:
         return self.__point[2]
     
     @property
+    def center_x(self):
+        return self.__center_x
+
+    @property
+    def center_z(self):
+        return self.__center_z
+
+    @property
     def northwest(self):
         return self.__nw_corder
     
@@ -51,10 +61,6 @@ class Vertex:
 
     def __init__(self, vid: int, 
                  coordinates: Coordinates,
-                 x: int,
-                 z: int,
-                 x_door: int,
-                 z_door: int,
                  typeof: MapEncoding,
                  area: int,
                  yaw: float,
@@ -63,14 +69,15 @@ class Vertex:
                  resources: pd.DataFrame,
                  waitingroom_det: pd.DataFrame,
                  waitingroom_rand: pd.DataFrame,
-                 room_matrix: np.ndarray,
-                 objects: pd.DataFrame) -> None:
+                 room_matrix_withmask: np.ndarray,
+                 room_matrix_withoutmask: np.ndarray,
+                 objects: pd.DataFrame,
+                 doorsINcanvas: pd.DataFrame,
+                 graph_id: int,
+                 room_container_id: int,
+                 door_container_id: int) -> None:
         self.id = vid 
         self.coords = coordinates
-        self.x = x
-        self.z = z
-        self.x_door = x_door
-        self.z_door = z_door
         self.type = typeof
         self.area = area
         self.yaw = yaw
@@ -79,8 +86,13 @@ class Vertex:
         self.resources = resources
         self.waitingroom_det = waitingroom_det
         self.waitingroom_rand = waitingroom_rand
-        self.room_matrix = room_matrix
+        self.room_matrix_withmask = room_matrix_withmask
+        self.room_matrix_withoutmask = room_matrix_withoutmask
         self.objects = objects
+        self.doorsINcanvas = doorsINcanvas
+        self.graph_id = graph_id
+        self.room_container_id = room_container_id
+        self.door_container_id = door_container_id
 
     def __str__(self):
         return f"{self.id} {MapEncoding.to_str(self.type)} {int(self.coords.x)} {int(self.coords.y)} {int(self.coords.z)}"
@@ -135,10 +147,10 @@ class SpatialGraph:
             if vtype not in [MapEncoding.CORRIDOR, MapEncoding.INSIDEROOM]:
                 self.vertices[vtype] = []
 
-    def add_vertex(self, x_value: int, y_value: int, z_value: int, x: int, z: int, x_door: int, z_door: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame, room_matrix: np.ndarray, objects: pd.DataFrame):
+    def add_vertex(self, x: int, y: int, z: int, center_x: int, center_z: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame, room_matrix_withmask: np.ndarray, room_matrix_withoutmask: np.ndarray, objects: pd.DataFrame, doorsINcanvas: pd.DataFrame, graph_id: int, room_container_id: int, door_container_id: int):
         global first_vertex_id
 
-        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x_value, y_value, z_value, northwest, southeast), x, z, x_door, z_door, vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand, room_matrix, objects))
+        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x, y, z, center_x, center_z, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand, room_matrix_withmask, room_matrix_withoutmask, objects, doorsINcanvas, graph_id, room_container_id, door_container_id))
         self.__first_vid = self.__first_vid + 1
         first_vertex_id = first_vertex_id + 1
 
@@ -210,11 +222,43 @@ class SpatialGraph:
     def __check_middle_values(self, path, matrix):
         if len(path) <= 2:
             return True
-        
-        middle = path[1:-1]
-        ref = next((matrix[x][z] for (z, x) in middle if matrix[x][z] != MapEncoding.to_value("DOOR") and matrix[x][z] != MapEncoding.to_value("CPOINT")), None)
-        return all(matrix[x][z] == ref or matrix[x][z] == MapEncoding.to_value("DOOR") or matrix[x][z] == MapEncoding.to_value("CPOINT") for (z, x) in middle)
 
+        rows = len(matrix)
+        cols = len(matrix[0])
+
+        for x, z in path:
+            if not (0 <= x < cols and 0 <= z < rows):
+                return False
+
+            value = matrix[z][x]
+
+            # Only 0 and 2 are allowed
+            if value not in (0, 2, 3):
+                return False
+
+            # 0 is always allowed
+            if value in (0, 3):
+                continue
+
+            # value == 2: exactly 3 of 4 neighbors must be 0
+            neighbors = [
+                (x - 1, z),
+                (x + 1, z),
+                (x, z - 1),
+                (x, z + 1)
+            ]
+
+            zero_or_two_neighbors = sum(
+                0 <= nx < cols
+                and 0 <= nz < rows
+                and matrix[nz][nx] == 0 or matrix[nz][nx] == 2
+                for nx, nz in neighbors
+            )
+
+            if zero_or_two_neighbors != 3:
+                return False
+
+        return True
 
     def __match_doors(self, type1: MapEncoding, type2: MapEncoding) -> List[GraphEdge]:
         """ Build edges between two vertices v1 and v2 s.t. type(v1) = type_v1 and type(v2) = type_v2
@@ -241,28 +285,29 @@ class SpatialGraph:
         return edge_list
 
     def __check_vertex_compatibility_doors(self, v1: Vertex, v2: Vertex) -> bool:
-        """ Check if two vertices are on the same line (either horizontal or vertical) and there are no wall between them """
+        """ Check if the door is in the same room container as the door considered (belongs to it) """
 
-        matches = self.__match_vertex(v1, v2) # v1.coords.vec == v2.coords.vec
-        if any(matches):
-            if matches[0]: # v1.x == v2.x:
-                return self.__check_line(v1.coords.z, v2.coords.z, x = v1.coords.x)
-            elif matches[2]: # v1.z == v2.z:
-                return self.__check_line(v1.coords.x, v2.coords.x, z = v1.coords.z)
+        return v1.door_container_id == v2.door_container_id
+        # matches = self.__match_vertex(v1, v2) # v1.coords.vec == v2.coords.vec
+        # if any(matches):
+        #     if matches[0]: # v1.x == v2.x:
+        #         return self.__check_line(v1.coords.z, v2.coords.z, x = v1.coords.x)
+        #     elif matches[2]: # v1.z == v2.z:
+        #         return self.__check_line(v1.coords.x, v2.coords.x, z = v1.coords.z)
 
-        return False
+        # return False
 
-    def __match_vertex(self, v1: Vertex, v2: Vertex) -> bool:
-        return abs(v1.coords.vec - v2.coords.vec) == 0
+    # def __match_vertex(self, v1: Vertex, v2: Vertex) -> bool:
+    #     return abs(v1.coords.vec - v2.coords.vec) == 0
 
-    def __check_line(self, lb, ub, x=None, z=None) -> bool:
-        """Check if there are no obstacles between two aligned points (allowing value 2)"""
-        assert x is not None or z is not None
-        u, v = (lb, ub) if lb < ub else (ub, lb)
+    # def __check_line(self, lb, ub, x=None, z=None) -> bool:
+    #     """Check if there are no obstacles between two aligned points (allowing value 2)"""
+    #     assert x is not None or z is not None
+    #     u, v = (lb, ub) if lb < ub else (ub, lb)
 
-        data = self.matrix[int(z), int(u):int(v)] if z is not None else self.matrix[int(u):int(v), int(x)]
+    #     data = self.matrix[int(z), int(u):int(v)] if z is not None else self.matrix[int(u):int(v), int(x)]
 
-        return np.all((data > 0) | (data == 2))
+    #     return np.all((data > 0) | (data == 2))
 
 
     def __check_vertex_compatibility(self, v1: Vertex, v2: Vertex) -> bool:
