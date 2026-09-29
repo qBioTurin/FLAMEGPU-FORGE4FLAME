@@ -32,13 +32,13 @@ FLAMEGPU_AGENT_FUNCTION_CONDITION(initCondition) {
 */
 FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning CUDAInit for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning CUDAInit for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     // CUDA initialization
     if(!FLAMEGPU->getVariable<unsigned short>(CUDA_INITIALIZED)){
         auto cuda_rng_offsets_pedestrian = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION>(CUDA_RNG_OFFSETS_PEDESTRIAN);
 
-        curand_init((unsigned long long) FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getVariable<short>(CONTACTS_ID)+1, (unsigned int) cuda_rng_offsets_pedestrian[FLAMEGPU->getVariable<short>(CONTACTS_ID)], &cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)][FLAMEGPU->getVariable<short>(CONTACTS_ID)]);
+        curand_init((unsigned long long) FLAMEGPU->environment.getProperty<unsigned int>(SEED), FLAMEGPU->getVariable<int>(CONTACTS_ID)+1, (unsigned int) cuda_rng_offsets_pedestrian[FLAMEGPU->getVariable<int>(CONTACTS_ID)], &cuda_pedestrian_states[FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX)][FLAMEGPU->getVariable<int>(CONTACTS_ID)]);
         FLAMEGPU->setVariable<unsigned short>(CUDA_INITIALIZED, 1);
     }
 
@@ -68,7 +68,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
 
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning CUDAInit for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning CUDAInit for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
 
     return ALIVE;
@@ -76,12 +76,12 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
 
  FLAMEGPU_AGENT_FUNCTION(CUDAContagionScreening, MessageBucket, MessageNone) {
  #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning CUDAContagionScreening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning CUDAContagionScreening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     int disease_state = FLAMEGPU->getVariable<int>(DISEASE_STATE);
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
 
 
     // Contagion processes
@@ -161,7 +161,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
         const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
 
         if(quarantine > 0){
-           // printf("beh qua sono i tamponi in quarantena ma in quarantena non ho nessuno indi... %d\n", FLAMEGPU->template getVariable<short>(CONTACTS_ID));
+           // printf("beh qua sono i tamponi in quarantena ma in quarantena non ho nessuno indi... %d\n", FLAMEGPU->template getVariable<int>(CONTACTS_ID));
             int swab_steps = -1;
             if((int) env_quarantine_swab_days_distr[day-1][agent_type][risk_class] != NO_SWAB){
                 if(FLAMEGPU->getVariable<int>(SWAB_STEPS) == 0)
@@ -179,7 +179,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
 #endif
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending CUDAContagionScreening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending CUDAContagionScreening for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -187,7 +187,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
 
 FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending CUDAEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending CUDAEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
 
     int disease_state = FLAMEGPU->getVariable<int>(DISEASE_STATE);
@@ -205,14 +205,14 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
 
     FLAMEGPU->setVariable<int>(SKIP_FLOW, 0);
 
-    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
-    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
-    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
+    const int currently_supported = FLAMEGPU->getVariable<int>(CURRENTLY_SUPPORTED);
+    const int on_the_way_to_support = FLAMEGPU->getVariable<int>(ON_THE_WAY_TO_SUPPORT);
+    const int requested_support = FLAMEGPU->getVariable<int>(REQUESTED_SUPPORT);
     const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
     const int agent_subtype = FLAMEGPU->getVariable<int>(AGENT_SUBTYPE);
     const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
@@ -235,11 +235,11 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     if(requested_support == -1 && on_the_way_to_support != -1 && currently_supported == -1){
         // Send a message to it after reaching it
         if((unsigned int) stay_matrix[contacts_id][next_index]){
-            FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, on_the_way_to_support);
-            FLAMEGPU->setVariable<short>(ON_THE_WAY_TO_SUPPORT, -1);
+            FLAMEGPU->setVariable<int>(CURRENTLY_SUPPORTED, on_the_way_to_support);
+            FLAMEGPU->setVariable<int>(ON_THE_WAY_TO_SUPPORT, -1);
 
             // Send message
-            FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
+            FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -1);
             FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
             FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
@@ -252,7 +252,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                 stay_matrix[contacts_id][next_index].exchange(0);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending CUDAEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
             FLAMEGPU->setVariable<int>(SKIP_FLOW, 1);
 
@@ -268,7 +268,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             stay_matrix[contacts_id][target_index].exchange(stay_final);
         }
 
-        FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
+        FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
         FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, FLAMEGPU->getVariable<int>(REQUEST_ID));
         FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
         FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
@@ -285,7 +285,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     if((requested_support != -1 && currently_supported == -1 && on_the_way_to_support == -1) ||
        (requested_support == -1 && on_the_way_to_support == -1 && currently_supported != -1)){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending CUDAEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending CUDAEvents for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
         FLAMEGPU->setVariable<int>(SKIP_FLOW, 1);
 
@@ -402,7 +402,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, previous_separation, type_room_event, area_room_event, &available);
                     }
                     // Search another room of the alternative
-                    else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != env_events_area){
+                    else if(alternative_resources_type_rand[agent_type][event_node] != type_room_event || alternative_resources_area_rand[agent_type][event_node] != area_room_event){
                         event_node = findFreeRoomForEventOfTypeAndArea(FLAMEGPU, 0, alternative_resources_type_rand[agent_type][event_node], alternative_resources_area_rand[agent_type][event_node], &available);
                     }
                 }
@@ -440,7 +440,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                     // Handle new support, if necessary
                     if(agentlinked != -1){
                         if(requested_support == -1){
-                            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
+                            FLAMEGPU->setVariable<int>(REQUESTED_SUPPORT, agentlinked);
                             FLAMEGPU->setVariable<short>(REQUESTED_TYPE, agentlinked_type);
 
                             auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
@@ -453,7 +453,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                             FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, env_events_agentlinked_timeout[agent_type][event]);
                             FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME_BEHAVE, env_events_agentlinked_timeout_behave[agent_type][event]);
 
-                            FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
+                            FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
                             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
                             FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
                             FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
@@ -473,9 +473,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
                     }
 
                     if(agent_pos[1] == INVISIBLE_AGENT_Y)
-                        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
+                        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
                     else
-                        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+                        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
 
                     FLAMEGPU->setVariable<int>(CAN_MOVE, 1);
                     FLAMEGPU->setVariable<int>(SKIP_FLOW, 1);
@@ -486,7 +486,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
             }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAEvent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending CUDAEvent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
             FLAMEGPU->setVariable<int>(CAN_MOVE, 1);
             return ALIVE;
@@ -494,7 +494,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAEvent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending CUDAEvent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
 
     return ALIVE;
@@ -503,7 +503,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
 
 FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     // If the agent has started an event
     if (FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
@@ -519,7 +519,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     unsigned int stay = (unsigned int) stay_matrix[contacts_id][next_index];
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
@@ -553,7 +553,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-                printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+                printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
                 return DEAD;
             }
@@ -567,7 +567,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
             FLAMEGPU->setVariable<unsigned short>(JUST_EXITED_FROM_QUARANTINE, 0);
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
 
             return ALIVE;
@@ -592,7 +592,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             exit_from_quarantine(FLAMEGPU);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-            printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+            printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
             return ALIVE;
         }
@@ -615,9 +615,9 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 
         if(!stay)
             if(agent_pos[1] == INVISIBLE_AGENT_Y)
-                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
+                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,-1\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], INVISIBLE_AGENT_Y, agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE));
             else
-                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+                printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
 
         if(!stay && next_index == target_index && (int) env_flow[agent_type][agent_subtype][week_day_flow][flow_index] != -1){
             if(!FLAMEGPU->getVariable<unsigned char>(INIT)){
@@ -661,7 +661,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                     counters[COUNTERS_KILLED_AGENTS_WITH_RATE]++;
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-                printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+                printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
                 return DEAD;
             }
@@ -679,7 +679,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
             int agentlinked = (int) env_flow_agentlinked[agent_type][agent_subtype][week_day_flow][flow_index + 1];
             int agentlinked_type = (int) env_flow_agentlinked_type[agent_type][agent_subtype][week_day_flow][flow_index + 1];
             if(agentlinked != -1 && (available && FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == OUTSIDE_WAITING_ROOM)){
-                FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, agentlinked);
+                FLAMEGPU->setVariable<int>(REQUESTED_SUPPORT, agentlinked);
                 FLAMEGPU->setVariable<short>(REQUESTED_TYPE, agentlinked_type);
 
                 auto support_requests = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, 2>(SUPPORT_REQUESTS);
@@ -692,7 +692,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, env_flow_agentlinked_timeout[agent_type][agent_subtype][week_day_flow][flow_index + 1]);
                 FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME_BEHAVE, env_flow_agentlinked_timeout_behave[agent_type][agent_subtype][week_day_flow][flow_index + 1]);
 
-                FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
+                FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
                 FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, (int) request_id);
                 FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
                 FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
@@ -713,7 +713,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
         }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
         return ALIVE;
     }
@@ -725,7 +725,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-        printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+        printf("5,%d,%d,Ending CUDAMovePedestrian for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -740,16 +740,16 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
 */
 FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Starting handleSupportRequest for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Starting handleSupportRequest for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
-    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
-    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
-    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
+    const int currently_supported = FLAMEGPU->getVariable<int>(CURRENTLY_SUPPORTED);
+    const int on_the_way_to_support = FLAMEGPU->getVariable<int>(ON_THE_WAY_TO_SUPPORT);
+    const int requested_support = FLAMEGPU->getVariable<int>(REQUESTED_SUPPORT);
     const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     const unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
 
@@ -781,7 +781,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
 
             if(!found){
 #if defined(DEBUG) && !defined(ENSEMBLE)
-                printf("5,%d,%d,Ending handleSupportRequest for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+                printf("5,%d,%d,Ending handleSupportRequest for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
                 return ALIVE;
             }
@@ -808,7 +808,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
             update_targets(FLAMEGPU, solution_start_support, &target_index, true, support_stay);
             update_targets(FLAMEGPU, solution_support_final, &target_index, false, final_stay);
 
-            FLAMEGPU->setVariable<unsigned short>(ON_THE_WAY_TO_SUPPORT, (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
+            FLAMEGPU->setVariable<int>(ON_THE_WAY_TO_SUPPORT, (*interested_message).getVariable<int>(CONTACTS_ID));
         }
         else{
             --support_requests[agent_type][1];
@@ -816,7 +816,7 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending handleSupportRequest for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending handleSupportRequest for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -831,15 +831,15 @@ FLAMEGPU_AGENT_FUNCTION(handleSupportRequest, MessageBucket, MessageNone) {
 */
 FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Starting waitingForSupport for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Starting waitingForSupport for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
-    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
-    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
-    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int currently_supported = FLAMEGPU->getVariable<int>(CURRENTLY_SUPPORTED);
+    const int on_the_way_to_support = FLAMEGPU->getVariable<int>(ON_THE_WAY_TO_SUPPORT);
+    const int requested_support = FLAMEGPU->getVariable<int>(REQUESTED_SUPPORT);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
@@ -859,7 +859,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
 
             // The agent received the start message from the support agent
             if(interested_message != messages.end()){
-                FLAMEGPU->setVariable<unsigned short>(CURRENTLY_SUPPORTED, (unsigned short) (*interested_message).getVariable<short>(CONTACTS_ID));
+                FLAMEGPU->setVariable<int>(CURRENTLY_SUPPORTED, (*interested_message).getVariable<int>(CONTACTS_ID));
 
                 FLAMEGPU->setVariable<int>(REQUEST_ID, -1);
                 FLAMEGPU->setVariable<int>(REQUEST_TIME, -1);
@@ -874,7 +874,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
                 FLAMEGPU->setVariable<int>(REQUEST_ID, -1);
                 FLAMEGPU->setVariable<int>(REQUEST_TIME, -1);
                 FLAMEGPU->setVariable<short>(REQUEST_NODE, -1);
-                FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, -1);
+                FLAMEGPU->setVariable<int>(REQUESTED_SUPPORT, -1);
                 FLAMEGPU->setVariable<short>(REQUESTED_TYPE, -1);
 
                 FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, -1);
@@ -918,7 +918,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending waitingForSupport for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending waitingForSupport for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -933,17 +933,17 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
 */
 FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Starting beingSupported for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Starting beingSupported for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
-    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
-    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
-    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
+    const int currently_supported = FLAMEGPU->getVariable<int>(CURRENTLY_SUPPORTED);
+    const int on_the_way_to_support = FLAMEGPU->getVariable<int>(ON_THE_WAY_TO_SUPPORT);
+    const int requested_support = FLAMEGPU->getVariable<int>(REQUESTED_SUPPORT);
     const short requested_type = FLAMEGPU->getVariable<short>(REQUESTED_TYPE);
     const short requested_support_event_with_flow = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT_EVENT_WITH_FLOW);
     const short support_time_event = FLAMEGPU->getVariable<short>(SUPPORT_TIME_EVENT);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
 
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
@@ -955,7 +955,7 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
     if(requested_support != -1 && currently_supported != -1 && on_the_way_to_support == -1 && quarantine == 0 &&
       (requested_support_event_with_flow == -1 || (in_an_event && requested_support_event_with_flow != -1) || support_time_event != -1)){
         // Send message with updated position to the support agent
-        FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
+        FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, NUMBER_OF_AGENTS_TYPES + contacts_id);
         FLAMEGPU->message_out.setVariable<float>(X, agent_pos[0]);
         FLAMEGPU->message_out.setVariable<float>(Y, agent_pos[1]);
         FLAMEGPU->message_out.setVariable<float>(Z, agent_pos[2]);
@@ -964,9 +964,9 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
             // The support is finished
             FLAMEGPU->message_out.setVariable<int>(REQUEST_ID, -2);
 
-            FLAMEGPU->setVariable<short>(REQUESTED_SUPPORT, -1);
+            FLAMEGPU->setVariable<int>(REQUESTED_SUPPORT, -1);
             FLAMEGPU->setVariable<short>(REQUESTED_TYPE, -1);
-            FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
+            FLAMEGPU->setVariable<int>(CURRENTLY_SUPPORTED, -1);
         }
         else{
             // The support continues
@@ -986,7 +986,7 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending beingSupported for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending beingSupported for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -1001,16 +1001,16 @@ FLAMEGPU_AGENT_FUNCTION(beingSupported, MessageNone, MessageBucket) {
 */
 FLAMEGPU_AGENT_FUNCTION(supportAgent, MessageBucket, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Starting supportAgent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Starting supportAgent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
-    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
-    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
-    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
+    const int currently_supported = FLAMEGPU->getVariable<int>(CURRENTLY_SUPPORTED);
+    const int on_the_way_to_support = FLAMEGPU->getVariable<int>(ON_THE_WAY_TO_SUPPORT);
+    const int requested_support = FLAMEGPU->getVariable<int>(REQUESTED_SUPPORT);
     const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     const unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
 
@@ -1041,13 +1041,13 @@ FLAMEGPU_AGENT_FUNCTION(supportAgent, MessageBucket, MessageNone) {
             }
 
             if((*interested_message).getVariable<int>(REQUEST_ID) == -2){
-                FLAMEGPU->setVariable<short>(CURRENTLY_SUPPORTED, -1);
+                FLAMEGPU->setVariable<int>(CURRENTLY_SUPPORTED, -1);
             }
         }
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending supportAgent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending supportAgent for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -1062,7 +1062,7 @@ FLAMEGPU_AGENT_FUNCTION(supportAgent, MessageBucket, MessageNone) {
 */
 FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocation, MessageNone, MessageSpatial3D) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning outputPedestrianLocation for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning outputPedestrianLocation for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     if (FLAMEGPU->getVariable<int>(SKIP_FLOW)) {
         return ALIVE;
@@ -1074,7 +1074,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocation, MessageNone, MessageSpatial3D)
     const short node = coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]];
 
     FLAMEGPU->message_out.setVariable<id_t>(ID, FLAMEGPU->getID());
-    FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, FLAMEGPU->getVariable<int>(CONTACTS_ID));
     FLAMEGPU->message_out.setVariable<int>(DISEASE_STATE, FLAMEGPU->getVariable<int>(DISEASE_STATE));
     FLAMEGPU->message_out.setVariable<int>(AGENT_TYPE, FLAMEGPU->getVariable<int>(AGENT_TYPE));
     FLAMEGPU->message_out.setVariable<short>(GRAPH_NODE, node);
@@ -1085,7 +1085,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocation, MessageNone, MessageSpatial3D)
     );
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending outputPedestrianLocation for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending outputPedestrianLocation for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -1093,7 +1093,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocation, MessageNone, MessageSpatial3D)
 
 FLAMEGPU_AGENT_FUNCTION(printMoveAgentInfo, MessageNone, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning printMoveAgentInfo for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning printMoveAgentInfo for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     const float agent_pos[3] = {FLAMEGPU->getVariable<float>(X), FLAMEGPU->getVariable<float>(Y), FLAMEGPU->getVariable<float>(Z)};
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
@@ -1118,11 +1118,11 @@ FLAMEGPU_AGENT_FUNCTION(printMoveAgentInfo, MessageNone, MessageNone) {
     }
 
     if(!compare_double(agent_pos[0], prev_x, 1e-10) || !compare_double(agent_pos[1], prev_y, 1e-10) || !compare_double(agent_pos[2], prev_z, 1e-10)){
-        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
+        printf("0,%d,%d,%d,%d,%f,%f,%f,%d,%d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID), FLAMEGPU->getVariable<int>(AGENT_TYPE), agent_pos[0], agent_pos[1], agent_pos[2], FLAMEGPU->getVariable<int>(DISEASE_STATE), (short) coord2index[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]]);
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending printMoveAgentInfo for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending printMoveAgentInfo for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -1137,7 +1137,7 @@ FLAMEGPU_AGENT_FUNCTION(printMoveAgentInfo, MessageNone, MessageNone) {
 */
 FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationAerosol, MessageNone, MessageBucket) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning outputPedestrianLocationAerosol for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning outputPedestrianLocationAerosol for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
     auto env_activity_type = FLAMEGPU->environment.getMacroProperty<float, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_ACTIVITY_TYPE);
@@ -1153,9 +1153,9 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationAerosol, MessageNone, MessageBuc
     const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
     const unsigned short week_day_flow = FLAMEGPU->getVariable<unsigned short>(WEEK_DAY_FLOW);
     const unsigned char in_an_event = FLAMEGPU->getVariable<unsigned char>(IN_AN_EVENT);
-    const short currently_supported = FLAMEGPU->getVariable<short>(CURRENTLY_SUPPORTED);
-    const short on_the_way_to_support = FLAMEGPU->getVariable<short>(ON_THE_WAY_TO_SUPPORT);
-    const short requested_support = FLAMEGPU->getVariable<short>(REQUESTED_SUPPORT);
+    const int currently_supported = FLAMEGPU->getVariable<int>(CURRENTLY_SUPPORTED);
+    const int on_the_way_to_support = FLAMEGPU->getVariable<int>(ON_THE_WAY_TO_SUPPORT);
+    const int requested_support = FLAMEGPU->getVariable<int>(REQUESTED_SUPPORT);
 
     int event_id = FLAMEGPU->getVariable<int>(EVENT_ID);
 
@@ -1174,7 +1174,7 @@ FLAMEGPU_AGENT_FUNCTION(outputPedestrianLocationAerosol, MessageNone, MessageBuc
     FLAMEGPU->message_out.setKey(node);
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending outputPedestrianLocationAerosol for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending outputPedestrianLocationAerosol for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -1325,7 +1325,7 @@ FLAMEGPU_AGENT_FUNCTION(outputRoomLocation, MessageNone, MessageBucket) {
 */
 FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, MessageNone) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning updateQuantaInhaledAndContacts for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning updateQuantaInhaledAndContacts for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     // Update quanta inhaled
     auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
@@ -1367,12 +1367,12 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
     }
 
     // Update contacts
-    const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+    const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
     const int agent_type = FLAMEGPU->getVariable<int>(AGENT_TYPE);
 
     for (const auto& message: FLAMEGPU->message_in(agent_pos[0], agent_pos[1], agent_pos[2])) {
         const float near_agent_pos[3] = {message.getVariable<float>(X), message.getVariable<float>(Y), message.getVariable<float>(Z)};
-        const short message_contacts_id = message.getVariable<short>(CONTACTS_ID);
+        const int message_contacts_id = message.getVariable<int>(CONTACTS_ID);
         const int message_agent_type = message.getVariable<int>(AGENT_TYPE);
 
         float x_diff = near_agent_pos[0] - agent_pos[0];
@@ -1395,7 +1395,7 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending updateQuantaInhaledAndContacts for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending updateQuantaInhaledAndContacts for room with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -1411,12 +1411,12 @@ FLAMEGPU_AGENT_FUNCTION(updateQuantaInhaledAndContacts, MessageSpatial3D, Messag
 
 FLAMEGPU_AGENT_FUNCTION(waitingInWaitingRoom, MessageBucket, MessageBucket) {
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Beginning waitingInWaitingRoom for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Beginning waitingInWaitingRoom for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     if(FLAMEGPU->getVariable<int>(WAITING_ROOM_FLAG) == INSIDE_WAITING_ROOM){
         auto stay_matrix = FLAMEGPU->environment.getMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
 
-        const short contacts_id = FLAMEGPU->getVariable<short>(CONTACTS_ID);
+        const int contacts_id = FLAMEGPU->getVariable<int>(CONTACTS_ID);
 
         //if the agent is not already exiting from waiting room
         if(FLAMEGPU->getVariable<int>(ENTRY_EXIT_FLAG) == STAYING_IN_WAITING_ROOM){
@@ -1437,7 +1437,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingInWaitingRoom, MessageBucket, MessageBucket) {
                 unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
                 stay_matrix[contacts_id][target_index].exchange(2);
 
-                FLAMEGPU->message_out.setVariable<short>(CONTACTS_ID, FLAMEGPU->getVariable<short>(CONTACTS_ID));
+                FLAMEGPU->message_out.setVariable<int>(CONTACTS_ID, FLAMEGPU->getVariable<int>(CONTACTS_ID));
                 FLAMEGPU->message_out.setVariable<int>(AGENT_TYPE, FLAMEGPU->getVariable<int>(AGENT_TYPE));
                 FLAMEGPU->message_out.setVariable<int>(WAITING_ROOM_TIME, time_waiting);
 
@@ -1455,7 +1455,7 @@ FLAMEGPU_AGENT_FUNCTION(waitingInWaitingRoom, MessageBucket, MessageBucket) {
     }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
-    printf("5,%d,%d,Ending waitingInWaitingRoom for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<short>(CONTACTS_ID));
+    printf("5,%d,%d,Ending waitingInWaitingRoom for agent with id %d\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter(), FLAMEGPU->getVariable<int>(CONTACTS_ID));
 #endif
     return ALIVE;
 }
@@ -1493,13 +1493,13 @@ FLAMEGPU_AGENT_FUNCTION(handlingQueueinWaitingRoom, MessageBucket, MessageBucket
             if(get_global_resource <= global_resources[node]){
 
                 int max_time_waiting = INT_MIN;
-                short contacts_id = -1;
+                int contacts_id = -1;
 
                 for(const auto& message: FLAMEGPU->message_in(node)){
 
                     if(message.getVariable<int>(WAITING_ROOM_TIME) > max_time_waiting && message.getVariable<int>(AGENT_TYPE) == agent_type){
                         max_time_waiting = message.getVariable<int>(WAITING_ROOM_TIME);
-                        contacts_id = message.getVariable<short>(CONTACTS_ID);
+                        contacts_id = message.getVariable<int>(CONTACTS_ID);
                     }
                 }
                 FLAMEGPU->message_out.setVariable<short>(GRAPH_NODE, node);
