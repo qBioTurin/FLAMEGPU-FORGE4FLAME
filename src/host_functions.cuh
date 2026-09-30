@@ -527,9 +527,8 @@ namespace host_functions {
                                 rejectedID[i] = hospitalizedID[last_idx];
 
                             }
-
-                            zmq_send(zmq_responder, rejectedID.data(), rejectedID.size() * sizeof(int), ZMQ_SNDMORE);
-                            zmq_send(zmq_responder, &rejected, sizeof(rejected), 0);
+                            zmq_send(zmq_responder, &rejected, sizeof(rejected), ZMQ_SNDMORE);
+                            zmq_send(zmq_responder, rejectedID.data(), rejectedID.size() * sizeof(int), 0);
 
                             // take the percentage of deaht only of the admitted
                             deaths.resize(deaths.size() - rejected);
