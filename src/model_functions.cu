@@ -158,7 +158,7 @@ void define_environment(ModelDescription& model){
     env.newProperty<unsigned short, V>(INDEX2COORDZ, {0});
     env.newProperty<short, V>(NODE_TYPE, {0});
     env.newProperty<float, V>(NODE_YAW, {0.0f});
-    env.newProperty<float, V>(NODE_X, {0.0f});
+    env.newProperty<float, V>(NODE_X, {2.0f});
     env.newProperty<float, V>(NODE_Z, {0.0f});
     env.newProperty<float, V>(NODE_LENGTH, {0.0f});
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
@@ -196,7 +196,6 @@ void define_environment(ModelDescription& model){
     env.newProperty<float, RISK_CLASSES + 1>(VIRUS_SEVERITY, {0.0f});
 
     env.newProperty<unsigned short>(RUN_IDX, 0);
-
 
     env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
@@ -253,16 +252,16 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_FIRSTPARAM);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_SWAB_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
-    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SENSITIVITY);
-    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_SPECIFICITY);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
-    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
-    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_TYPE);
-    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_ROOM_FOR_QUARANTINE_AREA);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_DAYS_DISTR);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_DAYS_DISTR_FIRSTPARAM);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_DAYS_DISTR_SECONDPARAM);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_SENSITIVITY);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_SPECIFICITY);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_DAYS_DISTR);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_DAYS_DISTR_FIRSTPARAM);
+    env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_QUARANTINE_SWAB_DAYS_DISTR_SECONDPARAM);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_ROOM_FOR_QUARANTINE_TYPE);
+    env.newMacroProperty<int, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1, RISK_CLASSES>(ENV_ROOM_FOR_QUARANTINE_AREA);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_FIRST);
     env.newMacroProperty<float, DAYS, NUMBER_OF_AGENTS_TYPES_PLUS_1>(ENV_EXTERNAL_SCREENING_SECOND);
 

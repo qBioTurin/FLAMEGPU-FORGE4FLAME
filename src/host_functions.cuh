@@ -401,6 +401,7 @@ namespace host_functions {
             unsigned short infection_days = 0;
             unsigned short fatality_days = 0;
             if(new_agent_state == SUSCEPTIBLE && find(selectedIndices.begin(), selectedIndices.end(), contacts_id) != selectedIndices.end()){
+           //     printf("qua ci entri? agente generato infetto con classe di rischio %d\n",risk_class);
                 new_agent_state = INFECTED;
                 infection_days = (unsigned short) max(0.0f, round(cuda_host_rng(FLAMEGPU, HOST_INFECTION_DISTR_IDX, FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES + 1>(MEAN_INFECTION_DAYS_DISTR, risk_class), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2), (float) FLAMEGPU->environment.getProperty<unsigned short, RISK_CLASSES * 2 + 1>(MEAN_INFECTION_DAYS, risk_class * 2 + 1), false)));
 #ifdef FATALITY
@@ -776,6 +777,7 @@ namespace host_functions {
             float risk_classes_cdf[RISK_CLASSES + 1] = {0.0f};
             for(unsigned short i = 0; i < RISK_CLASSES; i++){
                 risk_classes_cdf[i] = FLAMEGPU->environment.getProperty<float, RISK_CLASSES + 1>(PROPORTIONS, i);
+           //     printf("prende bene le proporzioni? %f\n", risk_classes_cdf[i]);
             }
 
             // --- Epigraph Hospitalized Integration for Subsequent Days ---
@@ -893,6 +895,7 @@ namespace host_functions {
                         float z = cuda_host_rng(FLAMEGPU, HOST_OFFSET_Z_DISTR_IDX, UNIFORM, FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM), FLAMEGPU->environment.getProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, (spawnroom_id * 2) + 2 * NUM_SPAWNROOM + 1), false);
 
                         unsigned short risk_class = findLeftmostIndex(cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false), risk_classes_cdf, RISK_CLASSES + 1);
+                    //    printf("che cazzo di risk class è %d\n", risk_class);
 
                         if (i == PATIENT_COVID19) {
                             new_agent_state = INFECTED;

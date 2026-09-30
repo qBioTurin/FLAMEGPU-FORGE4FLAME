@@ -161,7 +161,7 @@ FLAMEGPU_AGENT_FUNCTION(CUDAInit, MessageBucket, MessageNone) {
         const unsigned short quarantine = FLAMEGPU->getVariable<unsigned short>(QUARANTINE);
 
         if(quarantine > 0){
-           // printf("beh qua sono i tamponi in quarantena ma in quarantena non ho nessuno indi... %d\n", FLAMEGPU->template getVariable<int>(CONTACTS_ID));
+           // printf("beh qua sono i tamponi in quarantena ma in quarantena non ho nessuno indi... %d\n", FLAMEGPU->template getVariable<short>(CONTACTS_ID));
             int swab_steps = -1;
             if((int) env_quarantine_swab_days_distr[day-1][agent_type][risk_class] != NO_SWAB){
                 if(FLAMEGPU->getVariable<int>(SWAB_STEPS) == 0)
