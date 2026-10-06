@@ -75,7 +75,8 @@ class Vertex:
                  doorsINcanvas: pd.DataFrame,
                  graph_id: int,
                  room_container_id: int,
-                 door_container_id: int) -> None:
+                 door_container_id: int,
+                 f4f_id: int) -> None:
         self.id = vid 
         self.coords = coordinates
         self.type = typeof
@@ -93,6 +94,7 @@ class Vertex:
         self.graph_id = graph_id
         self.room_container_id = room_container_id
         self.door_container_id = door_container_id
+        self.f4f_id = f4f_id
 
     def __str__(self):
         return f"{self.id} {MapEncoding.to_str(self.type)} {int(self.coords.x)} {int(self.coords.y)} {int(self.coords.z)}"
@@ -147,10 +149,10 @@ class SpatialGraph:
             if vtype not in [MapEncoding.CORRIDOR, MapEncoding.INSIDEROOM]:
                 self.vertices[vtype] = []
 
-    def add_vertex(self, x: int, y: int, z: int, center_x: int, center_z: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame, room_matrix_withmask: np.ndarray, room_matrix_withoutmask: np.ndarray, objects: pd.DataFrame, doorsINcanvas: pd.DataFrame, graph_id: int, room_container_id: int, door_container_id: int):
+    def add_vertex(self, x: int, y: int, z: int, center_x: int, center_z: int, northwest: list, southeast: list, vtype: MapEncoding, area: int, yaw: float, length: int, width: int, resources: pd.DataFrame, waitingrooms_det: pd.DataFrame, waitingrooms_rand: pd.DataFrame, room_matrix_withmask: np.ndarray, room_matrix_withoutmask: np.ndarray, objects: pd.DataFrame, doorsINcanvas: pd.DataFrame, graph_id: int, room_container_id: int, door_container_id: int, f4f_id: int):
         global first_vertex_id
 
-        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x, y, z, center_x, center_z, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand, room_matrix_withmask, room_matrix_withoutmask, objects, doorsINcanvas, graph_id, room_container_id, door_container_id))
+        self.vertices[vtype].append(Vertex(self.__first_vid, Coordinates(x, y, z, center_x, center_z, northwest, southeast), vtype, area, yaw, length, width, resources, waitingrooms_det, waitingrooms_rand, room_matrix_withmask, room_matrix_withoutmask, objects, doorsINcanvas, graph_id, room_container_id, door_container_id, f4f_id))
         self.__first_vid = self.__first_vid + 1
         first_vertex_id = first_vertex_id + 1
 
@@ -288,27 +290,6 @@ class SpatialGraph:
         """ Check if the door is in the same room container as the door considered (belongs to it) """
 
         return v1.door_container_id == v2.door_container_id
-        # matches = self.__match_vertex(v1, v2) # v1.coords.vec == v2.coords.vec
-        # if any(matches):
-        #     if matches[0]: # v1.x == v2.x:
-        #         return self.__check_line(v1.coords.z, v2.coords.z, x = v1.coords.x)
-        #     elif matches[2]: # v1.z == v2.z:
-        #         return self.__check_line(v1.coords.x, v2.coords.x, z = v1.coords.z)
-
-        # return False
-
-    # def __match_vertex(self, v1: Vertex, v2: Vertex) -> bool:
-    #     return abs(v1.coords.vec - v2.coords.vec) == 0
-
-    # def __check_line(self, lb, ub, x=None, z=None) -> bool:
-    #     """Check if there are no obstacles between two aligned points (allowing value 2)"""
-    #     assert x is not None or z is not None
-    #     u, v = (lb, ub) if lb < ub else (ub, lb)
-
-    #     data = self.matrix[int(z), int(u):int(v)] if z is not None else self.matrix[int(u):int(v), int(x)]
-
-    #     return np.all((data > 0) | (data == 2))
-
 
     def __check_vertex_compatibility(self, v1: Vertex, v2: Vertex) -> bool:
         """ Check if two vertices are on the same line (either horizontal or vertical) and there are no wall between them """

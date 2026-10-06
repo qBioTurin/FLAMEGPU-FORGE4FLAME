@@ -156,11 +156,11 @@ void define_environment(ModelDescription& model){
     env.newProperty<unsigned short, V>(INDEX2COORDY, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDZ, {0});
     env.newProperty<short, V>(NODE_TYPE, {0});
-    env.newProperty<float, V>(NODE_YAW, {0.0f});
     env.newProperty<float, V>(NODE_X, {0.0f});
     env.newProperty<float, V>(NODE_Z, {0.0f});
     env.newProperty<float, V>(NODE_LENGTH, {0.0f});
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
+    env.newProperty<short, V>(ROOMS_CONTAINER, {0});
     env.newProperty<float, NUM_SPAWNROOM * 4>(EXTERN_RANGES, {0.0f});
     env.newProperty<unsigned short, NUM_SPAWNROOM + 1>(ENTRANCE_Y_COORDS, {0});
     env.newProperty<int>(NEXT_CONTACTS_ID, 0);
@@ -195,10 +195,12 @@ void define_environment(ModelDescription& model){
     env.newProperty<unsigned short>(RUN_IDX, 0);
     
 
-    env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+    env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHINTERNAL);
+    env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHOUTINTERNAL);
     
-    env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
-    env.newMacroProperty<float, V, 4>(ROOM_DOORS_POSITION);
+    env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES_WITHMASK);
+    env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES_WITHOUTMASK);
+    env.newMacroProperty<float, V, MAX_DOORS, 4>(ROOM_DOORS_POSITION);
     env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
@@ -213,6 +215,7 @@ void define_environment(ModelDescription& model){
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
+    env.newMacroProperty<int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(PATH);
 
     env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW);
     env.newMacroProperty<short, NUMBER_OF_AGENTS_TYPES, NUMBER_OF_AGENTS_SUBTYPES, DAYS_IN_A_WEEK, FLOW_LENGTH>(ENV_FLOW_AREA);
@@ -412,15 +415,21 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<short>(EVENT_ID);
     pedestrian.newVariable<short>(ACTUAL_EVENT_NODE, -1);
     pedestrian.newVariable<short>(SOURCE_NODE, -1);
+    pedestrian.newVariable<short>(SOURCE_CONTAINER_NODE, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE, -1);
+    pedestrian.newVariable<short>(DESTINATION_CONTAINER_NODE, -1);
     pedestrian.newVariable<int>(DESTINATION_NODE_STAY, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_OBJECT, -1);
     pedestrian.newVariable<short>(SOURCE_NODE_EVENT, -1);
+    pedestrian.newVariable<short>(SOURCE_CONTAINER_NODE_EVENT, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_EVENT, -1);
+    pedestrian.newVariable<short>(DESTINATION_CONTAINER_NODE_EVENT, -1);
     pedestrian.newVariable<int>(DESTINATION_NODE_STAY_EVENT, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_OBJECT_EVENT, -1);
     pedestrian.newVariable<short>(SOURCE_NODE_SUPPORT, -1);
+    pedestrian.newVariable<short>(SOURCE_CONTAINER_NODE_SUPPORT, -1);
     pedestrian.newVariable<short>(DESTINATION_NODE_SUPPORT, -1);
+    pedestrian.newVariable<short>(DESTINATION_CONTAINER_NODE_SUPPORT, -1);
     pedestrian.newVariable<int>(DESTINATION_NODE_STAY_SUPPORT, -1);
     pedestrian.newVariable<short>(WAITING_ROOM_TIME);
     pedestrian.newVariable<unsigned char>(WAITING_ROOM_FLAG);
@@ -441,6 +450,7 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned char>(RISK_CLASS);
     pedestrian.newVariable<unsigned char>(MOVEMENT_PHASE);
     pedestrian.newVariable<unsigned char>(SKIPPED);
+    pedestrian.newVariable<unsigned int>(PATH_INDEX);
 
     define_pedestrian_functions(pedestrian);
 }
@@ -466,10 +476,10 @@ void define_room(ModelDescription& model){
             room.newVariable<int>(COLOR_ID, 0);
             room.newVariable<float>(VOLUME, 0.0f);
             room.newVariable<float>(QUANTA_CONCENTRATION, 0.0f);
-            room.newVariable<int>(GRAPH_NODE, 0);
-            // room.newVariable<unsigned short>(X_CENTER, 0);
-            // room.newVariable<unsigned short>(Y_CENTER, 0);
-            // room.newVariable<unsigned short>(Z_CENTER, 0);
+            room.newVariable<short>(GRAPH_NODE, 0);
+            room.newVariable<unsigned short>(X_CENTER, 0);
+            room.newVariable<unsigned short>(Y_CENTER, 0);
+            room.newVariable<unsigned short>(Z_CENTER, 0);
             
             define_room_functions(room, room_type);
         }

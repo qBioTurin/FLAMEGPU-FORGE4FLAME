@@ -168,7 +168,6 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
     auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
     auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     auto intermediate_target_z = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
-    auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
 
     unsigned char movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
@@ -207,9 +206,13 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
 
         if(next_index == target_index && stay == 0) {
             if(movement_phase == ROOM2DOOR){
-                room2room_logic(FLAMEGPU, agent_pos);
+                crossroom_logic(FLAMEGPU, agent_pos);
             }
-            else if(movement_phase == ROOM2ROOM){
+            
+            target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
+            movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
+
+            if(next_index == target_index && stay == 0 && movement_phase == CROSSROOM){
                 door2room_logic(FLAMEGPU, agent_pos);
             }
 
@@ -305,7 +308,8 @@ void define_environment_submodule(ModelDescription &smm) {
     env.newProperty<float, V>(NODE_Z, {0.0f});
     env.newProperty<float, V>(NODE_LENGTH, {0.0f});
     env.newProperty<float, V>(NODE_WIDTH, {0.0f});
-    env.newProperty<float, V>(NODE_YAW, {0.0f});
+    env.newProperty<short, V>(NODE_TYPE, {0});
+    env.newProperty<short, V>(ROOMS_CONTAINER, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDX, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDY, {0});
     env.newProperty<unsigned short, V>(INDEX2COORDZ, {0});
@@ -315,9 +319,12 @@ void define_environment_submodule(ModelDescription &smm) {
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
     env.newMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Z);
     env.newMacroProperty<unsigned int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(STAY);
-    env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
-    env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES);
-    env.newMacroProperty<float, V, 4>(ROOM_DOORS_POSITION);
+    env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHINTERNAL);
+    env.newMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHOUTINTERNAL);
+    env.newMacroProperty<int, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(PATH);
+    env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES_WITHMASK);
+    env.newMacroProperty<short, V, MAX_DIMENSION, MAX_DIMENSION>(ROOM_MATRICES_WITHOUTMASK);
+    env.newMacroProperty<float, V, MAX_DOORS, 4>(ROOM_DOORS_POSITION);
     env.newMacroProperty<short, V>(ROOMS_HAS_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_X_OBJECTS);
     env.newMacroProperty<float, V, MAX_OBJECTS+1>(ROOMS_Z_OBJECTS);
@@ -364,17 +371,24 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian_sm.newVariable<unsigned short>(NEXT_INDEX);
     pedestrian_sm.newVariable<short>(SOURCE_NODE);
+    pedestrian_sm.newVariable<short>(SOURCE_CONTAINER_NODE, -1);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE);
+    pedestrian_sm.newVariable<short>(DESTINATION_CONTAINER_NODE, -1);
     pedestrian_sm.newVariable<int>(DESTINATION_NODE_STAY);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_OBJECT);
     pedestrian_sm.newVariable<short>(SOURCE_NODE_EVENT, -1);
+    pedestrian_sm.newVariable<short>(SOURCE_CONTAINER_NODE_EVENT, -1);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_EVENT, -1);
+    pedestrian_sm.newVariable<short>(DESTINATION_CONTAINER_NODE_EVENT, -1);
     pedestrian_sm.newVariable<int>(DESTINATION_NODE_STAY_EVENT, -1);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_OBJECT_EVENT, -1);
     pedestrian_sm.newVariable<short>(SOURCE_NODE_SUPPORT, -1);
+    pedestrian_sm.newVariable<short>(SOURCE_CONTAINER_NODE_SUPPORT, -1);
     pedestrian_sm.newVariable<short>(DESTINATION_NODE_SUPPORT, -1);
+    pedestrian_sm.newVariable<short>(DESTINATION_CONTAINER_NODE_SUPPORT, -1);
     pedestrian_sm.newVariable<int>(DESTINATION_NODE_STAY_SUPPORT, -1);
     pedestrian_sm.newVariable<unsigned char>(MOVEMENT_PHASE);
+    pedestrian_sm.newVariable<unsigned int>(PATH_INDEX);
 
     AgentFunctionDescription output_location = smm.Agent("pedestrian_submodule").newFunction("outputPedestrianLocationSub", outputPedestrianLocationSub);
     output_location.setMessageOutput("location_submodule");
@@ -420,7 +434,7 @@ SubModelDescription create_smm(ModelDescription &model) {
     smm.SubEnvironment().mapProperty(NODE_Z, NODE_Z);
     smm.SubEnvironment().mapProperty(NODE_LENGTH, NODE_LENGTH);
     smm.SubEnvironment().mapProperty(NODE_WIDTH, NODE_WIDTH);
-    smm.SubEnvironment().mapProperty(NODE_YAW, NODE_YAW);
+    smm.SubEnvironment().mapProperty(NODE_TYPE, NODE_TYPE);
     smm.SubEnvironment().mapProperty(INDEX2COORDX, INDEX2COORDX);
     smm.SubEnvironment().mapProperty(INDEX2COORDY, INDEX2COORDY);
     smm.SubEnvironment().mapProperty(INDEX2COORDZ, INDEX2COORDZ);
@@ -430,8 +444,11 @@ SubModelDescription create_smm(ModelDescription &model) {
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_Y, INTERMEDIATE_TARGET_Y);
     smm.SubEnvironment().mapMacroProperty(INTERMEDIATE_TARGET_Z, INTERMEDIATE_TARGET_Z);
     smm.SubEnvironment().mapMacroProperty(STAY, STAY);
-    smm.SubEnvironment().mapMacroProperty(COORD2INDEX, COORD2INDEX);
-    smm.SubEnvironment().mapMacroProperty(ROOM_MATRICES, ROOM_MATRICES);
+    smm.SubEnvironment().mapMacroProperty(COORD2INDEX_WITHINTERNAL, COORD2INDEX_WITHINTERNAL);
+    smm.SubEnvironment().mapMacroProperty(COORD2INDEX_WITHOUTINTERNAL, COORD2INDEX_WITHOUTINTERNAL);
+    smm.SubEnvironment().mapMacroProperty(PATH, PATH);
+    smm.SubEnvironment().mapMacroProperty(ROOM_MATRICES_WITHMASK, ROOM_MATRICES_WITHMASK);
+    smm.SubEnvironment().mapMacroProperty(ROOM_MATRICES_WITHOUTMASK, ROOM_MATRICES_WITHOUTMASK);
     smm.SubEnvironment().mapMacroProperty(ROOM_DOORS_POSITION, ROOM_DOORS_POSITION);
     smm.SubEnvironment().mapMacroProperty(ROOMS_HAS_OBJECTS, ROOMS_HAS_OBJECTS);
     smm.SubEnvironment().mapMacroProperty(ROOMS_X_OBJECTS, ROOMS_X_OBJECTS);

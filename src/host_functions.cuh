@@ -128,9 +128,11 @@ namespace host_functions {
         printf("5,%d,%d,Beginning macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
         // Import a macro properties
-        FLAMEGPU->environment.importMacroProperty(COORD2INDEX, string("resources/macro_environment/") + COORD2INDEX + ".xml");
+        FLAMEGPU->environment.importMacroProperty(COORD2INDEX_WITHINTERNAL, string("resources/macro_environment/") + COORD2INDEX_WITHINTERNAL + ".xml");
+        FLAMEGPU->environment.importMacroProperty(COORD2INDEX_WITHOUTINTERNAL, string("resources/macro_environment/") + COORD2INDEX_WITHOUTINTERNAL + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOM_DOORS_POSITION, string("resources/macro_environment/") + ROOM_DOORS_POSITION + ".xml");
-        FLAMEGPU->environment.importMacroProperty(ROOM_MATRICES, string("resources/macro_environment/") + ROOM_MATRICES + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOM_MATRICES_WITHMASK, string("resources/macro_environment/") + ROOM_MATRICES_WITHMASK + ".xml");
+        FLAMEGPU->environment.importMacroProperty(ROOM_MATRICES_WITHOUTMASK, string("resources/macro_environment/") + ROOM_MATRICES_WITHOUTMASK + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOMS_HAS_OBJECTS, string("resources/macro_environment/") + ROOMS_HAS_OBJECTS + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOMS_X_OBJECTS, string("resources/macro_environment/") + ROOMS_X_OBJECTS + ".xml");
         FLAMEGPU->environment.importMacroProperty(ROOMS_Z_OBJECTS, string("resources/macro_environment/") + ROOMS_Z_OBJECTS + ".xml");
@@ -225,7 +227,8 @@ namespace host_functions {
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Beginning generate_agents for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif
-        auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+        auto coord2index_withinternal = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHINTERNAL);
+        auto coord2index_withoutinternal = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHOUTINTERNAL);
         auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
         auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
         auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
@@ -377,7 +380,8 @@ namespace host_functions {
             new_pedestrian.setVariable<int>(CONTACTS_ID, contacts_id);
             new_pedestrian.setVariable<short>(AGENT_TYPE, agent_type);
             new_pedestrian.setVariable<short>(AGENT_SUBTYPE, agent_subtype);
-            new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
+            new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index_withinternal[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
+            new_pedestrian.setVariable<short>(DESTINATION_CONTAINER_NODE, (short) coord2index_withoutinternal[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
             new_pedestrian.setVariable<unsigned char>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][agent_type]) ? (unsigned short) env_mask_type[0][agent_type]: NO_MASK);
             new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
             new_pedestrian.setVariable<unsigned short>(INFECTION_DAYS, infection_days);
@@ -449,7 +453,8 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned char>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[0][i]) ? (unsigned short) env_mask_type[0][i]: NO_MASK);
                         new_pedestrian.setVariable<short>(AGENT_TYPE, i);
                         new_pedestrian.setVariable<short>(AGENT_SUBTYPE, 0);
-                        new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
+                        new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index_withinternal[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
+                        new_pedestrian.setVariable<short>(DESTINATION_CONTAINER_NODE, (short) coord2index_withoutinternal[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                         new_pedestrian.setVariable<unsigned char>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned char>(SEVERITY, MINOR);
@@ -508,6 +513,7 @@ namespace host_functions {
             unsigned short x_center = (unsigned short) xagent.child("x_center").text().as_int();
             unsigned short y_center = (unsigned short) xagent.child("y_center").text().as_int();
             unsigned short z_center = (unsigned short) xagent.child("z_center").text().as_int();
+            short graph_node = (short) xagent.child("graph_node").text().as_int();
 
             HostAgentAPI room_type = FLAMEGPU->agent(name);
             HostNewAgentAPI new_room = room_type.newAgent();
@@ -527,6 +533,7 @@ namespace host_functions {
             new_room.setVariable<unsigned short>(X_CENTER, x_center);
             new_room.setVariable<unsigned short>(Y_CENTER, y_center);
             new_room.setVariable<unsigned short>(Z_CENTER, z_center);
+            new_room.setVariable<short>(GRAPH_NODE, graph_node);
         }
 
 #if defined(DEBUG) && !defined(ENSEMBLE)
@@ -604,7 +611,8 @@ namespace host_functions {
 
             int contacts_id = FLAMEGPU->environment.getProperty<int>(NEXT_CONTACTS_ID);
 
-            auto coord2index = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX);
+            auto coord2index_withinternal = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHINTERNAL);
+            auto coord2index_withoutinternal = FLAMEGPU->environment.getMacroProperty<short, FLOORS, ENV_DIM_Z, ENV_DIM_X>(COORD2INDEX_WITHOUTINTERNAL);
             auto spawnrooms_areas_ids = FLAMEGPU->environment.getMacroProperty<unsigned short, NUM_AREAS, NUM_SPAWNROOM + 1>(SPAWNROOMS_AREAS_IDS);
             auto intermediate_target_x = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_X);
             auto intermediate_target_y = FLAMEGPU->environment.getMacroProperty<float, TOTAL_AGENTS_ESTIMATION, SOLUTION_LENGTH>(INTERMEDIATE_TARGET_Y);
@@ -672,7 +680,8 @@ namespace host_functions {
                         new_pedestrian.setVariable<unsigned char>(MASK_TYPE, (cuda_host_rng(FLAMEGPU, HOST_UNIFORM_0_1_DISTR_IDX, UNIFORM, 0.0f, 1.0f, false) < (float) env_mask_fraction[day-1][i]) ? (unsigned short) env_mask_type[day-1][i]: NO_MASK);
                         new_pedestrian.setVariable<short>(AGENT_TYPE, i);
                         new_pedestrian.setVariable<short>(AGENT_SUBTYPE, 0);
-                        new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
+                        new_pedestrian.setVariable<short>(DESTINATION_NODE, (short) coord2index_withinternal[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
+                        new_pedestrian.setVariable<short>(DESTINATION_CONTAINER_NODE, (short) coord2index_withoutinternal[(unsigned short)(y/YOFFSET)][(unsigned short)z][(unsigned short)x]);
                         new_pedestrian.setVariable<unsigned short>(END_OF_IMMUNIZATION_DAYS, vaccination_end_of_immunization_days);
                         new_pedestrian.setVariable<unsigned char>(AGENT_WITH_A_RATE, AGENT_WITH_RATE);
                         new_pedestrian.setVariable<unsigned char>(SEVERITY, MINOR);
