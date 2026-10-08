@@ -490,6 +490,10 @@ void define_layers(ModelDescription& model){
     // Define the execution order
     {
         LayerDescription layer = model.newLayer();
+        layer.addAgentFunction("room", "outputRoomLocation");
+    }
+    {
+        LayerDescription layer = model.newLayer();
         layer.addAgentFunction(CUDAInit);
     }
     {
@@ -531,7 +535,6 @@ void define_layers(ModelDescription& model){
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(outputPedestrianLocationAerosol);
-        layer.addAgentFunction("room", "outputRoomLocation");
     }
     {
         LayerDescription layer = model.newLayer();

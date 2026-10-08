@@ -213,8 +213,6 @@ namespace host_functions {
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_PEDESTRIAN, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_PEDESTRIAN + ".xml");
         FLAMEGPU->environment.importMacroProperty(CUDA_RNG_OFFSETS_ROOM, string("resources/macro_environment/") + CUDA_RNG_OFFSETS_ROOM + ".xml");
 
-
-
 #if defined(DEBUG) && !defined(ENSEMBLE)
         printf("5,%d,%d,Ending macroPropertyIO for host\n", FLAMEGPU->environment.getProperty<unsigned short>(RUN_IDX), FLAMEGPU->getStepCounter());
 #endif

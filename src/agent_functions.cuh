@@ -347,7 +347,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
         int event = env_events_mapping[findLeftmostIndex(random, env_events_cdf, num_events)];
 
         if(event != -1) {
-            printf("[TEMP_DEBUG] Agent %d (type %d) is trying to execute event %d at step %d\n", contacts_id, agent_type, event, FLAMEGPU->getStepCounter());
             short event_node = -1;
             short type_room_event = (short) env_events[agent_type][event];
             short area_room_event = (short) env_events_area[agent_type][event];

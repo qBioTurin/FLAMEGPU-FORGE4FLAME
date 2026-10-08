@@ -3,7 +3,6 @@ import math
 import json
 import graph
 import os
-import os
 import numpy as np
 import pandas as pd
 from MapEncoding import *
