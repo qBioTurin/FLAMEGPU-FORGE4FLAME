@@ -1243,8 +1243,9 @@ namespace device_functions {
 
         // The agent is on a door and has to cross the room until another door (eventually shared with another room)
         if(FLAMEGPU->environment.template getProperty<short, V>(NODE_TYPE, current_node) == DOOR &&
-           FLAMEGPU->environment.template getProperty<short, V>(NODE_TYPE, next_2_node) == DOOR){ //&&
-        //    FLAMEGPU->environment.template getProperty<short, V>(NODE_TYPE, next_3_node) == DOOR){
+           FLAMEGPU->environment.template getProperty<short, V>(NODE_TYPE, next_2_node) == DOOR &&
+           (FLAMEGPU->environment.template getProperty<short, V>(NODE_TYPE, next_3_node) == DOOR ||
+            FLAMEGPU->environment.template getProperty<short, V>(NODE_TYPE, next_3_node) == CPOINT)){
             printf("[TEMP_DEBUG] Agent id %d is on a door and has to cross the room until another door shared with another room\n", contacts_id);
             start_position[0] = (unsigned short) (agent_pos[0] - FLAMEGPU->environment.template getProperty<float, V>(NODE_X, next_1_node) + 1.0f);
             start_position[1] = (unsigned short) (agent_pos[2] - FLAMEGPU->environment.template getProperty<float, V>(NODE_Z, next_1_node) + 1.0f);
