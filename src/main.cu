@@ -31,7 +31,7 @@ int main(int argc, const char ** argv) {
 #ifdef ENSEMBLE
     // Create a CUDAEnsemble
     CUDAEnsemble ensemble(model);
-    
+    cps
     // Handle any runtime args
     ensemble.initialise(argc, argv);
 

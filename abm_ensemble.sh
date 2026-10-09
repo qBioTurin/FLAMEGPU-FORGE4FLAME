@@ -142,7 +142,7 @@ PARALLEL_RUN="$(echo "$WHOLE_OUTPUT" | cut -d' ' -f2)"
 echo $SEED > results/$EXPERIMENT_DIR/seed.txt
 
 # Build the model
-bash build.sh -cps OFF -g $DEBUG -v OFF
+bash build.sh -g $DEBUG -v OFF
 
 if [ $ONLY_BUILD == "OFF" ];
 then

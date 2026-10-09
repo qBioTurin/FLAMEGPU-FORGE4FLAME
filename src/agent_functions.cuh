@@ -226,7 +226,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAEvents, MessageBucket, MessageBucket) {
     const unsigned char quarantine = FLAMEGPU->getVariable<unsigned char>(QUARANTINE);
     const unsigned char movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
     const unsigned short flow_index = FLAMEGPU->getVariable<unsigned short>(FLOW_INDEX);
-    // const float final_target[3] = {FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 0), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 1), FLAMEGPU->getVariable<float, 3>(FINAL_TARGET, 2)};
     
     unsigned short target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
     unsigned short next_index = FLAMEGPU->getVariable<unsigned short>(NEXT_INDEX);
@@ -689,10 +688,6 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 agent_pos[0] = x;
                 agent_pos[1] = y;
                 agent_pos[2] = z;
-
-                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 0, x);
-                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 1, y);
-                FLAMEGPU->setVariable<float, 3>(FINAL_TARGET, 2, z);
             }
 
             int flow_stay = 1;
@@ -788,8 +783,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 FLAMEGPU->setVariable<short>(DESTINATION_CONTAINER_NODE, FLAMEGPU->environment.getProperty<short, V>(ROOMS_CONTAINER, final_node));
                 FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, flow_stay);
 
-                // printf("[TEMP_DEBUG] start_node = %d, final_node = %d\n", start_node, final_node);
-                // printf("[TEMP_DEBUG] destination_node = %d, destination_container_node = %d\n", final_node, FLAMEGPU->environment.getProperty<short, V>(ROOMS_CONTAINER, final_node));
+                printf("[TEMP_DEBUG] start_node = %d, final_node = %d\n", start_node, final_node);
+                printf("[TEMP_DEBUG] destination_node = %d, destination_container_node = %d\n", final_node, FLAMEGPU->environment.getProperty<short, V>(ROOMS_CONTAINER, final_node));
 
                 room2door_logic(FLAMEGPU);
             }
@@ -988,7 +983,6 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
                 FLAMEGPU->setVariable<int>(REQUEST_WAITING_TIME, -1);
 
                 if(request_waiting_time_behave == SKIP_PIECE_OF_FLOW){
-                    // printf("[TEMP_DEBUG] Agent with id %d is skipping the flow because the support agent did not arrive in time\n", contacts_id);
                     const short target_node = coord2index_withinternal[(unsigned short)(agent_pos[1]/YOFFSET)][(unsigned short)agent_pos[2]][(unsigned short)agent_pos[0]];
 
                     short solution_x[SOLUTION_LENGTH] = {-1};
@@ -1008,7 +1002,6 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
                 }
                 else{
                     if(request_waiting_time_behave == SKIP_EVENT){
-                        // printf("[TEMP_DEBUG] Agent with id %d is skipping the event because the support agent did not arrive in time\n", contacts_id);
                         auto global_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, V>(GLOBAL_RESOURCES_COUNTER);
                         auto specific_resources_counter = FLAMEGPU->environment.getMacroProperty<unsigned int, NUMBER_OF_AGENTS_TYPES, V>(SPECIFIC_RESOURCES_COUNTER);
 
@@ -1021,8 +1014,6 @@ FLAMEGPU_AGENT_FUNCTION(waitingForSupport, MessageBucket, MessageNone) {
 
                         --global_resources_counter[FLAMEGPU->getVariable<short>(DESTINATION_NODE)];
                         --specific_resources_counter[agent_type][FLAMEGPU->getVariable<short>(DESTINATION_NODE)];
-
-                        // printf("[TEMP_DEBUG] Agent with id %d, start_position: (%d, %d), final_position: (%d, %d)\n", contacts_id, start_position[0], start_position[1], final_position[0], final_position[1]);
 
                         a_star_matrix(FLAMEGPU, target_node, start_position, final_position, solution_x, solution_z, false);
                         update_targets_coordinates(FLAMEGPU, target_node, solution_x, solution_z, &target_index, true, FLAMEGPU->getVariable<int>(DESTINATION_NODE_STAY_EVENT));

@@ -207,16 +207,14 @@ FLAMEGPU_AGENT_FUNCTION(move_agent_function, MessageNone, MessageNone) {
         if(next_index == target_index && stay == 0) {
             if(movement_phase == ROOM2DOOR){
                 crossroom_logic(FLAMEGPU, agent_pos);
+                target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
+                movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
             }
-            
-            target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
-            movement_phase = FLAMEGPU->getVariable<unsigned char>(MOVEMENT_PHASE);
 
             if(next_index == target_index && stay == 0 && movement_phase == CROSSROOM){
                 door2room_logic(FLAMEGPU, agent_pos);
+                target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
             }
-
-            target_index = FLAMEGPU->getVariable<unsigned short>(TARGET_INDEX);
         }
 
         if(next_index == target_index || stay > 0) {
@@ -365,7 +363,6 @@ void define_agent_submodule(ModelDescription &smm) {
     pedestrian_sm.newVariable<float>(STEER_Z);
     pedestrian_sm.newVariable<char>(CAN_MOVE);
     pedestrian_sm.newVariable<char>(SKIP_FLOW);
-    pedestrian_sm.newVariable<float, 3>(FINAL_TARGET);
     pedestrian_sm.newVariable<int>(CONTACTS_ID, -1);
     pedestrian_sm.newVariable<short>(AGENT_TYPE);
     pedestrian_sm.newVariable<unsigned short>(TARGET_INDEX);

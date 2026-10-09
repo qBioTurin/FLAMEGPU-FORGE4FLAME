@@ -386,7 +386,6 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<char>(CAN_MOVE);
     pedestrian.newVariable<char>(SKIP_FLOW);
     pedestrian.newVariable<float>(QUANTA_INHALED);
-    pedestrian.newVariable<float, 3>(FINAL_TARGET);
     pedestrian.newVariable<unsigned short>(NEXT_INDEX);
     pedestrian.newVariable<unsigned short>(TARGET_INDEX);
     pedestrian.newVariable<unsigned short>(FLOW_INDEX);
