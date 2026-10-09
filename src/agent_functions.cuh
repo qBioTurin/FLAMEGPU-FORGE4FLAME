@@ -783,8 +783,8 @@ FLAMEGPU_AGENT_FUNCTION(CUDAMovePedestrian, MessageBucket, MessageBucket) {
                 FLAMEGPU->setVariable<short>(DESTINATION_CONTAINER_NODE, FLAMEGPU->environment.getProperty<short, V>(ROOMS_CONTAINER, final_node));
                 FLAMEGPU->setVariable<int>(DESTINATION_NODE_STAY, flow_stay);
 
-                printf("[TEMP_DEBUG] start_node = %d, final_node = %d\n", start_node, final_node);
-                printf("[TEMP_DEBUG] destination_node = %d, destination_container_node = %d\n", final_node, FLAMEGPU->environment.getProperty<short, V>(ROOMS_CONTAINER, final_node));
+                // printf("[TEMP_DEBUG] start_node = %d, final_node = %d\n", start_node, final_node);
+                // printf("[TEMP_DEBUG] destination_node = %d, destination_container_node = %d\n", final_node, FLAMEGPU->environment.getProperty<short, V>(ROOMS_CONTAINER, final_node));
 
                 room2door_logic(FLAMEGPU);
             }
