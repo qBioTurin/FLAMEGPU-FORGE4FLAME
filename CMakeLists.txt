@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.18...3.25 FATAL_ERROR)
 
 # Optionaly set the version of flamegpu which should be used, ideally a tag (i.e. `v2.0.0-rc`) or branch name, or potentially a commit hash.
-set(FLAMEGPU_VERSION "master" CACHE STRING "FLAMEGPU/FLAMEGPU2 git branch or tag to use")
+set(FLAMEGPU_VERSION "fb8289433ebf3ba2f852973be725d8d0521b3872" CACHE STRING "FLAMEGPU/FLAMEGPU2 git branch or tag to use")
 # If the above version is a hash instead, also set FLAMEGPU_VERSION_ALLOW_HASH to ON
 # set(FLAMEGPU_VERSION_ALLOW_HASH "ON")
 
