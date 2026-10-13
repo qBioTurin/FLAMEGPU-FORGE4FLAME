@@ -12,22 +12,23 @@ using namespace host_functions;
 void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription CUDAInit_fn = pedestrian.newFunction("CUDAInit", CUDAInit);
     CUDAInit_fn.setMessageInput("room_location");
-    CUDAInit_fn.setMessageOutputOptional(true);
 
-    AgentFunctionDescription CUDAContagionScreening_fn = pedestrian.newFunction("CUDAContagionScreening", CUDAContagionScreening);
-    CUDAContagionScreening_fn.setMessageInput("room_location");
-    CUDAContagionScreening_fn.setMessageOutputOptional(true);
+    AgentFunctionDescription contagionScreening_fn = pedestrian.newFunction("contagionScreening", contagionScreening);
+    contagionScreening_fn.setMessageInput("room_location");
 
-    AgentFunctionDescription CUDAEvents_fn = pedestrian.newFunction("CUDAEvents", CUDAEvents);
-    CUDAEvents_fn.setMessageInput("room_location");
-    CUDAEvents_fn.setMessageOutput("link_message");
-    CUDAEvents_fn.setMessageOutputOptional(true);
+    AgentFunctionDescription swabAgent_fn = pedestrian.newFunction("swabAgent", swabAgent);
+    swabAgent_fn.setMessageInput("room_location");
 
-    AgentFunctionDescription CUDAMovePedestrian_fn = pedestrian.newFunction("CUDAMovePedestrian", CUDAMovePedestrian);
-    CUDAMovePedestrian_fn.setMessageInput("room_location");
-    CUDAMovePedestrian_fn.setMessageOutput("link_message");
-    CUDAMovePedestrian_fn.setMessageOutputOptional(true);
-    CUDAMovePedestrian_fn.setAllowAgentDeath(true);
+    AgentFunctionDescription events_fn = pedestrian.newFunction("events", events);
+    events_fn.setMessageInput("room_location");
+    events_fn.setMessageOutput("link_message");
+    events_fn.setMessageOutputOptional(true);
+
+    AgentFunctionDescription movePedestrian_fn = pedestrian.newFunction("movePedestrian", movePedestrian);
+    movePedestrian_fn.setMessageInput("room_location");
+    movePedestrian_fn.setMessageOutput("link_message");
+    movePedestrian_fn.setMessageOutputOptional(true);
+    movePedestrian_fn.setAllowAgentDeath(true);
 
     AgentFunctionDescription handleSupportRequest_fn = pedestrian.newFunction("handleSupportRequest", handleSupportRequest);
     handleSupportRequest_fn.setFunctionCondition(initCondition);
@@ -45,6 +46,8 @@ void define_pedestrian_functions(AgentDescription& pedestrian){
     AgentFunctionDescription supportAgent_fn = pedestrian.newFunction("supportAgent", supportAgent);
     supportAgent_fn.setFunctionCondition(initCondition);
     supportAgent_fn.setMessageInput("link_message");
+
+    AgentFunctionDescription handleMovement_fn = pedestrian.newFunction("handleMovement", handleMovement);
     
     AgentFunctionDescription outputPedestrianLocation_fn = pedestrian.newFunction("outputPedestrianLocation", outputPedestrianLocation);
     outputPedestrianLocation_fn.setFunctionCondition(initCondition);
@@ -450,6 +453,8 @@ void define_pedestrian(ModelDescription& model){
     pedestrian.newVariable<unsigned char>(MOVEMENT_PHASE);
     pedestrian.newVariable<unsigned char>(SKIPPED);
     pedestrian.newVariable<unsigned int>(PATH_INDEX);
+    pedestrian.newVariable<unsigned char>(HAS_TO_MAKE_A_SWAB);
+    pedestrian.newVariable<unsigned char>(HAS_TO_HANDLE_MOVEMENT);
 
     define_pedestrian_functions(pedestrian);
 }
@@ -497,15 +502,19 @@ void define_layers(ModelDescription& model){
     }
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAContagionScreening);
+        layer.addAgentFunction(contagionScreening);
     }
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAEvents);
+        layer.addAgentFunction(swabAgent);
     }
     {
         LayerDescription layer = model.newLayer();
-        layer.addAgentFunction(CUDAMovePedestrian);
+        layer.addAgentFunction(events);
+    }
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(movePedestrian);
     }
     {
         LayerDescription layer = model.newLayer();
@@ -530,6 +539,10 @@ void define_layers(ModelDescription& model){
     {
         LayerDescription layer = model.newLayer();
         layer.addAgentFunction(supportAgent);
+    }
+    {
+        LayerDescription layer = model.newLayer();
+        layer.addAgentFunction(handleMovement);
     }
     {
         LayerDescription layer = model.newLayer();

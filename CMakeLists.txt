@@ -6,12 +6,7 @@ set(FLAMEGPU_VERSION "master" CACHE STRING "FLAMEGPU/FLAMEGPU2 git branch or tag
 # If the above version is a hash instead, also set FLAMEGPU_VERSION_ALLOW_HASH to ON
 # set(FLAMEGPU_VERSION_ALLOW_HASH "ON")
 
-# Run to obtain a checkpoint minimizing the cost of the simulation
-option(CHECKPOINT "Run to obtain a checkpoint" OFF)
 option(DEBUG "Run with debug info" OFF)
-if(CHECKPOINT)
-    add_definitions(-DCHECKPOINT)
-endif()
 if(DEBUG)
     add_definitions(-DDEBUG)
 endif()
