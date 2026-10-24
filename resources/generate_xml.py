@@ -565,7 +565,7 @@ def generate_xml(input_file, random_seed, rooms, areas, initial_agent_order, ped
 				if col == "Ventilation":
 					(type, area) = (types_IDs[room.split("-")[0]]["ID"], areas[room.split("-")[1]]["ID"])
 
-					env_ventilation[:, area, type] = np.array(rooms_whatif.loc["Ventilation", col][id_room][1:], dtype=int) / 3600
+					env_ventilation[:, area, type] = np.array(rooms_whatif.loc["Ventilation", col][id_room][1:], dtype=float) / 3600
 					env_sterilisation[:, area, type] = np.array(rooms_whatif.loc["Sterilisation", col][id_room][1:], dtype=float) / 100
 					env_air[:, area, type] = np.array(rooms_whatif.loc["Air", col][id_room][1:], dtype=int) / 100
 
